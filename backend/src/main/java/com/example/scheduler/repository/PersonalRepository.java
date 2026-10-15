@@ -55,4 +55,6 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
     Optional<Personal> findDoctorPatientsById(Long id);
 
     boolean existsByAccountCi(String ci);
+
+    boolean existsByIdAndActiveTrue(Long id);
 }

@@ -8,6 +8,7 @@ import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
+import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,6 +50,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ScheduleExceptionRepository  scheduleExceptionRepository;
     private final DoctorAvailabilityRepository  doctorAvailabilityRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     @Override
     @Transactional
@@ -56,10 +59,12 @@ public class AppointmentServiceImpl implements AppointmentService {
         var isPatient = ERole.PATIENT.name().equals(role);
         var patientId = isPatient ? userId : request.patientId();
         var startTime = request.startTime();
-        if (isBlocked(request.doctorId(), startTime.toLocalDate()))
-            throw new BusinessException("That schedule is blocked");
+        if (startTime.isBefore(LocalDateTime.now(clock)))
+            throw new BadRequestException("The appointment cannot be in the past");
         var endTime = findSlotEnd(request.doctorId(), startTime)
                 .orElseThrow(() -> new BusinessException("That Schedule is out of journey"));
+        if (isBlocked(request.doctorId(), startTime, endTime))
+            throw new BusinessException("That schedule is blocked");
         if (isSlotTaken(request.doctorId(), startTime, endTime))
             throw new BusinessException("That slot is already taken");
         var doctor = personalRepository.getReferenceById(request.doctorId());
@@ -176,10 +181,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 throw new ForbiddenException("Not authorize to do this");
     }
 
-    private boolean isBlocked(Long doctorId, LocalDate date) {
-        return scheduleExceptionRepository.existsByDoctorIdAndDateAndIsFullDayBlockTrue(
-                doctorId, date
-        );
+    private boolean isBlocked(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
+        return scheduleExceptionRepository.findByDoctorIdAndDate(doctorId, startTime.toLocalDate()).stream()
+                .anyMatch(e -> e.blocks(startTime.toLocalTime(), endTime.toLocalTime()));
     }
 
     /**
@@ -189,6 +193,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private Optional<LocalDateTime> findSlotEnd(Long doctorId, LocalDateTime startTime) {
         var time = startTime.toLocalTime();
         return doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, startTime.getDayOfWeek()).stream()
+                .filter(a -> a.getSlotDurationMinutes() != null && a.getSlotDurationMinutes() > 0)
                 .filter(a -> {
                     var slotSeconds = a.getSlotDurationMinutes() * 60L;
                     var offset = Duration.between(a.getStartTime(), time).toSeconds();

@@ -37,4 +37,10 @@ public class ScheduleException {
 
     @Column(nullable = true)
     private String reason;
+
+    /** True when this exception blocks any part of [start, end): a full-day block, or a partial block overlapping it. */
+    public boolean blocks(LocalTime start, LocalTime end) {
+        if (Boolean.TRUE.equals(isFullDayBlock)) return true;
+        return startTime != null && endTime != null && start.isBefore(endTime) && end.isAfter(startTime);
+    }
 }

@@ -2,11 +2,14 @@ package com.example.scheduler.service.impl;
 
 import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.appointment.AppointmentRequest;
+import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.entity.Patient;
 import com.example.scheduler.entity.Personal;
+import com.example.scheduler.entity.ScheduleException;
 import com.example.scheduler.enums.AppointmentStatus;
+import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.mapper.AppointmentMapper;
 import com.example.scheduler.repository.*;
@@ -16,13 +19,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,8 +39,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AppointmentServiceImplTest {
     private static final long DOCTOR_ID = 7L;
-    private static final LocalDateTime START = LocalDateTime.of(2026, 10, 12, 9, 0);
+    private static final LocalDateTime START = LocalDateTime.of(2099, 10, 12, 9, 0);
     private static final LocalDateTime END = START.plusMinutes(30);
+    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-15T14:00:00Z"), ZoneId.of("America/La_Paz"));
 
     @Mock AppointmentRepository appointmentRepository;
     @Mock PatientRepository patientRepository;
@@ -44,12 +50,14 @@ class AppointmentServiceImplTest {
     @Mock ScheduleExceptionRepository scheduleExceptionRepository;
     @Mock AppointmentMapper appointmentMapper;
     @Mock ApplicationEventPublisher eventPublisher;
-    @InjectMocks AppointmentServiceImpl service;
+    AppointmentServiceImpl service;
 
     private final AppointmentRequest request = new AppointmentRequest(DOCTOR_ID, 99L, START);
 
     @BeforeEach
     void freeSlot() {
+        service = new AppointmentServiceImpl(appointmentRepository, patientRepository, personalRepository, appointmentMapper,
+                scheduleExceptionRepository, doctorAvailabilityRepository, eventPublisher, CLOCK);
         TenantContext.setCurrentTenant("clinic_3");
         lenient().when(doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(DOCTOR_ID, START.getDayOfWeek()))
                 .thenReturn(List.of(DoctorAvailability.builder()
@@ -82,6 +90,81 @@ class AppointmentServiceImplTest {
         assertThatThrownBy(() -> service.bookAppointment(offGrid, 5L, "PATIENT"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("That Schedule is out of journey");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    void bookAppointment_should_reject_when_inThePast() {
+        var past = new AppointmentRequest(DOCTOR_ID, 99L, LocalDateTime.now(CLOCK).minusDays(1));
+
+        assertThatThrownBy(() -> service.bookAppointment(past, 5L, "PATIENT"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("The appointment cannot be in the past");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    void bookAppointment_should_reject_when_slotStartsAtPartialBlockStart() {
+        var at8 = new AppointmentRequest(DOCTOR_ID, 99L, START.withHour(8));
+        when(scheduleExceptionRepository.findByDoctorIdAndDate(DOCTOR_ID, START.toLocalDate()))
+                .thenReturn(List.of(partialBlock(8, 9)));
+
+        assertThatThrownBy(() -> service.bookAppointment(at8, 5L, "PATIENT"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("That schedule is blocked");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    void bookAppointment_should_reject_when_fullDayBlock() {
+        when(scheduleExceptionRepository.findByDoctorIdAndDate(DOCTOR_ID, START.toLocalDate()))
+                .thenReturn(List.of(ScheduleException.builder().isFullDayBlock(true).build()));
+
+        assertThatThrownBy(() -> service.bookAppointment(request, 5L, "PATIENT"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("That schedule is blocked");
+    }
+
+    @Test
+    void bookAppointment_should_book_when_partialBlockEndsAtSlotStart() {
+        when(scheduleExceptionRepository.findByDoctorIdAndDate(DOCTOR_ID, START.toLocalDate()))
+                .thenReturn(List.of(partialBlock(8, 9)));
+        stubSave();
+
+        service.bookAppointment(request, 5L, "PATIENT");
+
+        assertThat(savedAppointment().getStartTime()).isEqualTo(START);
+    }
+
+    @Test
+    void bookAppointment_should_notFail500_when_legacyBlockHasZeroSlotDuration() {
+        // B1 residue: createGeneratedSlots skips rows with duration <= 0, findSlotEnd still computes offset % 0.
+        when(doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(DOCTOR_ID, START.getDayOfWeek()))
+                .thenReturn(List.of(
+                        // starts before the requested 09:00, so the `offset >= 0` guard does not short-circuit
+                        DoctorAvailability.builder().startTime(LocalTime.of(7, 0)).endTime(LocalTime.of(8, 0)).slotDurationMinutes(0).build(),
+                        DoctorAvailability.builder().startTime(LocalTime.of(8, 0)).endTime(LocalTime.of(13, 0)).slotDurationMinutes(30).build()));
+        stubSave();
+
+        service.bookAppointment(request, 5L, "PATIENT");
+
+        assertThat(savedAppointment().getEndTime()).isEqualTo(END);
+    }
+
+    private static ScheduleException partialBlock(int fromHour, int toHour) {
+        return ScheduleException.builder().isFullDayBlock(false)
+                .startTime(LocalTime.of(fromHour, 0)).endTime(LocalTime.of(toHour, 0)).build();
+    }
+
+    @Test
+    void bookAppointment_should_reject_when_partialBlockOverlapsSlot() {
+        when(scheduleExceptionRepository.findByDoctorIdAndDate(DOCTOR_ID, START.toLocalDate()))
+                .thenReturn(List.of(ScheduleException.builder().isFullDayBlock(false)
+                        .startTime(LocalTime.of(8, 45)).endTime(LocalTime.of(9, 15)).build()));
+
+        assertThatThrownBy(() -> service.bookAppointment(request, 5L, "PATIENT"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("That schedule is blocked");
         verify(appointmentRepository, never()).save(any());
     }
 
@@ -126,7 +209,7 @@ class AppointmentServiceImplTest {
     void cancelAppointment_should_storeStrippedReason() {
         stubExisting(AppointmentStatus.CONFIRMED);
 
-        service.cancelAppointmentById(1L, "  El doctor no estará disponible ", 1L, "ASSISTANT");
+        service.cancelAppointmentById(1L, new CancelAppointmentRequest("  El doctor no estará disponible "), 1L, "ASSISTANT");
 
         var saved = savedAppointment();
         assertThat(saved.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
@@ -137,7 +220,7 @@ class AppointmentServiceImplTest {
     void cancelAppointment_should_storeNullReason_when_blankOrMissing() {
         stubExisting(AppointmentStatus.PENDING);
 
-        service.cancelAppointmentById(1L, "   ", 1L, "ASSISTANT");
+        service.cancelAppointmentById(1L, new CancelAppointmentRequest("   "), 1L, "ASSISTANT");
 
         assertThat(savedAppointment().getCancellationReason()).isNull();
     }

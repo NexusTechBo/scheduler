@@ -8,6 +8,5 @@ import java.util.List;
 
 public interface ScheduleExceptionRepository extends JpaRepository<ScheduleException, Long> {
     List<ScheduleException> findByDoctorIdAndDate(Long doctorId, LocalDate date);
-    boolean existsByDoctorIdAndDateAndIsFullDayBlockTrue(Long doctorId, LocalDate date);
     List<ScheduleException> findByDoctorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(Long doctorId, LocalDate from);
 }

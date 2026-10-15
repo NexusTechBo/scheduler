@@ -62,3 +62,6 @@ jwt:
 
 security:
   public-paths: /api/auth/login, /api/clinics, /swagger-ui/**, /v3/api-docs/**
+
+app:
+  zone: ${APP_ZONE:America/La_Paz}

@@ -36,4 +36,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findPatientDoctorsById(Long id);
 
     boolean existsByAccountCi(String ci);
+
+    boolean existsByIdAndActiveTrue(Long id);
 }

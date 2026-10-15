@@ -1,5 +1,7 @@
 package com.example.scheduler.websocket;
 
+import com.example.scheduler.config.tenant.TenantContext;
+import com.example.scheduler.security.ActiveUserChecker;
 import com.example.scheduler.security.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.messaging.Message;
@@ -11,14 +13,18 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class JwtChannelInterceptorTest {
 
     private final JwtUtil jwtUtil = new JwtUtil("test-secret-test-secret-test-secret-0123456789");
-    private final JwtChannelInterceptor interceptor = new JwtChannelInterceptor(jwtUtil);
+    private final ActiveUserChecker activeUserChecker = mock(ActiveUserChecker.class);
+    private final JwtChannelInterceptor interceptor = new JwtChannelInterceptor(jwtUtil, activeUserChecker);
 
     @Test
     void connect_should_reject_when_tokenMissing() {
@@ -40,7 +46,27 @@ class JwtChannelInterceptorTest {
     }
 
     @Test
+    void connect_should_reject_when_userDeactivated() {
+        // Checked inside the token's clinic schema, which is cleared afterward.
+        var tenantSeen = new AtomicReference<String>();
+        when(activeUserChecker.isActive(42L, "PATIENT")).thenAnswer(_ -> {
+            tenantSeen.set(TenantContext.getCurrentTenant());
+            return false;
+        });
+        var accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
+        accessor.setSessionAttributes(new HashMap<>());
+        accessor.addNativeHeader("Authorization", "Bearer " + jwtUtil.generate(42L, "PATIENT", 3L, "ana"));
+
+        assertThatThrownBy(() -> interceptor.preSend(message(accessor), null))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessage("Invalid token");
+        assertThat(tenantSeen.get()).isEqualTo("clinic_3");
+        assertThat(TenantContext.getCurrentTenant()).isNull();
+    }
+
+    @Test
     void connect_should_setPrincipalAndClinic_when_tokenValid() {
+        when(activeUserChecker.isActive(42L, "ASSISTANT")).thenReturn(true);
         var accessor = StompHeaderAccessor.create(StompCommand.CONNECT);
         accessor.setSessionAttributes(new HashMap<>());
         accessor.addNativeHeader("Authorization", "Bearer " + jwtUtil.generate(42L, "ASSISTANT", 3L, "ana"));

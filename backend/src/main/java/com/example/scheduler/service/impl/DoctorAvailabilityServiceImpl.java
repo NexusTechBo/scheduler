@@ -7,6 +7,7 @@ import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityResponse;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.exception.BadRequestException;
+import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.DoctorAvailabilityMapper;
@@ -19,7 +20,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,12 +37,17 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     private final AppointmentRepository appointmentRepository;
     private final PersonalRepository personalRepository;
     private final DoctorAvailabilityMapper mapper;
+    private final Clock clock;
 
     @Override
     @Transactional
     public DoctorAvailabilityResponse addDoctorAvailability(Long doctorId, DoctorAvailabilityRequest request) {
         if (request.startTime().isAfter(request.endTime()) || request.startTime().equals(request.endTime()))
             throw new BadRequestException("the start time must be after the end time");
+        var overlaps = availabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, request.dayOfWeek()).stream()
+                .anyMatch(a -> request.startTime().isBefore(a.getEndTime()) && request.endTime().isAfter(a.getStartTime()));
+        if (overlaps)
+            throw new BusinessException("That availability overlaps an existing block");
         var doctor = personalRepository.findById(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
         var availability = DoctorAvailability.builder()
@@ -60,25 +68,15 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
 
     @Override
     public DoctorAvailabilitySlotsResponse getDoctorAvailableSlots(Long doctorId, LocalDate date) {
-        var isFullDayBlocked = scheduleExceptionRepository.existsByDoctorIdAndDateAndIsFullDayBlockTrue(doctorId, date);
-        if (isFullDayBlocked)
+        var now = LocalDateTime.now(clock);
+        if (date.isBefore(now.toLocalDate()))
             return new DoctorAvailabilitySlotsResponse(date, doctorId, List.of());
         var dayOfWeek = date.getDayOfWeek();
         var availabilities = availabilityRepository
                 .findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, dayOfWeek);
         if (availabilities.isEmpty())
             return new DoctorAvailabilitySlotsResponse(date, doctorId, List.of());
-        var generatedSlots = createGeneratedSlots(availabilities);
-        var partialExceptions = scheduleExceptionRepository.findByDoctorIdAndDate(doctorId, date)
-                .stream()
-                .filter(e -> !e.getIsFullDayBlock() && e.getStartTime() != null && e.getEndTime() != null)
-                .toList();
-        var slotsAfterExceptions = generatedSlots.stream()
-                .filter(slot -> partialExceptions.stream()
-                        .noneMatch(e ->
-                                !slot.startTime().isBefore(e.getStartTime()) && slot.startTime().isBefore(e.getEndTime()))
-                )
-                .toList();
+        var exceptions = scheduleExceptionRepository.findByDoctorIdAndDate(doctorId, date);
         var startOfDay = date.atStartOfDay();
         var endOfDay = date.atTime(LocalTime.MAX);
         var existingAppointments = appointmentRepository.findByDoctorIdAndStartTimeBetweenAndStatusNot(
@@ -87,11 +85,13 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
                 endOfDay,
                 AppointmentStatus.CANCELLED
         );
-        var bookedStartTimes = existingAppointments.stream()
-                .map(a -> a.getStartTime().toLocalTime())
-                .toList();
-        var availableSlots = slotsAfterExceptions.stream()
-                .filter(slot -> !bookedStartTimes.contains(slot.startTime()))
+        var isToday = date.equals(now.toLocalDate());
+        var availableSlots = createGeneratedSlots(availabilities).stream()
+                .distinct()
+                .filter(slot -> !isToday || slot.startTime().isAfter(now.toLocalTime()))
+                .filter(slot -> exceptions.stream().noneMatch(e -> e.blocks(slot.startTime(), slot.endTime())))
+                .filter(slot -> existingAppointments.stream().noneMatch(a ->
+                        slot.startTime().isBefore(a.getEndTime().toLocalTime()) && slot.endTime().isAfter(a.getStartTime().toLocalTime())))
                 .sorted(Comparator.comparing(Slot::startTime))
                 .toList();
         return new DoctorAvailabilitySlotsResponse(date, doctorId, availableSlots);
@@ -111,14 +111,12 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     private List<Slot> createGeneratedSlots(List<DoctorAvailability> availabilities) {
         var generatedSlots = new ArrayList<Slot>();
         for (var availability : availabilities) {
-            var current = availability.getStartTime();
-            var end = availability.getEndTime();
+            // Minutes of the day instead of LocalTime.plusMinutes, which wraps past midnight and never reaches the end.
             var duration = availability.getSlotDurationMinutes();
-            while (current.plusMinutes(duration).isBefore(end) || current.plusMinutes(duration).equals(end)) {
-                var next = current.plusMinutes(duration);
-                generatedSlots.add(new Slot(current, next));
-                current = next;
-            }
+            if (duration == null || duration <= 0) continue; // rows saved before the @Min(5) validation was enforced
+            var end = availability.getEndTime().toSecondOfDay() / 60;
+            for (int m = availability.getStartTime().toSecondOfDay() / 60; m + duration <= end; m += duration)
+                generatedSlots.add(new Slot(LocalTime.ofSecondOfDay(m * 60L), LocalTime.ofSecondOfDay((m + duration) * 60L)));
         }
         return generatedSlots;
     }

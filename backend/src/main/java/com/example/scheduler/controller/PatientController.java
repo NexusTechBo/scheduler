@@ -4,6 +4,7 @@ import com.example.scheduler.dto.patient.PatientRegisterRequest;
 import com.example.scheduler.dto.patient.PatientRequest;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
+import com.example.scheduler.security.SecurityUtils;
 import com.example.scheduler.service.PatientService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,7 +74,7 @@ public class PatientController {
     @GetMapping("/{patientId}/doctors")
     @PreAuthorize("hasAnyRole('PATIENT', 'ASSISTANT')")
     @Operation(summary = "GET /api/patients/{patientId}/doctors — list all doctors assigned to a patient")
-    public ResponseEntity<List<PersonalResponse>> getDoctors(@PathVariable Long patientId) {
-        return ResponseEntity.ok(patientService.getDoctorsOfPatient(patientId));
+    public ResponseEntity<List<PersonalResponse>> getDoctors(@PathVariable Long patientId, Authentication auth) {
+        return ResponseEntity.ok(patientService.getDoctorsOfPatient(patientId, Long.parseLong(auth.getName()), SecurityUtils.extractRole(auth)));
     }
 }

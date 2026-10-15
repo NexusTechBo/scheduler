@@ -10,6 +10,7 @@ const KNOWN_MESSAGES: [RegExp, string][] = [
   [/slot is already taken/i, 'Ese horario ya fue reservado, elige otro'],
   [/schedule is blocked/i, 'El doctor bloqueó ese horario'],
   [/out of journey|does not attend/i, 'El horario está fuera de la jornada del doctor'],
+  [/overlaps an existing block/i, 'Ese horario se cruza con otro bloque de disponibilidad'],
   [/in the past/i, 'No se puede agendar en una fecha pasada'],
   [/just can confirm/i, 'Solo se pueden confirmar citas pendientes'],
   [/already cancelled/i, 'La cita ya estaba cancelada'],

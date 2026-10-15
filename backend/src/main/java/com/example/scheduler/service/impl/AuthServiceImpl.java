@@ -5,6 +5,8 @@ import com.example.scheduler.dto.account.ProfileResponse;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.entity.Account;
+import com.example.scheduler.entity.Patient;
+import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.exception.UnauthorizedException;
@@ -31,8 +33,8 @@ public class AuthServiceImpl implements AuthService {
         var schemaName = "clinic_" + request.clinicId();
         try {
             TenantContext.setCurrentTenant(schemaName);
-            var personal = personalRepository.findByAccountEmail(request.email()).orElse(null);
-            var patient = patientRepository.findByAccountEmail(request.email()).orElse(null);
+            var personal = personalRepository.findByAccountEmail(request.email()).filter(Personal::isActive).orElse(null);
+            var patient = patientRepository.findByAccountEmail(request.email()).filter(Patient::isActive).orElse(null);
             if (personal == null && patient == null) {
                 throw new UnauthorizedException("Invalid Credentials");
             }

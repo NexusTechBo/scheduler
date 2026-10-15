@@ -9,6 +9,7 @@ import com.example.scheduler.entity.Patient;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
+import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
@@ -73,12 +74,6 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public PatientResponse findPatientByPhoneNumber(String phoneNumber) {
-        return patientMapper.toResponse(patientRepository.findByAccountPhoneNumber(phoneNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with phone number: " + phoneNumber)));
-    }
-
-    @Override
     @Transactional
     public PatientResponse updatePatientById(Long patientId, PatientRequest request) {
         var patient = getPatientOrThrowById(patientId);
@@ -97,7 +92,9 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public List<PersonalResponse> getDoctorsOfPatient(Long patientId) {
+    public List<PersonalResponse> getDoctorsOfPatient(Long patientId, Long userId, String role) {
+        if (ERole.PATIENT.name().equals(role) && !patientId.equals(userId))
+            throw new ForbiddenException("Not authorize to do this");
         var patient = getPatientDoctorsOrThrowById(patientId);
         return personalMapper.toResponseList(patient.getDoctors());
     }
