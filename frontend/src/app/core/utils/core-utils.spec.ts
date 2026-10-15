@@ -79,8 +79,11 @@ describe('http helpers', () => {
   it('only mentions correo/CI for duplicates that are about them', () => {
     const duplicate = (message: string) =>
       apiErrorMessage(new HttpErrorResponse({ status: 409, error: { message } }));
-    expect(duplicate('Account with email a@b.com is already exists')).toBe(
+    expect(duplicate('Account with email a@b.com already exists')).toBe(
       'Ya existe un registro con ese correo o CI',
+    );
+    expect(duplicate('Account with phone number 70000000 already exists')).toBe(
+      'Ese teléfono ya está registrado',
     );
     expect(duplicate('This specialty already exists')).toBe(
       'Ya existe un registro con esos datos.',
