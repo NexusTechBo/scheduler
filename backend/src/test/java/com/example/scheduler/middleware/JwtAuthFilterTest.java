@@ -87,7 +87,6 @@ class JwtAuthFilterTest {
         verifyNoInteractions(patientRepository, personalRepository);
     }
 
-    /** Runs the filter and returns the Authentication seen by the next element of the chain. */
     private Authentication run(long userId, String role) throws Exception {
         var request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer " + jwtUtil.generate(userId, role, 1L, "Test"));

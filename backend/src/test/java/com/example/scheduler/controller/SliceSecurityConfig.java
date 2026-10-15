@@ -9,11 +9,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
-/**
- * Real SecurityConfig + JwtUtil + JwtAuthFilter for @WebMvcTest slices.
- * MockMvc would otherwise also add JwtAuthFilter as a plain servlet filter ahead of the security chain; then
- * OncePerRequestFilter skips it inside the chain and SecurityContextHolderFilter wipes the authentication.
- */
 @TestConfiguration
 @Import({SecurityConfig.class, JwtUtil.class, ActiveUserChecker.class})
 public class SliceSecurityConfig {

@@ -33,7 +33,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         switch (accessor.getCommand()) {
             case CONNECT -> authenticate(accessor);
             case SUBSCRIBE -> authorizeSubscription(accessor);
-            case SEND -> throw new MessageDeliveryException("Sending is not supported"); // push-only
+            case SEND -> throw new MessageDeliveryException("Sending is not supported");
             default -> { }
         }
         return message;

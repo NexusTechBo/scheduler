@@ -203,10 +203,8 @@ class AppointmentServiceImplTest {
 
     @Test
     void bookAppointment_should_notFail500_when_legacyBlockHasZeroSlotDuration() {
-        // B1 residue: createGeneratedSlots skips rows with duration <= 0, findSlotEnd still computes offset % 0.
         when(doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(DOCTOR_ID, START.getDayOfWeek()))
                 .thenReturn(List.of(
-                        // starts before the requested 09:00, so the `offset >= 0` guard does not short-circuit
                         DoctorAvailability.builder().startTime(LocalTime.of(7, 0)).endTime(LocalTime.of(8, 0)).slotDurationMinutes(0).build(),
                         DoctorAvailability.builder().startTime(LocalTime.of(8, 0)).endTime(LocalTime.of(13, 0)).slotDurationMinutes(30).build()));
         stubSave();

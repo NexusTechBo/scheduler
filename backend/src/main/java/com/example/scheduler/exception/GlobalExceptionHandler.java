@@ -104,7 +104,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, "The resource was modified by another request, retry", req);
     }
 
-    @ExceptionHandler(PropertyReferenceException.class)   // ?sort=foo on derived queries / findAll(Pageable)
+    @ExceptionHandler(PropertyReferenceException.class)
     public ResponseEntity<ErrorResponse> handlePropertyReference(PropertyReferenceException ex, HttpServletRequest req) {
         return build(HttpStatus.BAD_REQUEST, "Invalid sort property '" + ex.getPropertyName() + "'", req);
     }

@@ -29,7 +29,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // ponytail: in-memory broker, single instance only; switch to enableStompBrokerRelay before scaling out.
         registry.enableSimpleBroker("/topic", "/queue")
                 .setHeartbeatValue(new long[]{10_000, 10_000})
                 .setTaskScheduler(heartbeatScheduler());
