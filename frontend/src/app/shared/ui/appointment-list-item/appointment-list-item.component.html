@@ -1,0 +1,21 @@
+<div class="glass-card cursor-pointer rounded-2xl p-4">
+  <div class="mb-2 flex items-start justify-between gap-2.5">
+    <p class="text-[16px] font-bold leading-tight text-gray-900">
+      {{ doctorAsTitle() ? appointment().doctorName : appointment().clientName }}
+    </p>
+    <app-status-badge [status]="appointment().status" />
+  </div>
+
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-gray-500">
+    <span class="inline-flex items-center gap-1.5">
+      <app-ui-icon name="clock" class="h-3.5 w-3.5" />
+      {{ timeLabel() }}
+    </span>
+    @if (!doctorAsTitle()) {
+      <span class="inline-flex items-center gap-1.5">
+        <app-ui-icon name="stethoscope" class="h-3.5 w-3.5" />
+        {{ appointment().doctorName }}
+      </span>
+    }
+  </div>
+</div>

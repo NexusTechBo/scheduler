@@ -1,0 +1,68 @@
+<app-glass-background class="block min-h-screen w-full px-4 py-10 sm:px-6">
+  <div class="relative z-10 mx-auto max-w-5xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <div class="mb-5 flex items-center gap-2">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/30"
+          >
+            CF
+          </div>
+          <span class="text-lg font-bold text-gray-900">ClinicFlow</span>
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-[34px]">
+          Selecciona tu clínica
+        </h1>
+        <p class="mt-2 max-w-2xl text-[15px] font-medium text-gray-500">
+          Cada clínica tiene su propio espacio de trabajo con pacientes, agenda y personal. Elige a
+          cuál quieres ingresar.
+        </p>
+      </div>
+      <a
+        routerLink="/register"
+        class="inline-flex min-h-6 items-center px-1 text-sm font-bold text-primary hover:underline"
+      >
+        ¿Tu clínica no está? Regístrala
+      </a>
+    </div>
+
+    @if (resource.isLoading()) {
+      <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="h-48 animate-pulse rounded-3xl bg-white/50"></div>
+        }
+      </div>
+    } @else if (resource.isError()) {
+      <app-empty-state
+        class="mt-8"
+        icon="alert"
+        [title]="resource.errorMessage()"
+        message="Verifica que el servidor esté disponible."
+      >
+        <button type="button" class="btn btn-secondary btn-sm" (click)="resource.reloadClinics()">
+          Reintentar
+        </button>
+      </app-empty-state>
+    } @else if (resource.clinics().length) {
+      <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        @for (clinic of resource.clinics(); track clinic.id; let i = $index) {
+          <app-clinic-option-card
+            [clinic]="clinic"
+            [highlighted]="clinic.id === lastClinicId"
+            [accent]="accents[i % accents.length]"
+            (select)="selectClinic($event)"
+          />
+        }
+      </div>
+    } @else {
+      <app-empty-state
+        class="mt-8"
+        icon="home"
+        title="Todavía no hay clínicas registradas"
+        message="Registra la primera para comenzar."
+      >
+        <a routerLink="/register" class="btn btn-secondary btn-sm">Registrar clínica</a>
+      </app-empty-state>
+    }
+  </div>
+</app-glass-background>

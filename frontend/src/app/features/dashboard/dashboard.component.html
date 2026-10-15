@@ -1,0 +1,86 @@
+<app-page-header title="Inicio" subtitle="Resumen de la actividad de esta semana" />
+
+<div class="min-h-0 flex-1 overflow-y-auto pb-2">
+  <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    @for (kpi of kpis(); track kpi.label) {
+      <div class="glass-panel flex items-center gap-4 rounded-3xl p-5">
+        <span
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+          [class]="kpi.tone"
+        >
+          <app-ui-icon [name]="kpi.icon" class="h-6 w-6" />
+        </span>
+        <div>
+          @if (weekResource.isLoading()) {
+            <div class="mb-1 h-7 w-10 animate-pulse rounded-lg bg-white/70"></div>
+          } @else {
+            <p class="text-[28px] font-extrabold leading-none text-gray-900">{{ kpi.value }}</p>
+          }
+          <p class="mt-1 text-sm font-semibold text-gray-500">{{ kpi.label }}</p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
+    <section class="glass-panel flex min-w-0 min-h-[22rem] flex-col rounded-3xl p-6">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-extrabold text-gray-900">Agenda de hoy</h2>
+          <p class="text-sm font-medium text-gray-500">Citas pendientes y confirmadas</p>
+        </div>
+        <a routerLink="/calendar" class="btn btn-secondary btn-sm">Ver calendario</a>
+      </div>
+
+      @if (weekResource.isLoading()) {
+        <div class="space-y-3">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="h-[74px] animate-pulse rounded-2xl bg-white/50"></div>
+          }
+        </div>
+      } @else if (weekResource.error()) {
+        <app-empty-state icon="alert" title="No se pudo cargar la agenda">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="weekResource.reload()">
+            Reintentar
+          </button>
+        </app-empty-state>
+      } @else {
+        <div class="-m-2 flex flex-1 flex-col gap-3 p-2">
+          @for (appointment of todayAppointments(); track appointment.id) {
+            <app-appointment-list-item [appointment]="appointment" (click)="open(appointment)" />
+          } @empty {
+            <app-empty-state
+              class="flex-1"
+              icon="calendar"
+              title="Sin citas para hoy"
+              message="Las nuevas reservas aparecerán aquí."
+            />
+          }
+        </div>
+      }
+    </section>
+
+    <section class="glass-panel min-w-0 rounded-3xl p-6">
+      <h2 class="mb-4 text-xl font-extrabold text-gray-900">Accesos rápidos</h2>
+      <div class="space-y-2.5">
+        @for (link of quickLinks; track link.route) {
+          <a
+            [routerLink]="link.route"
+            class="flex items-center gap-3.5 rounded-2xl bg-white/50 px-4 py-3.5 transition-all hover:-translate-y-px hover:bg-white/85 hover:shadow-md"
+          >
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+            >
+              <app-ui-icon [name]="link.icon" class="h-5 w-5" />
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-[15px] font-bold text-gray-900">{{ link.label }}</span>
+              <span class="block truncate text-sm text-gray-500">{{ link.description }}</span>
+            </span>
+            <app-ui-icon name="chevronRight" class="h-4 w-4 text-gray-400" />
+          </a>
+        }
+      </div>
+    </section>
+  </div>
+</div>

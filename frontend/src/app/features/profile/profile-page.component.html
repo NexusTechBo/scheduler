@@ -1,0 +1,85 @@
+<app-page-header title="Mi perfil" subtitle="Tus datos de contacto en la clínica" />
+
+<div class="min-h-0 flex-1 overflow-y-auto">
+  @if (resource.error()) {
+    <div class="glass-panel max-w-5xl rounded-3xl p-6">
+      <app-empty-state
+        icon="alert"
+        [title]="errorMessage()"
+        message="Intenta nuevamente en unos segundos."
+      >
+        <button type="button" class="btn btn-secondary btn-sm" (click)="resource.reload()">
+          Reintentar
+        </button>
+      </app-empty-state>
+    </div>
+  } @else {
+    <div class="grid max-w-5xl gap-5 lg:grid-cols-[20rem_1fr]">
+      <section class="glass-panel flex flex-col items-center rounded-3xl p-6 text-center">
+        @if (resource.isLoading()) {
+          <div class="h-20 w-20 animate-pulse rounded-3xl bg-white/60"></div>
+          <div class="mt-4 h-5 w-40 animate-pulse rounded-lg bg-white/60"></div>
+        } @else if (profile()) {
+          @let p = profile()!;
+          <div
+            class="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-2xl font-extrabold text-white shadow-lg shadow-primary/30"
+          >
+            {{ avatar() }}
+          </div>
+          <p class="mt-4 text-lg font-extrabold text-gray-900">{{ p.name }}</p>
+          <p class="text-sm font-semibold text-primary">{{ roleLabel() }}</p>
+          <dl class="mt-5 w-full space-y-2.5 text-left text-sm">
+            <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
+              <dt class="font-semibold text-gray-500">CI</dt>
+              <dd class="font-bold text-gray-800">{{ p.ci }}</dd>
+            </div>
+            @if (p.specialtyName) {
+              <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
+                <dt class="font-semibold text-gray-500">Especialidad</dt>
+                <dd class="font-bold text-gray-800">{{ p.specialtyName }}</dd>
+              </div>
+            }
+            @if (clinic(); as clinic) {
+              <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
+                <dt class="font-semibold text-gray-500">Clínica</dt>
+                <dd class="truncate font-bold text-gray-800">{{ clinic.name }}</dd>
+              </div>
+            }
+          </dl>
+        }
+      </section>
+
+      <section class="glass-panel rounded-3xl p-6">
+        <h2 class="mb-5 text-xl font-extrabold text-gray-900">Datos personales</h2>
+        <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+          <div>
+            <label class="field-label" for="profile-name">Nombre completo</label>
+            <input id="profile-name" class="field-input" formControlName="name" />
+            @if (errorOf('name'); as message) {
+              <p class="field-error">{{ message }}</p>
+            }
+          </div>
+          <div>
+            <label class="field-label" for="profile-email">Email</label>
+            <input id="profile-email" type="email" class="field-input" formControlName="email" />
+            @if (errorOf('email'); as message) {
+              <p class="field-error">{{ message }}</p>
+            }
+          </div>
+          @if (isPatient) {
+            <div>
+              <label class="field-label" for="profile-phone">Teléfono</label>
+              <input id="profile-phone" class="field-input" formControlName="phoneNumber" />
+              <p class="mt-1.5 text-xs text-gray-500">Para que la clínica pueda contactarte.</p>
+            </div>
+          }
+          <div class="flex justify-end pt-2">
+            <button type="submit" class="btn btn-primary" [disabled]="saving() || form.pristine">
+              {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  }
+</div>

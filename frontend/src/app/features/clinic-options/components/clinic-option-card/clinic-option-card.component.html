@@ -1,0 +1,36 @@
+<div class="glass-card flex h-full flex-col rounded-3xl p-5">
+  <div class="mb-4 flex items-center gap-3">
+    <div
+      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl {{
+        accentClasses().badge
+      }}"
+    >
+      <app-icon name="clinic" class="h-5 w-5 {{ accentClasses().icon }}" />
+    </div>
+    <div class="min-w-0">
+      <h3 class="truncate text-base font-bold text-gray-900">{{ clinic().name }}</h3>
+      @if (highlighted()) {
+        <p class="text-xs font-bold text-primary">Usada recientemente</p>
+      }
+    </div>
+  </div>
+
+  <div class="border-t border-gray-900/[0.06]"></div>
+
+  <div class="my-4 flex-1 space-y-2 text-sm">
+    <div class="flex items-center justify-between gap-3">
+      <span class="font-medium text-gray-500">Teléfono:</span>
+      <span class="truncate font-bold text-gray-900">{{ clinic().phoneNumber }}</span>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="btn w-full"
+    [class]="highlighted() ? 'btn-primary' : 'btn-secondary'"
+    (click)="select.emit(clinic())"
+  >
+    Ingresar al espacio
+    <app-icon name="arrowRight" class="h-4 w-4" />
+  </button>
+</div>

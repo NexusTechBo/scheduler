@@ -1,0 +1,35 @@
+<div class="flex shrink-0 items-center gap-2.5 px-5 py-4">
+  <span class="h-2.5 w-2.5 rounded-full" [class]="column().accentClass"></span>
+  <h2 class="text-base font-bold text-gray-800">{{ column().title }}</h2>
+  <span
+    class="ml-auto rounded-full bg-gray-900/[0.06] px-2.5 py-0.5 text-xs font-bold text-gray-600"
+  >
+    {{ column().appointments.length }}
+  </span>
+</div>
+
+<div
+  cdkDropList
+  [id]="column().id"
+  [cdkDropListData]="column().appointments"
+  [cdkDropListDisabled]="readonly()"
+  (cdkDropListDropped)="dropped.emit($event)"
+  class="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pb-4 pt-2"
+>
+  @for (appointment of column().appointments; track appointment.id) {
+    <app-board-card
+      cdkDrag
+      [cdkDragData]="appointment"
+      [appointment]="appointment"
+      [showDate]="showDates()"
+      [draggable]="!readonly()"
+      (click)="open.emit(appointment)"
+    />
+  } @empty {
+    <div
+      class="flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-gray-900/10 py-8 text-sm font-medium text-gray-500"
+    >
+      Sin citas
+    </div>
+  }
+</div>

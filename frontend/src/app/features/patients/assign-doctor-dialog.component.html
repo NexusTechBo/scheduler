@@ -1,0 +1,42 @@
+<app-dialog-frame title="Doctores del paciente" [subtitle]="data.patient.name" (closed)="close()">
+  <p class="field-label">Asignados</p>
+  <div class="mb-5 space-y-2">
+    @if (assignedResource.isLoading()) {
+      <div class="h-14 animate-pulse rounded-2xl bg-white/60"></div>
+    } @else {
+      @for (doctor of assignedResource.value() ?? []; track doctor.id) {
+        <div class="flex items-center gap-3 rounded-2xl bg-white/60 px-3.5 py-2.5">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">{{
+            initials(doctor.name)
+          }}</span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold text-gray-900">{{ doctor.name }}</p>
+            <p class="truncate text-xs text-gray-500">{{ doctor.specialtyName ?? 'Sin especialidad' }}</p>
+          </div>
+          <button
+            type="button"
+            class="btn-icon hover:!text-red-600"
+            [disabled]="busy()"
+            (click)="remove(doctor.id)"
+            aria-label="Quitar doctor"
+          >
+            <app-ui-icon name="trash" class="h-4 w-4" />
+          </button>
+        </div>
+      } @empty {
+        <p class="rounded-2xl bg-white/40 px-4 py-3 text-sm text-gray-500">Este paciente aún no tiene doctores asignados.</p>
+      }
+    }
+  </div>
+
+  <label class="field-label" for="doctor-to-add">Asignar a otro doctor</label>
+  <div class="flex gap-2">
+    <select id="doctor-to-add" class="field-input" [ngModel]="doctorToAdd()" (ngModelChange)="doctorToAdd.set($event)">
+      <option [ngValue]="null" disabled>Selecciona un doctor</option>
+      @for (doctor of available(); track doctor.id) {
+        <option [ngValue]="doctor.id">{{ doctor.name }} · {{ doctor.specialtyName ?? 'Sin especialidad' }}</option>
+      }
+    </select>
+    <button type="button" class="btn btn-primary" [disabled]="!doctorToAdd() || busy()" (click)="add()">Asignar</button>
+  </div>
+</app-dialog-frame>

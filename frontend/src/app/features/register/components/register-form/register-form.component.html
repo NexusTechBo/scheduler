@@ -1,0 +1,131 @@
+<form
+  [formGroup]="formGroup"
+  (ngSubmit)="submit()"
+  class="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8"
+  novalidate
+>
+  <div class="mb-6">
+    <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">Registra tu clínica</h1>
+    <p class="mt-1 text-sm font-medium text-gray-500">
+      Crea el espacio de tu clínica y la cuenta de su administrador
+    </p>
+  </div>
+
+  <p class="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">Clínica</p>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label class="field-label" for="register-name">Nombre</label>
+      <input
+        id="register-name"
+        type="text"
+        class="field-input"
+        formControlName="name"
+        autocomplete="organization"
+        placeholder="Clínica Central"
+        [attr.aria-invalid]="!!errorOf('name')"
+        [attr.aria-describedby]="errorOf('name') ? 'register-name-error' : null"
+      />
+      @if (errorOf('name'); as message) {
+        <p id="register-name-error" class="field-error">{{ message }}</p>
+      }
+    </div>
+    <div>
+      <label class="field-label" for="register-phone">Teléfono</label>
+      <input
+        id="register-phone"
+        type="tel"
+        class="field-input"
+        formControlName="phoneNumber"
+        autocomplete="tel"
+        placeholder="+591 700 00000"
+        [attr.aria-invalid]="!!errorOf('phoneNumber')"
+        [attr.aria-describedby]="errorOf('phoneNumber') ? 'register-phone-error' : null"
+      />
+      @if (errorOf('phoneNumber'); as message) {
+        <p id="register-phone-error" class="field-error">{{ message }}</p>
+      }
+    </div>
+  </div>
+
+  <p class="mb-3 mt-6 text-xs font-bold uppercase tracking-wide text-gray-500">Administrador</p>
+  <div class="space-y-4">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="field-label" for="register-admin-name">Nombre completo</label>
+        <input
+          id="register-admin-name"
+          type="text"
+          class="field-input"
+          formControlName="adminName"
+          autocomplete="name"
+          placeholder="Tu nombre"
+          [attr.aria-invalid]="!!errorOf('adminName')"
+          [attr.aria-describedby]="errorOf('adminName') ? 'register-admin-name-error' : null"
+        />
+        @if (errorOf('adminName'); as message) {
+          <p id="register-admin-name-error" class="field-error">{{ message }}</p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="register-admin-ci">CI</label>
+        <input
+          id="register-admin-ci"
+          type="text"
+          class="field-input"
+          formControlName="adminCi"
+          autocomplete="off"
+          placeholder="Documento de identidad"
+          [attr.aria-invalid]="!!errorOf('adminCi')"
+          [attr.aria-describedby]="errorOf('adminCi') ? 'register-admin-ci-error' : null"
+        />
+        @if (errorOf('adminCi'); as message) {
+          <p id="register-admin-ci-error" class="field-error">{{ message }}</p>
+        }
+      </div>
+    </div>
+    <div>
+      <label class="field-label" for="register-admin-email">Correo electrónico</label>
+      <input
+        id="register-admin-email"
+        type="email"
+        class="field-input"
+        formControlName="adminEmail"
+        autocomplete="email"
+        placeholder="admin@tuclinica.com"
+        [attr.aria-invalid]="!!errorOf('adminEmail')"
+        [attr.aria-describedby]="errorOf('adminEmail') ? 'register-admin-email-error' : null"
+      />
+      @if (errorOf('adminEmail'); as message) {
+        <p id="register-admin-email-error" class="field-error">{{ message }}</p>
+      }
+    </div>
+    <div>
+      <label class="field-label" for="register-admin-password">Contraseña</label>
+      <input
+        id="register-admin-password"
+        type="password"
+        class="field-input"
+        formControlName="adminPassword"
+        autocomplete="new-password"
+        placeholder="Mínimo 8 caracteres"
+        [attr.aria-invalid]="!!errorOf('adminPassword')"
+        [attr.aria-describedby]="errorOf('adminPassword') ? 'register-admin-password-error' : null"
+      />
+      @if (errorOf('adminPassword'); as message) {
+        <p id="register-admin-password-error" class="field-error">{{ message }}</p>
+      }
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary mt-6 w-full" [disabled]="submitting()">
+    {{ submitting() ? 'Registrando…' : 'Registrar clínica' }}
+  </button>
+
+  <div class="mt-6 flex items-center gap-3">
+    <span class="h-px flex-1 bg-gray-900/10"></span>
+    <span class="text-xs font-medium text-gray-500">¿Ya tienes cuenta?</span>
+    <span class="h-px flex-1 bg-gray-900/10"></span>
+  </div>
+
+  <a routerLink="/clinic-options" class="btn btn-secondary mt-4 w-full">Iniciar sesión</a>
+</form>

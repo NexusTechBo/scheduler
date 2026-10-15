@@ -1,0 +1,38 @@
+<app-glass-background class="flex h-screen justify-center">
+  <!-- Capped + centered so the app reads as one native-feeling window instead of stretching edge-to-edge on wide desktops. -->
+  <div class="relative z-10 flex h-full w-full min-w-0 max-w-[1680px]">
+    <!-- Below lg the sidebar is an off-canvas drawer. `invisible` keeps it out of the tab order when closed; visibility only
+         transitions on close so it is focusable immediately on open. -->
+    <app-sidebar-nav
+      id="app-sidebar"
+      [class]="
+        navOpen()
+          ? ''
+          : 'max-lg:invisible max-lg:-translate-x-[calc(100%+2rem)] max-lg:transition-[transform,visibility]'
+      "
+      [cdkTrapFocus]="navOpen()"
+      [navItems]="navItems()"
+      [clinicName]="clinicName()"
+      [roleLabel]="roleLabel()"
+      (logout)="logout()"
+      (click)="onNavClick($event)"
+    />
+
+    @if (navOpen()) {
+      <div class="glass-backdrop fixed inset-0 z-30 lg:hidden" (click)="closeNav()"></div>
+    }
+
+    <div class="flex min-w-0 flex-1 flex-col">
+      <app-topbar
+        [userName]="userName()"
+        [roleLabel]="roleLabel()"
+        [menuOpen]="navOpen()"
+        (menu)="openNav()"
+      />
+
+      <main class="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 sm:px-6 lg:px-8 lg:pb-8">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+</app-glass-background>

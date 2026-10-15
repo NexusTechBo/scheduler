@@ -1,0 +1,60 @@
+<app-dialog-frame
+  [title]="isEdit ? 'Editar paciente' : 'Nuevo paciente'"
+  [subtitle]="isEdit ? data.patient!.name : 'Se creará su cuenta de acceso'"
+  (closed)="close()"
+>
+  <form id="patient-form" [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+    <div>
+      <label class="field-label" for="patient-name">Nombre completo</label>
+      <input id="patient-name" class="field-input" formControlName="name" autocomplete="off" />
+      @if (errorOf('name'); as message) {
+        <p class="field-error">{{ message }}</p>
+      }
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="field-label" for="patient-email">Email</label>
+        <input id="patient-email" type="email" class="field-input" formControlName="email" autocomplete="off" />
+        @if (errorOf('email'); as message) {
+          <p class="field-error">{{ message }}</p>
+        }
+      </div>
+      <div>
+        <label class="field-label" for="patient-phone">Teléfono (opcional)</label>
+        <input id="patient-phone" class="field-input" formControlName="phoneNumber" autocomplete="off" />
+      </div>
+    </div>
+
+    @if (!isEdit) {
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="field-label" for="patient-ci">CI</label>
+          <input id="patient-ci" class="field-input" formControlName="ci" autocomplete="off" />
+          @if (errorOf('ci'); as message) {
+            <p class="field-error">{{ message }}</p>
+          }
+        </div>
+        <div>
+          <label class="field-label" for="patient-password">Contraseña inicial</label>
+          <input id="patient-password" type="password" class="field-input" formControlName="password" autocomplete="new-password" />
+          @if (errorOf('password'); as message) {
+            <p class="field-error">{{ message }}</p>
+          }
+        </div>
+      </div>
+      <p class="text-xs text-gray-500">El paciente podrá iniciar sesión con su email y esta contraseña.</p>
+    }
+
+    @if (error(); as message) {
+      <p class="rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{{ message }}</p>
+    }
+  </form>
+
+  <div dialogFooter class="contents">
+    <button type="button" class="btn btn-secondary" (click)="close()">Cancelar</button>
+    <button type="submit" form="patient-form" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear paciente' }}
+    </button>
+  </div>
+</app-dialog-frame>

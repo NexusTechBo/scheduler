@@ -1,0 +1,80 @@
+<form
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  class="glass-panel w-full max-w-sm rounded-3xl p-6 sm:p-8"
+  novalidate
+>
+  <div class="mb-6">
+    <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">Inicia sesión</h1>
+    <p class="mt-1 text-sm font-medium text-gray-500">
+      Ingresa tus credenciales para acceder a tu cuenta
+    </p>
+  </div>
+
+  <div class="mb-5 flex items-center justify-between gap-3 rounded-2xl bg-white/60 px-4 py-3">
+    <div class="min-w-0">
+      <p class="text-xs font-bold tracking-wide text-gray-500">Clínica</p>
+      <p class="truncate text-sm font-bold text-gray-900">
+        {{ clinic()?.name ?? 'Sin seleccionar' }}
+      </p>
+    </div>
+    <a
+      routerLink="/clinic-options"
+      class="inline-flex min-h-6 shrink-0 items-center px-1 text-xs font-bold text-primary hover:underline"
+    >
+      Cambiar
+    </a>
+  </div>
+
+  <div class="space-y-4">
+    <div>
+      <label class="field-label" for="login-email">Correo electrónico</label>
+      <input
+        id="login-email"
+        type="email"
+        class="field-input"
+        formControlName="email"
+        autocomplete="email"
+        placeholder="tucorreo@clinica.com"
+        [attr.aria-invalid]="!!errorOf('email')"
+        [attr.aria-describedby]="errorOf('email') ? 'login-email-error' : null"
+      />
+      @if (errorOf('email'); as message) {
+        <p id="login-email-error" class="field-error">{{ message }}</p>
+      }
+    </div>
+    <div>
+      <label class="field-label" for="login-password">Contraseña</label>
+      <input
+        id="login-password"
+        type="password"
+        class="field-input"
+        formControlName="password"
+        autocomplete="current-password"
+        placeholder="Ingresa tu contraseña"
+        [attr.aria-invalid]="!!errorOf('password')"
+        [attr.aria-describedby]="errorOf('password') ? 'login-password-error' : null"
+      />
+      @if (errorOf('password'); as message) {
+        <p id="login-password-error" class="field-error">{{ message }}</p>
+      }
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary mt-6 w-full" [disabled]="submitting()">
+    {{ submitting() ? 'Ingresando…' : 'Ingresar' }}
+  </button>
+
+  <div class="mt-6 flex items-center gap-3">
+    <span class="h-px flex-1 bg-gray-900/10"></span>
+    <span class="text-center text-xs font-medium text-gray-500"
+      >¿Tu clínica aún no usa ClinicFlow?</span
+    >
+    <span class="h-px flex-1 bg-gray-900/10"></span>
+  </div>
+
+  <a routerLink="/register" class="btn btn-secondary mt-4 w-full">Registrar clínica</a>
+  <p class="mt-4 text-center text-xs font-medium text-gray-500">
+    Los pacientes y el personal son creados por la clínica.
+  </p>
+</form>

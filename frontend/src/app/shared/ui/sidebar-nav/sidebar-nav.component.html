@@ -1,0 +1,44 @@
+<div class="flex items-center gap-3 px-5 py-6">
+  <div
+    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-primary/30"
+  >
+    {{ clinicInitials() }}
+  </div>
+  <div class="min-w-0">
+    <p class="truncate text-base font-bold text-gray-900">{{ clinicName() }}</p>
+    <p class="truncate text-sm text-gray-500">{{ roleLabel() }}</p>
+  </div>
+</div>
+
+<nav class="flex-1 space-y-1.5 overflow-y-auto px-4 py-2">
+  @for (item of navItems(); track item.route + item.label) {
+    <a
+      [routerLink]="item.route"
+      routerLinkActive="bg-white/90 !text-primary shadow-md"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-semibold text-gray-500 transition-colors hover:bg-white/60"
+    >
+      <app-ui-icon [name]="item.icon" class="h-[18px] w-[18px]" [strokeWidth]="2" />
+      {{ item.label }}
+    </a>
+  }
+</nav>
+
+<div class="space-y-1 px-3 py-3">
+  <a
+    routerLink="/profile"
+    routerLinkActive="bg-white/90 !text-primary shadow-md"
+    class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[15px] font-semibold text-gray-500 transition-colors hover:bg-white/60"
+  >
+    <app-ui-icon name="user" class="h-[18px] w-[18px]" [strokeWidth]="2" />
+    Mi perfil
+  </a>
+  <button
+    type="button"
+    (click)="logout.emit()"
+    class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-4 py-2.5 text-[15px] font-semibold text-gray-500 transition-colors hover:bg-white/60 hover:text-red-600"
+  >
+    <app-ui-icon name="logout" class="h-[18px] w-[18px]" [strokeWidth]="2" />
+    Cerrar sesión
+  </button>
+</div>

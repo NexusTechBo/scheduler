@@ -1,0 +1,83 @@
+<button
+  #triggerEl
+  type="button"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  role="combobox"
+  aria-haspopup="listbox"
+  [attr.id]="id()"
+  [attr.aria-label]="ariaLabel()"
+  [attr.aria-labelledby]="ariaLabelledby()"
+  [attr.aria-expanded]="isOpen()"
+  [attr.aria-controls]="listboxId"
+  [attr.aria-activedescendant]="isOpen() && activeIndex() >= 0 ? optionId(activeIndex()) : null"
+  [disabled]="disabled()"
+  (click)="toggle()"
+  (keydown)="onKeydown($event)"
+  (keyup.space)="$event.preventDefault()"
+  (blur)="onBlur()"
+  class="field-input flex cursor-pointer items-center gap-2 text-left font-semibold disabled:cursor-not-allowed"
+>
+  @if (icon) {
+    <app-ui-icon [name]="icon" class="h-4 w-4 shrink-0 text-gray-500" [strokeWidth]="2" />
+  }
+  <span class="flex-1 truncate" [class.text-gray-400]="!selected()">{{
+    selected()?.label ?? placeholder()
+  }}</span>
+  <app-ui-icon
+    name="chevronDown"
+    class="h-3.5 w-3.5 shrink-0 text-gray-500 transition-transform {{
+      isOpen() ? 'rotate-180' : ''
+    }}"
+    [strokeWidth]="2.2"
+  />
+</button>
+
+<!-- CDK overlay: escapes dialog overflow clipping, Esc → detach, viewport push/flip. -->
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="isOpen()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayWidth]="width()"
+  [cdkConnectedOverlayViewportMargin]="16"
+  [cdkConnectedOverlayPush]="true"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  (backdropClick)="close()"
+  (detach)="close()"
+  (attach)="onAttach()"
+>
+  <!-- mousedown is cancelled so focus (and aria-activedescendant) stays on the trigger. -->
+  <ul
+    [id]="listboxId"
+    role="listbox"
+    [attr.aria-label]="ariaLabel()"
+    [attr.aria-labelledby]="ariaLabelledby()"
+    (mousedown)="$event.preventDefault()"
+    class="glass-modal relative max-h-60 w-full overflow-y-auto rounded-2xl p-1.5"
+  >
+    @for (option of items(); track $index; let i = $index) {
+      <li
+        [id]="optionId(i)"
+        role="option"
+        [attr.aria-selected]="i === selectedIndex()"
+        [attr.aria-disabled]="option.disabled || null"
+        (click)="choose(i)"
+        (mouseenter)="hover(i)"
+        class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors {{
+          option.disabled
+            ? 'cursor-not-allowed text-gray-300'
+            : i === selectedIndex()
+              ? 'cursor-pointer font-bold text-primary'
+              : 'cursor-pointer font-medium text-gray-700'
+        }} {{ i === activeIndex() && !option.disabled ? 'bg-gray-900/[0.06]' : '' }}"
+      >
+        <span class="flex-1 truncate">{{ option.label }}</span>
+        @if (i === selectedIndex()) {
+          <app-ui-icon name="check" class="h-4 w-4 shrink-0" [strokeWidth]="2.4" />
+        }
+      </li>
+    }
+  </ul>
+</ng-template>
