@@ -33,6 +33,8 @@ const KNOWN_MESSAGES: [RegExp, string][] = [
   [/partial block needs/i, 'Indica hora de inicio y fin del bloqueo'],
   [/modified by another request/i, 'Otro usuario modificó este registro, vuelve a intentarlo'],
   [/not authorize|access denied/i, 'No tienes permiso para realizar esta acción'],
+  [/must not be (blank|null|empty)/i, 'Completa los campos obligatorios'],
+  [/well-formed email/i, 'Ingresa un email válido'],
 ];
 
 const STATUS_FALLBACK: Record<number, string> = {
@@ -53,11 +55,11 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error in
 
   const body = error.error as Partial<ApiError> | string | null;
   if (body && typeof body === 'object') {
-    const details = (body.errors ?? [])
-      .map((e) => e.message)
-      .filter(Boolean)
-      .map((m) => translate(m) ?? m);
-    if (details.length) return details.join('. ');
+    // Untranslated Bean Validation messages are English: drop them and fall back to the status text.
+    const details = new Set(
+      (body.errors ?? []).map((e) => translate(e.message ?? '')).filter((m): m is string => !!m),
+    );
+    if (details.size) return [...details].join('. ');
     if (body.message) {
       const known = translate(body.message);
       if (known) return known;

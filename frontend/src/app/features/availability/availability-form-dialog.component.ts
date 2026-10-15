@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DialogRef } from '@angular/cdk/dialog';
 import {
   AbstractControl,
@@ -59,7 +59,12 @@ export class AvailabilityFormDialogComponent {
   /** "Hasta" options start one step after "Desde"; endAfterStart still guards the submit. */
   protected readonly endMin = computed(() => addMinutesToTime(this.startTime(), 30));
 
+  constructor() {
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.error.set(null));
+  }
+
   protected toggleDay(day: DayOfWeek): void {
+    this.error.set(null);
     this.selectedDays.update((days) => {
       const next = new Set(days);
       if (next.has(day)) next.delete(day);

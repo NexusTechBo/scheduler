@@ -39,14 +39,15 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
-        if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
+        var clinicName = request.name().strip();
+        if (clinicRepository.existsByNameIgnoreCase(clinicName))
             throw new BusinessException("A clinic with this name already exists");
         if (accountRepository.findByCi(request.adminCi()).isEmpty() && accountRepository.existsByEmail(request.adminEmail()))
             throw new BadRequestException("Account with email " + request.adminEmail() + " already exists");
         var tx = new TransactionTemplate(transactionManager);
         var clinic = tx.execute(_ -> {
             var entity = clinicMapper.toEntity(request);
-            entity.setName(request.name().strip());
+            entity.setName(clinicName);
             return clinicRepository.save(entity);
         });
         var schemaName = "clinic_" + clinic.getId();

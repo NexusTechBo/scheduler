@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DialogRef } from '@angular/cdk/dialog';
 import {
   AbstractControl,
@@ -49,6 +50,10 @@ export class ExceptionFormDialogComponent {
     },
     { validators: partialRangeValid },
   );
+
+  constructor() {
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.error.set(null));
+  }
 
   protected close(): void {
     this.ref.close(false);
