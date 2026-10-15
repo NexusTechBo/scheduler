@@ -2,13 +2,12 @@ package com.example.scheduler.dto.clinic;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record ClinicRequest(
-        @NotNull
+        @NotBlank
         String name,
-        @NotNull
+        @NotBlank
         String phoneNumber,
         @NotBlank
         String adminName,

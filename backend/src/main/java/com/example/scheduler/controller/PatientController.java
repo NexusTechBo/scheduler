@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -39,7 +40,7 @@ public class PatientController {
     @PreAuthorize("hasAnyRole('DOCTOR', 'ASSISTANT')")
     @Operation(summary = "POST /api/patients — create a patient user")
     public ResponseEntity<PatientResponse> createPatient(@Valid @RequestBody PatientRegisterRequest request) {
-        return ResponseEntity.ok(patientService.createPatient(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(patientService.createPatient(request));
     }
 
     @GetMapping("/{patientId}")

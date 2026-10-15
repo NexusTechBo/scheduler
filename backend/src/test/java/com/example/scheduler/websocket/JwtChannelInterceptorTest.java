@@ -47,7 +47,6 @@ class JwtChannelInterceptorTest {
 
     @Test
     void connect_should_reject_when_userDeactivated() {
-        // Checked inside the token's clinic schema, which is cleared afterward.
         var tenantSeen = new AtomicReference<String>();
         when(activeUserChecker.isActive(42L, "PATIENT")).thenAnswer(_ -> {
             tenantSeen.set(TenantContext.getCurrentTenant());

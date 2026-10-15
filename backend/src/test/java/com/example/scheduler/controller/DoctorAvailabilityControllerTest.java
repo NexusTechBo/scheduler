@@ -1,6 +1,7 @@
 package com.example.scheduler.controller;
 
 import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityResponse;
+import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilitySlotsResponse;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.repository.PatientRepository;
 import com.example.scheduler.repository.PersonalRepository;
@@ -24,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -49,12 +51,12 @@ class DoctorAvailabilityControllerTest {
     }
 
     @Test
-    @DisplayName("valid body as DOCTOR -> 200 and service called with the token's id")
-    void add_should_return200_when_valid() throws Exception {
+    @DisplayName("valid body as DOCTOR -> 201 and service called with the token's id")
+    void add_should_return201_when_valid() throws Exception {
         when(service.addDoctorAvailability(eq(DOCTOR_ID), any()))
                 .thenReturn(new DoctorAvailabilityResponse(10L, null, null, null, 30, true));
 
-        postAs("DOCTOR", VALID).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(10));
+        postAs("DOCTOR", VALID).andExpect(status().isCreated()).andExpect(jsonPath("$.id").value(10));
         verify(service).addDoctorAvailability(eq(DOCTOR_ID), any());
     }
 
@@ -117,6 +119,23 @@ class DoctorAvailabilityControllerTest {
     void add_should_return403_when_notDoctor(String role) throws Exception {
         postAs(role, VALID).andExpect(status().isForbidden());
         verifyNoInteractions(service);
+    }
+
+    @ParameterizedTest(name = "role {0} -> path doctorId used")
+    @CsvSource({"DOCTOR", "ASSISTANT", "PATIENT"})
+    @DisplayName("B20: GET /doctor/{doctorId}/availables uses the path id for every role, DOCTOR included")
+    void slots_should_usePathDoctorId_forEveryRole(String role) throws Exception {
+        var date = java.time.LocalDate.of(2099, 1, 5);
+        long otherDoctor = 7L;
+        when(service.getDoctorAvailableSlots(otherDoctor, date))
+                .thenReturn(new DoctorAvailabilitySlotsResponse(date, otherDoctor, java.util.List.of()));
+
+        mvc.perform(get("/api/doctorAvailability/doctor/{id}/availables", otherDoctor).param("date", date.toString())
+                        .header("Authorization", "Bearer " + jwtUtil.generate(DOCTOR_ID, role, 1L, "Test")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.doctorId").value(otherDoctor));
+        verify(service).getDoctorAvailableSlots(otherDoctor, date);
+        verify(service, never()).getDoctorAvailableSlots(eq(DOCTOR_ID), any());
     }
 
     private ResultActions postAs(String role, String body) throws Exception {

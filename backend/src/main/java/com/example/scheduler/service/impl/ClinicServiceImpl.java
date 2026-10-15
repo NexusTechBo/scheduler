@@ -8,6 +8,7 @@ import com.example.scheduler.entity.Account;
 import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
+import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.mapper.ClinicMapper;
 import com.example.scheduler.repository.AccountRepository;
 import com.example.scheduler.repository.ClinicRepository;
@@ -38,24 +39,28 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
+        if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
+            throw new BusinessException("A clinic with this name already exists");
+        if (accountRepository.findByCi(request.adminCi()).isEmpty() && accountRepository.existsByEmail(request.adminEmail()))
+            throw new BadRequestException("Account with email " + request.adminEmail() + " already exists");
         var tx = new TransactionTemplate(transactionManager);
-        var clinic = tx.execute(_ -> clinicRepository.save(clinicMapper.toEntity(request)));
+        var clinic = tx.execute(_ -> {
+            var entity = clinicMapper.toEntity(request);
+            entity.setName(request.name().strip());
+            return clinicRepository.save(entity);
+        });
         var schemaName = "clinic_" + clinic.getId();
         schemaProvisioningService.createTenantSchema(schemaName);
         try {
             TenantContext.setCurrentTenant(schemaName);
             return tx.execute(_ -> {
                 var account = accountRepository.findByCi(request.adminCi())
-                        .orElseGet(() -> {
-                            if(accountRepository.existsByEmail(request.adminEmail()))
-                                throw new BadRequestException("Account with email " + request.adminEmail() + " is already exists");
-                            return Account.builder()
-                                    .name(request.name())
+                        .orElseGet(() -> Account.builder()
+                                    .name(request.adminName())
                                     .password(passwordEncoder.encode(request.adminPassword()))
                                     .email(request.adminEmail())
                                     .ci(request.adminCi())
-                                    .build();
-                        });
+                                    .build());
                 var adminRole = roleRepository.getByName(ERole.ADMINISTRATOR);
                 var admin = personalRepository.save(Personal.builder()
                         .account(account)

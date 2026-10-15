@@ -5,7 +5,9 @@ import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilitySlotsRespo
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.entity.Personal;
+import com.example.scheduler.entity.Role;
 import com.example.scheduler.entity.ScheduleException;
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.mapper.DoctorAvailabilityMapper;
 import com.example.scheduler.repository.AppointmentRepository;
@@ -17,6 +19,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,7 +42,6 @@ import static org.mockito.Mockito.*;
 class DoctorAvailabilityServiceImplTest {
     private static final long DOCTOR_ID = 7L;
     private static final LocalDate DATE = LocalDate.of(2099, 10, 12);
-    // 14:00 UTC = 10:00 in La Paz: "today" and "now" must follow the clinic zone, not the JVM zone
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-15T14:00:00Z"), ZoneId.of("America/La_Paz"));
 
     @Mock DoctorAvailabilityRepository availabilityRepository;
@@ -52,6 +55,30 @@ class DoctorAvailabilityServiceImplTest {
     void setUp() {
         service = new DoctorAvailabilityServiceImpl(availabilityRepository, scheduleExceptionRepository, appointmentRepository,
                 personalRepository, mapper, CLOCK);
+        lenient().when(personalRepository.findById(DOCTOR_ID)).thenReturn(Optional.of(personal(ERole.DOCTOR, true)));
+    }
+
+    @ParameterizedTest(name = "role={0}, active={1} -> no slots")
+    @CsvSource({"ASSISTANT,true", "DOCTOR,false"})
+    @DisplayName("B20: path id that is not an active doctor -> empty slot list, no blocks queried")
+    void slots_should_beEmpty_when_notActiveDoctor(ERole role, boolean active) {
+        when(personalRepository.findById(DOCTOR_ID)).thenReturn(Optional.of(personal(role, active)));
+
+        assertThat(startTimes()).isEmpty();
+        verifyNoInteractions(availabilityRepository);
+    }
+
+    @Test
+    @DisplayName("B20: unknown path id -> empty slot list")
+    void slots_should_beEmpty_when_doctorUnknown() {
+        when(personalRepository.findById(DOCTOR_ID)).thenReturn(Optional.empty());
+
+        assertThat(startTimes()).isEmpty();
+        verifyNoInteractions(availabilityRepository);
+    }
+
+    private static Personal personal(ERole role, boolean active) {
+        return Personal.builder().id(DOCTOR_ID).active(active).role(Role.builder().name(role).build()).build();
     }
 
     @Test

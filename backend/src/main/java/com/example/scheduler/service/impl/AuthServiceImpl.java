@@ -10,6 +10,7 @@ import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.exception.UnauthorizedException;
+import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PatientRepository;
 import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.security.JwtUtil;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private final ClinicRepository clinicRepository;
     private final PatientRepository patientRepository;
     private final PersonalRepository personalRepository;
     private final PasswordEncoder passwordEncoder;
@@ -30,6 +32,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        if (!clinicRepository.existsById(request.clinicId()))
+            throw new UnauthorizedException("Invalid clinic");
         var schemaName = "clinic_" + request.clinicId();
         try {
             TenantContext.setCurrentTenant(schemaName);

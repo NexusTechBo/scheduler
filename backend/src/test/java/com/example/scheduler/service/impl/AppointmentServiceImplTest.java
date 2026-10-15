@@ -7,15 +7,19 @@ import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.entity.Patient;
 import com.example.scheduler.entity.Personal;
+import com.example.scheduler.entity.Role;
 import com.example.scheduler.entity.ScheduleException;
 import com.example.scheduler.enums.AppointmentStatus;
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
+import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.AppointmentMapper;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.websocket.AppointmentChangedEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -62,6 +66,67 @@ class AppointmentServiceImplTest {
         lenient().when(doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(DOCTOR_ID, START.getDayOfWeek()))
                 .thenReturn(List.of(DoctorAvailability.builder()
                         .startTime(LocalTime.of(8, 0)).endTime(LocalTime.of(13, 0)).slotDurationMinutes(30).build()));
+        lenient().when(personalRepository.findById(DOCTOR_ID)).thenReturn(Optional.of(personal(ERole.DOCTOR, true)));
+        lenient().when(patientRepository.findById(anyLong())).thenReturn(Optional.of(Patient.builder().active(true).build()));
+    }
+
+    @Test
+    @DisplayName("B15: unknown doctorId -> 404 Doctor not found, nothing saved")
+    void bookAppointment_should_throwNotFound_when_doctorUnknown() {
+        when(personalRepository.findById(DOCTOR_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.bookAppointment(request, 5L, "PATIENT"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Doctor not found with id: " + DOCTOR_ID);
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("B15: doctorId of an assistant -> 400 is not a doctor")
+    void bookAppointment_should_throwBadRequest_when_personalIsNotDoctor() {
+        when(personalRepository.findById(DOCTOR_ID)).thenReturn(Optional.of(personal(ERole.ASSISTANT, true)));
+
+        assertThatThrownBy(() -> service.bookAppointment(request, 5L, "PATIENT"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Personal with id " + DOCTOR_ID + " is not a doctor");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("B16: inactive doctor -> 409")
+    void bookAppointment_should_throwConflict_when_doctorInactive() {
+        when(personalRepository.findById(DOCTOR_ID)).thenReturn(Optional.of(personal(ERole.DOCTOR, false)));
+
+        assertThatThrownBy(() -> service.bookAppointment(request, 5L, "PATIENT"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("The doctor is not active");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("B15: unknown patientId (staff booking) -> 404 Patient not found")
+    void bookAppointment_should_throwNotFound_when_patientUnknown() {
+        when(patientRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.bookAppointment(request, 1L, "ASSISTANT"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Patient not found with id: 99");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("B16: inactive patient -> 409")
+    void bookAppointment_should_throwConflict_when_patientInactive() {
+        when(patientRepository.findById(99L)).thenReturn(Optional.of(Patient.builder().active(false).build()));
+
+        assertThatThrownBy(() -> service.bookAppointment(request, 1L, "ASSISTANT"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("The patient is not active");
+        verify(appointmentRepository, never()).save(any());
+    }
+
+    private static Personal personal(ERole role, boolean active) {
+        return Personal.builder().id(DOCTOR_ID).active(active).role(Role.builder().name(role).build()).build();
     }
 
     @Test
@@ -70,7 +135,7 @@ class AppointmentServiceImplTest {
 
         service.bookAppointment(request, 5L, "PATIENT");
 
-        verify(patientRepository).getReferenceById(5L);
+        verify(patientRepository).findById(5L);
         assertThat(savedAppointment().getStatus()).isEqualTo(AppointmentStatus.PENDING);
     }
 
@@ -89,7 +154,7 @@ class AppointmentServiceImplTest {
 
         assertThatThrownBy(() -> service.bookAppointment(offGrid, 5L, "PATIENT"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("That Schedule is out of journey");
+                .hasMessage("The doctor does not attend at that time");
         verify(appointmentRepository, never()).save(any());
     }
 
@@ -191,7 +256,7 @@ class AppointmentServiceImplTest {
 
         service.bookAppointment(request, 1L, "ASSISTANT");
 
-        verify(patientRepository).getReferenceById(99L);
+        verify(patientRepository).findById(99L);
         assertThat(savedAppointment().getStatus()).isEqualTo(AppointmentStatus.PENDING);
     }
 
@@ -232,8 +297,6 @@ class AppointmentServiceImplTest {
     }
 
     private void stubSave() {
-        when(personalRepository.getReferenceById(DOCTOR_ID)).thenReturn(new Personal());
-        when(patientRepository.getReferenceById(anyLong())).thenReturn(new Patient());
         when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 

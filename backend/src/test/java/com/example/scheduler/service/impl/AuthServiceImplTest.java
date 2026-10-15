@@ -7,6 +7,7 @@ import com.example.scheduler.entity.Personal;
 import com.example.scheduler.entity.Role;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.UnauthorizedException;
+import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PatientRepository;
 import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.security.JwtUtil;
@@ -31,6 +32,7 @@ class AuthServiceImplTest {
     private static final String EMAIL = "qa.pac1@test.com";
     private static final LoginRequest REQUEST = new LoginRequest(EMAIL, "secret", 1L);
 
+    @Mock ClinicRepository clinicRepository;
     @Mock PatientRepository patientRepository;
     @Mock PersonalRepository personalRepository;
     @Mock PasswordEncoder passwordEncoder;
@@ -42,6 +44,18 @@ class AuthServiceImplTest {
         lenient().when(personalRepository.findByAccountEmail(EMAIL)).thenReturn(Optional.empty());
         lenient().when(patientRepository.findByAccountEmail(EMAIL)).thenReturn(Optional.empty());
         lenient().when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        lenient().when(clinicRepository.existsById(1L)).thenReturn(true);
+    }
+
+    @Test
+    @DisplayName("B13: unknown clinicId -> 401 Invalid clinic without touching the (missing) tenant schema")
+    void login_should_reject_when_clinicUnknown() {
+        var request = new LoginRequest(EMAIL, "secret", 999L);
+
+        assertThatThrownBy(() -> service.login(request))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Invalid clinic");
+        verifyNoInteractions(personalRepository, patientRepository, jwtUtil);
     }
 
     @Test

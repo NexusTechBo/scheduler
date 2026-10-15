@@ -15,7 +15,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${cors.allowed-origins:*}")
     private String[] allowedOrigins;
 
-    /** Clinic-local clock: the JVM runs in UTC on Render, while appointment times are clinic-local. */
     @Bean
     public Clock clock(@Value("${app.zone:America/La_Paz}") String zone) {
         return Clock.system(ZoneId.of(zone));

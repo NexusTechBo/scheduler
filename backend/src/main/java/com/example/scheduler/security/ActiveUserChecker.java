@@ -6,10 +6,6 @@ import com.example.scheduler.repository.PersonalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * Checks that the user behind a token is still active, so a deactivated user loses access at once.
- * Patient and personal ids live in different tables; the current tenant must already be set.
- */
 @Component
 @RequiredArgsConstructor
 public class ActiveUserChecker {

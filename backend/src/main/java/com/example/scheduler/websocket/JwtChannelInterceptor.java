@@ -17,9 +17,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Authenticates the STOMP CONNECT frame with the REST JWT and only allows subscribing to the caller's own clinic board.
- */
 @Component
 @RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
@@ -52,7 +49,6 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         if (clinicId == null || accessor.getSessionAttributes() == null)
             throw new MessageDeliveryException("Invalid token");
         var role = claims.get("role", String.class);
-        // Same rule as JwtAuthFilter: a deactivated user's token is rejected.
         TenantContext.setCurrentTenant("clinic_" + clinicId);
         try {
             if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role))

@@ -4,6 +4,7 @@ import com.example.scheduler.repository.PatientRepository;
 import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.security.ActiveUserChecker;
 import com.example.scheduler.security.JwtUtil;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -93,7 +94,7 @@ class JwtAuthFilterTest {
         var seen = new AtomicReference<Authentication>();
         var chain = new MockFilterChain() {
             @Override
-            public void doFilter(jakarta.servlet.ServletRequest req, jakarta.servlet.ServletResponse res) {
+            public void doFilter(jakarta.servlet.@NonNull ServletRequest req, jakarta.servlet.@NonNull ServletResponse res) {
                 seen.set(SecurityContextHolder.getContext().getAuthentication());
             }
         };

@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -31,13 +32,14 @@ public class PersonalController {
 
     @GetMapping("/doctors")
     @PreAuthorize("hasAnyRole('PATIENT', 'ASSISTANT')")
-    @Operation(summary = "GET /api/personal/doctors — list all doctors, filter by ?specialtyId={specialtyId}?isActive={isActive}")
+    @Operation(summary = "GET /api/personal/doctors — list doctors, filter by ?specialtyId={specialtyId}&isActive={isActive} (default active only; a PATIENT always gets active only)")
     public ResponseEntity<Page<PersonalResponse>> findAllDoctors(
             @RequestParam(required = false) Long specialtyId,
             @RequestParam(required = false) Boolean isActive,
-            @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable
+            @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
+            Authentication auth
     ) {
-        return ResponseEntity.ok(personalService.findAllDoctors(specialtyId, isActive, pageable));
+        return ResponseEntity.ok(personalService.findAllDoctors(specialtyId, isActive, SecurityUtils.extractRole(auth), pageable));
     }
 
     @GetMapping
@@ -56,7 +58,7 @@ public class PersonalController {
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
     @Operation(summary = "POST /api/personal/{personalId} — create a personal user")
     public ResponseEntity<PersonalResponse> createPersonal(@Valid @RequestBody PersonalRegisterRequest request){
-        return ResponseEntity.ok(personalService.createPersonal(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(personalService.createPersonal(request));
     }
 
     @GetMapping("/{personalId}")
@@ -108,8 +110,8 @@ public class PersonalController {
 
     @GetMapping("/{doctorId}/patients")
     @PreAuthorize("hasAnyRole('DOCTOR', 'ASSISTANT')")
-    @Operation(summary = "GET /api/personal/{doctorId}/patients — list all patients assigned to a doctor")
-    public ResponseEntity<List<PatientResponse>> getPatients(@PathVariable Long doctorId) {
-        return ResponseEntity.ok(personalService.getPatientsOfDoctor(doctorId));
+    @Operation(summary = "GET /api/personal/{doctorId}/patients — list all patients assigned to a doctor; a DOCTOR only its own")
+    public ResponseEntity<List<PatientResponse>> getPatients(@PathVariable Long doctorId, Authentication auth) {
+        return ResponseEntity.ok(personalService.getPatientsOfDoctor(doctorId, Long.parseLong(auth.getName()), SecurityUtils.extractRole(auth)));
     }
 }

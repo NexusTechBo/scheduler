@@ -11,6 +11,8 @@ import com.example.scheduler.service.AppointmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -133,8 +135,8 @@ public class AppointmentController {
     @GetMapping("/calendar")
     @Operation(summary = "GET /api/appointments/calendar — appointments grouped by day, filtered by ?month={month}&year={year}&doctorId={id}&clientId={id}")
     public ResponseEntity<Map<String, List<AppointmentSummaryItem>>> getCalendar(
-            @RequestParam int month,
-            @RequestParam int year,
+            @RequestParam @Min(1) @Max(12) int month,
+            @RequestParam @Min(1900) @Max(9999) int year,
             @RequestParam(required = false) Long doctorId,
             @RequestParam(required = false) Long patientId,
             Authentication auth) {

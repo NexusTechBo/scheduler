@@ -1,5 +1,6 @@
 package com.example.scheduler.controller;
 
+import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
 import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.repository.PatientRepository;
@@ -9,19 +10,26 @@ import com.example.scheduler.service.PatientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -107,5 +115,45 @@ class PatientControllerTest {
     private ResultActions getAs(long userId, String role, long patientId) throws Exception {
         return mvc.perform(get("/api/patients/{id}/doctors", patientId)
                 .header("Authorization", "Bearer " + jwtUtil.generate(userId, role, 1L, "Test")));
+    }
+
+    @ParameterizedTest(name = "body {0} -> 400 on email")
+    @ValueSource(strings = {
+            "{\"name\":\"John Smith\",\"email\":\"not-an-email\"}",
+            "{\"name\":\"John Smith\"}"})
+    @DisplayName("B14: PUT /update with invalid or missing email -> 400 field error, service never called")
+    void update_should_return400_when_emailInvalid(String body) throws Exception {
+        mvc.perform(put("/api/patients/update")
+                        .header("Authorization", "Bearer " + jwtUtil.generate(OWN_ID, "PATIENT", 1L, "Test"))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[*].field").value(hasItem("email")));
+        verify(patientService, never()).updatePatientById(anyLong(), any());
+    }
+
+    @ParameterizedTest(name = "body {0} -> 400 on email")
+    @ValueSource(strings = {
+            "{\"name\":\"John Smith\",\"email\":\"not-an-email\"}",
+            "{\"name\":\"John Smith\"}"})
+    @DisplayName("B14: PUT /update/{id} (staff) with invalid or missing email -> 400 field error, service never called")
+    void updateById_should_return400_when_emailInvalid(String body) throws Exception {
+        mvc.perform(put("/api/patients/update/{id}", OTHER_ID)
+                        .header("Authorization", "Bearer " + jwtUtil.generate(OWN_ID, "ASSISTANT", 1L, "Test"))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[*].field").value(hasItem("email")));
+        verify(patientService, never()).updatePatientById(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("B20: POST create patient -> 201")
+    void create_should_return201() throws Exception {
+        when(patientService.createPatient(any())).thenReturn(new PatientResponse(9L, "Ana", "ana@test.com", null, true));
+
+        mvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + jwtUtil.generate(OWN_ID, "ASSISTANT", 1L, "Test"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Ana\",\"email\":\"ana@test.com\",\"ci\":\"123\",\"password\":\"password1\"}"))
+                .andExpect(status().isCreated());
     }
 }

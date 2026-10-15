@@ -3,7 +3,10 @@ package com.example.scheduler.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.query.SemanticException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -99,6 +102,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex, HttpServletRequest req) {
         log.warn("Optimistic locking conflict on {}: {}", req.getRequestURI(), ex.getMessage());
         return build(HttpStatus.CONFLICT, "The resource was modified by another request, retry", req);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)   // ?sort=foo on derived queries / findAll(Pageable)
+    public ResponseEntity<ErrorResponse> handlePropertyReference(PropertyReferenceException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, "Invalid sort property '" + ex.getPropertyName() + "'", req);
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidApiUsage(InvalidDataAccessApiUsageException ex, HttpServletRequest req) {
+        if (ex.contains(SemanticException.class)) {
+            log.debug("Invalid query input on {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
+            return build(HttpStatus.BAD_REQUEST, "Invalid sort property", req);
+        }
+        return handleUnexpected(ex, req);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

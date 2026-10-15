@@ -6,6 +6,7 @@ import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityRequest;
 import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityResponse;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.enums.AppointmentStatus;
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
@@ -43,7 +44,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Transactional
     public DoctorAvailabilityResponse addDoctorAvailability(Long doctorId, DoctorAvailabilityRequest request) {
         if (request.startTime().isAfter(request.endTime()) || request.startTime().equals(request.endTime()))
-            throw new BadRequestException("the start time must be after the end time");
+            throw new BadRequestException("The end time must be after the start time");
         var overlaps = availabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, request.dayOfWeek()).stream()
                 .anyMatch(a -> request.startTime().isBefore(a.getEndTime()) && request.endTime().isAfter(a.getStartTime()));
         if (overlaps)
@@ -69,7 +70,10 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Override
     public DoctorAvailabilitySlotsResponse getDoctorAvailableSlots(Long doctorId, LocalDate date) {
         var now = LocalDateTime.now(clock);
-        if (date.isBefore(now.toLocalDate()))
+        var isActiveDoctor = personalRepository.findById(doctorId)
+                .filter(p -> p.isActive() && p.getRole().getName() == ERole.DOCTOR)
+                .isPresent();
+        if (!isActiveDoctor || date.isBefore(now.toLocalDate()))
             return new DoctorAvailabilitySlotsResponse(date, doctorId, List.of());
         var dayOfWeek = date.getDayOfWeek();
         var availabilities = availabilityRepository
@@ -111,9 +115,8 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     private List<Slot> createGeneratedSlots(List<DoctorAvailability> availabilities) {
         var generatedSlots = new ArrayList<Slot>();
         for (var availability : availabilities) {
-            // Minutes of the day instead of LocalTime.plusMinutes, which wraps past midnight and never reaches the end.
             var duration = availability.getSlotDurationMinutes();
-            if (duration == null || duration <= 0) continue; // rows saved before the @Min(5) validation was enforced
+            if (duration == null || duration <= 0) continue;
             var end = availability.getEndTime().toSecondOfDay() / 60;
             for (int m = availability.getStartTime().toSecondOfDay() / 60; m + duration <= end; m += duration)
                 generatedSlots.add(new Slot(LocalTime.ofSecondOfDay(m * 60L), LocalTime.ofSecondOfDay((m + duration) * 60L)));

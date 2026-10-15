@@ -37,9 +37,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 jwtUtil.parse(header.substring(7)).ifPresent(claims -> {
                     TenantContext.setCurrentTenant("clinic_" + claims.get("clinicId", Long.class));
                     var role = claims.get("role", String.class);
-                    // A deactivated user loses access at once, even with a token issued before. One PK lookup per request.
                     var userId = Long.valueOf(claims.getSubject());
-                    // A failed lookup (DB down, missing schema) leaves the request unauthenticated instead of a 500.
                     try {
                         if (!activeUserChecker.isActive(userId, role)) return;
                     } catch (DataAccessException e) {
