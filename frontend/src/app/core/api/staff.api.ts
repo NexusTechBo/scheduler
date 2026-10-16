@@ -9,7 +9,7 @@ import {
   Staff,
   StaffFilters,
   StaffRegisterRequest,
-  StaffUpdateRequest
+  StaffUpdateRequest,
 } from '../models/api.models';
 import { toHttpParams } from '../http/http-params.util';
 
@@ -17,7 +17,9 @@ import { toHttpParams } from '../http/http-params.util';
 export class StaffApi {
   private readonly http = inject(HttpClient);
 
-  doctors(query: { specialtyId?: number; isActive?: boolean } & PageQuery = {}): Observable<Page<Staff>> {
+  doctors(
+    query: { specialtyId?: number; isActive?: boolean } & PageQuery = {},
+  ): Observable<Page<Staff>> {
     return this.http.get<Page<Staff>>('personal/doctors', { params: toHttpParams(query) });
   }
 

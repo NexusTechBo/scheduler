@@ -94,7 +94,6 @@ app-board-card:nth-of-type(3n + 3) {
   backdrop-filter: blur(4px);
 }
 
-
 @layer components {
   .btn {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50;

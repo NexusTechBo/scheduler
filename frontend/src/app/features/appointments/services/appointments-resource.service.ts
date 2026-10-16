@@ -61,6 +61,4 @@ export class AppointmentsResourceService {
     }));
 
   public setPage = (page: number) => this.filters.update((current) => ({ ...current, page }));
-
-  public resetResource = () => this.filters.set(getDefaultAppointmentFilters());
 }

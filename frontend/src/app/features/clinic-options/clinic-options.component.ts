@@ -28,6 +28,6 @@ export class ClinicOptionsComponent {
 
   protected selectClinic(clinic: Clinic): void {
     this.auth.selectClinic(clinic);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login']).finally();
   }
 }

@@ -55,7 +55,7 @@ export class RegisterFormComponent {
       .subscribe({
         next: () => {
           this.notifications.success('¡Clínica registrada! Ya puedes crear a tu personal.');
-          this.router.navigateByUrl(this.auth.homeUrl());
+          this.router.navigateByUrl(this.auth.homeUrl()).finally();
         },
         error: (error) =>
           this.notifications.error(

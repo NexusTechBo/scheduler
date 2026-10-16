@@ -13,8 +13,7 @@
 </app-page-header>
 
 <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto lg:flex-row lg:overflow-visible">
-  <div class="space-y-5 lg:min-h-0 lg:flex-[2] lg:overflow-y-auto lg:pb-2 lg:pr-1">
-    <!-- 1. Patient (staff) -->
+  <div class="space-y-5 lg:min-h-0 lg:flex-2 lg:overflow-y-auto lg:pb-2 lg:pr-1">
     @if (!isPatient) {
       <section class="glass-panel rounded-3xl p-6">
         <h2 class="mb-4 flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
@@ -89,7 +88,6 @@
       </section>
     }
 
-    <!-- 2. Doctor -->
     @if (!isDoctor) {
       <section class="glass-panel rounded-3xl p-6">
         <h2 class="mb-4 flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
@@ -134,7 +132,7 @@
         <div class="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
           @if (doctorsResource.isLoading()) {
             @for (i of [1, 2, 3]; track i) {
-              <div class="h-[68px] animate-pulse rounded-2xl bg-white/50"></div>
+              <div class="h-17 animate-pulse rounded-2xl bg-white/50"></div>
             }
           } @else {
             @for (doctor of doctorsResource.value() ?? []; track doctor.id) {
@@ -172,7 +170,6 @@
       </section>
     }
 
-    <!-- 3. Date & time -->
     <section class="glass-panel rounded-3xl p-6">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 class="flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
@@ -258,10 +255,7 @@
     </section>
   </div>
 
-  <!-- Summary -->
-  <aside
-    class="glass-panel flex w-full flex-col rounded-3xl p-6 lg:w-[22rem] lg:shrink-0 lg:self-start"
-  >
+  <aside class="glass-panel flex w-full flex-col rounded-3xl p-6 lg:w-88 lg:shrink-0 lg:self-start">
     <h2 class="mb-5 text-xl font-extrabold text-gray-900">Resumen</h2>
 
     <dl class="space-y-4 text-sm">

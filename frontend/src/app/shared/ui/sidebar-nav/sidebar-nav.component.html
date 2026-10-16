@@ -18,7 +18,7 @@
       [routerLinkActiveOptions]="{ exact: true }"
       class="flex items-center gap-3 rounded-2xl px-4 py-3 text-[15px] font-semibold text-gray-500 transition-colors hover:bg-white/60"
     >
-      <app-ui-icon [name]="item.icon" class="h-[18px] w-[18px]" [strokeWidth]="2" />
+      <app-ui-icon [name]="item.icon" class="h-4.5 w-4.5" [strokeWidth]="2" />
       {{ item.label }}
     </a>
   }
@@ -30,7 +30,7 @@
     routerLinkActive="bg-white/90 !text-primary shadow-md"
     class="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[15px] font-semibold text-gray-500 transition-colors hover:bg-white/60"
   >
-    <app-ui-icon name="user" class="h-[18px] w-[18px]" [strokeWidth]="2" />
+    <app-ui-icon name="user" class="h-4.5 w-4.5" [strokeWidth]="2" />
     Mi perfil
   </a>
   <button
@@ -38,7 +38,7 @@
     (click)="logout.emit()"
     class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-4 py-2.5 text-[15px] font-semibold text-gray-500 transition-colors hover:bg-white/60 hover:text-red-600"
   >
-    <app-ui-icon name="logout" class="h-[18px] w-[18px]" [strokeWidth]="2" />
+    <app-ui-icon name="logout" class="h-4.5 w-4.5" [strokeWidth]="2" />
     Cerrar sesión
   </button>
 </div>

@@ -5,7 +5,9 @@ import { AuthService } from './auth.service';
 
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
-  return auth.token() ? true : inject(Router).createUrlTree([auth.clinic() ? '/login' : '/clinic-options']);
+  return auth.token()
+    ? true
+    : inject(Router).createUrlTree([auth.clinic() ? '/login' : '/clinic-options']);
 };
 
 export const guestGuard: CanActivateFn = () => {

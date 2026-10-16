@@ -1,4 +1,3 @@
-
 export type Role = 'ADMINISTRATOR' | 'DOCTOR' | 'ASSISTANT' | 'PATIENT';
 
 export const ROLE_ID: Record<Role, number> = {
@@ -36,7 +35,6 @@ export interface ApiError {
   errors?: { field: string; message: string }[] | null;
 }
 
-
 export interface LoginRequest {
   email: string;
   password: string;
@@ -66,7 +64,6 @@ export interface ProfileResponse {
   specialtyName: string | null;
 }
 
-
 export interface Clinic {
   id: number;
   name: string;
@@ -89,7 +86,6 @@ export interface ClinicCreatedResponse {
   adminPersonalId: number;
   adminEmail: string;
 }
-
 
 export interface AppointmentRequest {
   doctorId: number;
@@ -136,7 +132,6 @@ export interface AppointmentFilters extends PageQuery {
   status?: AppointmentStatus;
 }
 
-
 export interface Patient {
   id: number;
   name: string;
@@ -158,7 +153,6 @@ export interface PatientUpdateRequest {
   email: string;
   phoneNumber?: string | null;
 }
-
 
 export interface Staff {
   id: number;
@@ -195,12 +189,10 @@ export interface AssignPatientRequest {
   doctorId: number;
 }
 
-
 export interface Specialty {
   id: number;
   name: string;
 }
-
 
 export interface AvailabilityRequest {
   dayOfWeek: DayOfWeek;

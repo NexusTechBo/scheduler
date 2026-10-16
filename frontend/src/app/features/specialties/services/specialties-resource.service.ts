@@ -10,7 +10,7 @@ export class SpecialtiesResourceService {
   private readonly _catalogsApi = inject(CatalogsApi);
 
   private _specialtiesResource = rxResource({
-    loader: () => this._catalogsApi.specialties()
+    loader: () => this._catalogsApi.specialties(),
   });
 
   public specialties = linkedSignal(() => this._specialtiesResource.value() ?? ([] as Specialty[]));

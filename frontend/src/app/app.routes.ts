@@ -13,84 +13,111 @@ export const routes: Routes = [
         path: 'dashboard',
         title: 'Inicio',
         canActivate: [roleGuard(...ROLES.staff)],
-        loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent)
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
         path: 'board',
         title: 'Tablero',
         canActivate: [roleGuard(...ROLES.staff)],
-        loadComponent: () => import('./features/board/board.component').then((m) => m.BoardComponent)
+        loadComponent: () =>
+          import('./features/board/board.component').then((m) => m.BoardComponent),
       },
       {
         path: 'calendar',
         title: 'Calendario',
-        loadComponent: () => import('./features/calendar/calendar.component').then((m) => m.CalendarComponent)
+        loadComponent: () =>
+          import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),
       },
       {
         path: 'appointments',
         title: 'Citas',
-        loadComponent: () => import('./features/appointments/appointments-page.component').then((m) => m.AppointmentsPageComponent)
+        loadComponent: () =>
+          import('./features/appointments/appointments-page.component').then(
+            (m) => m.AppointmentsPageComponent,
+          ),
       },
       {
         path: 'appointments/new',
         title: 'Agendar cita',
         canActivate: [roleGuard(...ROLES.booking)],
-        loadComponent: () => import('./features/appointments/booking/booking-page.component').then((m) => m.BookingPageComponent)
+        loadComponent: () =>
+          import('./features/appointments/booking/booking-page.component').then(
+            (m) => m.BookingPageComponent,
+          ),
       },
       {
         path: 'patients',
         title: 'Pacientes',
         canActivate: [roleGuard(...ROLES.clinical)],
-        loadComponent: () => import('./features/patients/patients-page.component').then((m) => m.PatientsPageComponent)
+        loadComponent: () =>
+          import('./features/patients/patients-page.component').then(
+            (m) => m.PatientsPageComponent,
+          ),
       },
       {
         path: 'availability',
         title: 'Mi disponibilidad',
         canActivate: [roleGuard(...ROLES.doctor)],
-        loadComponent: () => import('./features/availability/availability-page.component').then((m) => m.AvailabilityPageComponent)
+        loadComponent: () =>
+          import('./features/availability/availability-page.component').then(
+            (m) => m.AvailabilityPageComponent,
+          ),
       },
       {
         path: 'staff',
         title: 'Personal',
         canActivate: [roleGuard(...ROLES.admin)],
-        loadComponent: () => import('./features/staff/staff-page.component').then((m) => m.StaffPageComponent)
+        loadComponent: () =>
+          import('./features/staff/staff-page.component').then((m) => m.StaffPageComponent),
       },
       {
         path: 'specialties',
         title: 'Especialidades',
         canActivate: [roleGuard(...ROLES.admin)],
-        loadComponent: () => import('./features/specialties/specialties-page.component').then((m) => m.SpecialtiesPageComponent)
+        loadComponent: () =>
+          import('./features/specialties/specialties-page.component').then(
+            (m) => m.SpecialtiesPageComponent,
+          ),
       },
       {
         path: 'assistant',
         title: 'Asistente IA',
         canActivate: [roleGuard(...ROLES.patient)],
-        loadComponent: () => import('./features/assistant/assistant-page.component').then((m) => m.AssistantPageComponent)
+        loadComponent: () =>
+          import('./features/assistant/assistant-page.component').then(
+            (m) => m.AssistantPageComponent,
+          ),
       },
       {
         path: 'profile',
         title: 'Mi perfil',
-        loadComponent: () => import('./features/profile/profile-page.component').then((m) => m.ProfilePageComponent)
-      }
-    ]
+        loadComponent: () =>
+          import('./features/profile/profile-page.component').then((m) => m.ProfilePageComponent),
+      },
+    ],
   },
   {
     path: 'clinic-options',
     title: 'Selecciona tu clínica',
     canActivate: [guestGuard],
-    loadComponent: () => import('./features/clinic-options/clinic-options.component').then((m) => m.ClinicOptionsComponent)
+    loadComponent: () =>
+      import('./features/clinic-options/clinic-options.component').then(
+        (m) => m.ClinicOptionsComponent,
+      ),
   },
   {
     path: 'login',
     title: 'Iniciar sesión',
     canActivate: [guestGuard],
-    loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent)
+    loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'register',
     title: 'Registrar clínica',
     canActivate: [guestGuard],
-    loadComponent: () => import('./features/register/register.component').then((m) => m.RegisterComponent)
+    loadComponent: () =>
+      import('./features/register/register.component').then((m) => m.RegisterComponent),
   },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '' },
 ];

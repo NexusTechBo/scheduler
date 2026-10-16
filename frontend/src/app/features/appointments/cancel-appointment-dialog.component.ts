@@ -27,8 +27,8 @@ const QUICK_REASONS = [
   template: `
     <app-dialog-frame title="Cancelar cita" (closed)="ref.close()">
       <p class="text-[15px] leading-relaxed text-gray-600">
-        ¿Cancelar la cita de <span class="font-bold text-gray-900">{{ data.patientName }}</span>? El
-        horario quedará libre nuevamente.
+        ¿Cancelar la cita de <span class="font-bold text-gray-900">{{ data.patientName }}</span
+        >? El horario quedará libre nuevamente.
       </p>
 
       <p class="field-label mt-5">Motivos rápidos</p>
@@ -53,7 +53,9 @@ const QUICK_REASONS = [
         }
       </div>
 
-      <label class="field-label mt-5" for="cancel-reason">Mensaje para el paciente (opcional)</label>
+      <label class="field-label mt-5" for="cancel-reason"
+        >Mensaje para el paciente (opcional)</label
+      >
       <textarea
         id="cancel-reason"
         rows="3"

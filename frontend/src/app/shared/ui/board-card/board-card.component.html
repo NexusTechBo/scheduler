@@ -1,6 +1,6 @@
 <div
-  class="glass-card rounded-2xl p-[18px]"
-  [class]="draggable() ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'"
+  class="glass-card rounded-2xl p-4.5"
+  [class]="draggable() ? 'cursor-grab' : 'cursor-pointer'"
 >
   <p class="mb-2 text-[16.5px] font-bold leading-tight text-gray-900">
     {{ appointment().clientName }}
@@ -9,16 +9,16 @@
   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] font-medium text-gray-500">
     @if (showDate()) {
       <span class="inline-flex items-center gap-1.5">
-        <app-ui-icon name="calendar" class="h-[15px] w-[15px]" />
+        <app-ui-icon name="calendar" class="h-3.75 w-3.75" />
         {{ dayLabel() }}
       </span>
     }
     <span class="inline-flex items-center gap-1.5">
-      <app-ui-icon name="clock" class="h-[15px] w-[15px]" />
+      <app-ui-icon name="clock" class="h-3.75 w-3.75" />
       {{ timeLabel() }}
     </span>
     <span class="inline-flex items-center gap-1.5">
-      <app-ui-icon name="stethoscope" class="h-[15px] w-[15px]" />
+      <app-ui-icon name="stethoscope" class="h-3.75 w-3.75" />
       {{ appointment().doctorName }}
     </span>
   </div>

@@ -29,8 +29,7 @@ function writeStorage(key: string, value: string | null): void {
   try {
     if (value === null) localStorage.removeItem(key);
     else localStorage.setItem(key, value);
-  } catch {
-  }
+  } catch {}
 }
 
 function decodeSession(token: string | null): Session | null {
@@ -43,7 +42,7 @@ function decodeSession(token: string | null): Session | null {
       role: payload.role,
       clinicId: Number(payload.clinicId),
       username: payload.username,
-      expiresAt: payload.exp * 1000
+      expiresAt: payload.exp * 1000,
     };
     return session.expiresAt > Date.now() ? session : null;
   } catch {
@@ -94,13 +93,13 @@ export class AuthService {
       tap((session) => {
         writeStorage(TOKEN_KEY, session.token);
         this._session.set(session);
-      })
+      }),
     );
   }
 
   logout(): void {
     this.clearSession();
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login']).finally();
   }
 
   homeUrl(): string {

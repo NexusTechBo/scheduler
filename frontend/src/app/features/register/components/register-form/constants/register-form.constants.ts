@@ -7,5 +7,5 @@ export const REGISTER_FORM = {
   adminName: ['', [notBlank]],
   adminCi: ['', [notBlank]],
   adminEmail: ['', [Validators.required, Validators.email]],
-  adminPassword: ['', [Validators.required, Validators.minLength(8)]]
+  adminPassword: ['', [Validators.required, Validators.minLength(8)]],
 };

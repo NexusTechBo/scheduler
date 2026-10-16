@@ -29,10 +29,6 @@ export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] 
   { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
 ];
 
-export function dayOfWeekOf(date: Date): DayOfWeek {
-  return DAYS_OF_WEEK[(date.getDay() + 6) % 7].value;
-}
-
 export function initials(name: string | null | undefined): string {
   if (!name) return '?';
   const words = name

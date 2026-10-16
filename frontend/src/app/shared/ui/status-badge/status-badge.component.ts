@@ -7,7 +7,7 @@ import { STATUS_LABEL, STATUS_STYLE } from '../../../core/utils/labels.util';
   template: `<span class="chip" [class]="style().badge">
     <span class="h-1.5 w-1.5 rounded-full" [class]="style().dot"></span>
     {{ label() }}
-  </span>`
+  </span>`,
 })
 export class StatusBadgeComponent {
   status = input.required<AppointmentStatus>();

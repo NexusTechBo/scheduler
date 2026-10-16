@@ -14,7 +14,7 @@ export class IconLoaderService {
 
     const icon$ = from(fetch(ICON_REGISTRY[name]).then((response) => response.text())).pipe(
       map((svg) => this.sanitizer.bypassSecurityTrustHtml(svg)),
-      shareReplay({ bufferSize: 1, refCount: false })
+      shareReplay({ bufferSize: 1, refCount: false }),
     );
 
     this.cache.set(name, icon$);

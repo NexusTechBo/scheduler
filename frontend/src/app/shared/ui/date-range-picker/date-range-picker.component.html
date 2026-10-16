@@ -10,7 +10,7 @@
   class="group cursor-pointer {{
     mode() === 'single'
       ? 'field-input flex items-center gap-2 whitespace-nowrap text-left font-semibold'
-      : 'inline-flex items-center gap-1.5 rounded-xl bg-gray-900/[0.05] py-1 pl-2.5 pr-2 text-[15px] font-bold text-gray-600 transition-colors hover:bg-gray-900/[0.08] hover:text-gray-900'
+      : 'inline-flex items-center gap-1.5 rounded-xl bg-gray-900/5 py-1 pl-2.5 pr-2 text-[15px] font-bold text-gray-600 transition-colors hover:bg-gray-900/8 hover:text-gray-900'
   }}"
 >
   <svg
@@ -40,7 +40,6 @@
   </svg>
 </button>
 
-<!-- CDK overlay: escapes overflow clipping (dialog bodies), handles Esc (→ detach) and viewport push. -->
 <ng-template
   cdkConnectedOverlay
   [cdkConnectedOverlayOrigin]="trigger"

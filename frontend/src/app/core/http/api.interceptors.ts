@@ -18,6 +18,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       if (error.status === HttpStatusCode.Unauthorized && token) auth.logout();
       return throwError(() => error);
-    })
+    }),
   );
 };

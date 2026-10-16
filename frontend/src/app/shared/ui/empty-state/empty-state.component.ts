@@ -8,7 +8,9 @@ import { UiIconComponent, UiIconName } from '../ui-icon/ui-icon.component';
     <div
       class="flex h-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-900/10 px-6 py-10 text-center"
     >
-      <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/60 text-gray-400">
+      <span
+        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/60 text-gray-400"
+      >
         <app-ui-icon [name]="icon()" class="h-6 w-6" />
       </span>
       <div>
@@ -20,7 +22,7 @@ import { UiIconComponent, UiIconName } from '../ui-icon/ui-icon.component';
       <ng-content />
     </div>
   `,
-  host: { class: 'block' }
+  host: { class: 'block' },
 })
 export class EmptyStateComponent {
   title = input.required<string>();

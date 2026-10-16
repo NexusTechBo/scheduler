@@ -16,7 +16,7 @@
   (keydown)="onKeydown($event)"
   (keyup.space)="$event.preventDefault()"
   (blur)="onBlur()"
-  class="field-input flex cursor-pointer items-center gap-2 text-left font-semibold disabled:cursor-not-allowed"
+  class="field-input flex cursor-pointer items-center gap-2 text-left font-semibold"
 >
   @if (icon) {
     <app-ui-icon [name]="icon" class="h-4 w-4 shrink-0 text-gray-500" [strokeWidth]="2" />
@@ -33,7 +33,6 @@
   />
 </button>
 
-<!-- CDK overlay: escapes dialog overflow clipping, Esc → detach, viewport push/flip. -->
 <ng-template
   cdkConnectedOverlay
   [cdkConnectedOverlayOrigin]="origin"
@@ -48,7 +47,6 @@
   (detach)="close()"
   (attach)="onAttach()"
 >
-  <!-- mousedown is cancelled so focus (and aria-activedescendant) stays on the trigger. -->
   <ul
     [id]="listboxId"
     role="listbox"

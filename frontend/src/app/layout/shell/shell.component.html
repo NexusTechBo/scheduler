@@ -1,8 +1,5 @@
 <app-glass-background class="flex h-screen justify-center">
-  <!-- Capped + centered so the app reads as one native-feeling window instead of stretching edge-to-edge on wide desktops. -->
   <div class="relative z-10 flex h-full w-full min-w-0 max-w-[1680px]">
-    <!-- Below lg the sidebar is an off-canvas drawer. `invisible` keeps it out of the tab order when closed; visibility only
-         transitions on close so it is focusable immediately on open. -->
     <app-sidebar-nav
       id="app-sidebar"
       [class]="

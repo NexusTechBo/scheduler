@@ -24,7 +24,7 @@ export const getDefaultPatientsQuery = (isDoctor: boolean): PatientsQuery => ({
   scope: isDoctor ? 'mine' : 'all',
   search: '',
   showInactive: false,
-  page: 0
+  page: 0,
 });
 
 @Injectable()
@@ -45,11 +45,14 @@ export class PatientsResourceService {
     loader: ({ request }) =>
       request === 'mine'
         ? this._staffApi.patientsOf(this._auth.userId()!)
-        : this._patientsApi.list({ size: MAX_PATIENTS, sort: 'id' }).pipe(map((page) => page.content))
+        : this._patientsApi
+            .list({ size: MAX_PATIENTS, sort: 'id' })
+            .pipe(map((page) => page.content)),
   });
 
   private _mineResource = rxResource({
-    loader: () => (this.isDoctor ? this._staffApi.patientsOf(this._auth.userId()!) : of([] as Patient[]))
+    loader: () =>
+      this.isDoctor ? this._staffApi.patientsOf(this._auth.userId()!) : of([] as Patient[]),
   });
 
   public allPatients = linkedSignal(() => this._patientsResource.value() ?? ([] as Patient[]));
@@ -58,7 +61,13 @@ export class PatientsResourceService {
     const term = search.trim().toLowerCase();
     return this.allPatients()
       .filter((patient) => showInactive || patient.active)
-      .filter((patient) => !term || `${patient.name} ${patient.email} ${patient.phoneNumber ?? ''}`.toLowerCase().includes(term));
+      .filter(
+        (patient) =>
+          !term ||
+          `${patient.name} ${patient.email} ${patient.phoneNumber ?? ''}`
+            .toLowerCase()
+            .includes(term),
+      );
   });
   public patients = computed(() => {
     const start = this.filters().page * PATIENTS_PAGE_SIZE;
@@ -68,9 +77,11 @@ export class PatientsResourceService {
     number: this.filters().page,
     size: PATIENTS_PAGE_SIZE,
     totalElements: this._filtered().length,
-    totalPages: Math.ceil(this._filtered().length / PATIENTS_PAGE_SIZE)
+    totalPages: Math.ceil(this._filtered().length / PATIENTS_PAGE_SIZE),
   }));
-  public mineIds = computed(() => new Set((this._mineResource.value() ?? []).map((patient) => patient.id)));
+  public mineIds = computed(
+    () => new Set((this._mineResource.value() ?? []).map((patient) => patient.id)),
+  );
   public isLoading = this._patientsResource.isLoading;
   public isError = computed(() => !!this._patientsResource.error());
   public errorMessage = computed(() => {
@@ -83,7 +94,8 @@ export class PatientsResourceService {
     this._mineResource.reload();
   };
 
-  public updateFilters = (patch: Partial<PatientsQuery>) => this.filters.update((current) => ({ ...current, page: 0, ...patch }));
+  public updateFilters = (patch: Partial<PatientsQuery>) =>
+    this.filters.update((current) => ({ ...current, page: 0, ...patch }));
 
   public setScope = (scope: PatientScope) => this.updateFilters({ scope });
 
@@ -94,9 +106,4 @@ export class PatientsResourceService {
   public setPage = (page: number) => this.filters.update((current) => ({ ...current, page }));
 
   public isMine = (patient: Patient) => this.mineIds().has(patient.id);
-
-  public resetResource = () => {
-    this.filters.set(getDefaultPatientsQuery(this.isDoctor));
-    this.allPatients.set([]);
-  };
 }

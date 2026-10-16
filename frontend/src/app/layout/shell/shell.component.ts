@@ -62,7 +62,7 @@ export class ShellComponent {
   protected openNav(): void {
     this.focusBeforeOpen = document.activeElement as HTMLElement | null;
     this.navOpen.set(true);
-    this.drawerTrap().focusTrap.focusFirstTabbableElementWhenReady();
+    this.drawerTrap().focusTrap.focusFirstTabbableElementWhenReady().finally();
   }
 
   protected onNavClick(event: MouseEvent): void {

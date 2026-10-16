@@ -15,7 +15,7 @@ export const ROLES = {
   booking: ['DOCTOR', 'ASSISTANT', 'PATIENT'],
   doctor: ['DOCTOR'],
   admin: ['ADMINISTRATOR'],
-  patient: ['PATIENT']
+  patient: ['PATIENT'],
 } as const satisfies Record<string, readonly Role[]>;
 
 export const NAV_ITEMS: NavItem[] = [
@@ -29,7 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Mi disponibilidad', route: '/availability', icon: 'clock', roles: [...ROLES.doctor] },
   { label: 'Personal', route: '/staff', icon: 'staff', roles: [...ROLES.admin] },
   { label: 'Especialidades', route: '/specialties', icon: 'tag', roles: [...ROLES.admin] },
-  { label: 'Asistente IA', route: '/assistant', icon: 'sparkles', roles: [...ROLES.patient] }
+  { label: 'Asistente IA', route: '/assistant', icon: 'sparkles', roles: [...ROLES.patient] },
 ];
 
 export function navItemsFor(role: Role | null): NavItem[] {

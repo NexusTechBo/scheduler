@@ -1,7 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Page, PageQuery, Patient, PatientRegisterRequest, PatientUpdateRequest, Staff } from '../models/api.models';
+import {
+  Page,
+  PageQuery,
+  Patient,
+  PatientRegisterRequest,
+  PatientUpdateRequest,
+  Staff,
+} from '../models/api.models';
 import { toHttpParams } from '../http/http-params.util';
 
 @Injectable({ providedIn: 'root' })

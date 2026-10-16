@@ -98,7 +98,7 @@ export class CalendarComponent {
   }
 
   protected openNewAppointment(): void {
-    this.router.navigate(['/appointments/new'], { queryParams: { date: this.selectedDate() } });
+    this.router.navigate(['/appointments/new'], { queryParams: { date: this.selectedDate() } }).finally();
   }
 
   protected open(appointment: AppointmentSummaryItem): void {

@@ -118,16 +118,14 @@ export class BookingPageComponent {
       return doctor ? { doctorId: doctor.id, date: this.selectedDate() } : undefined;
     },
     loader: ({ request }) =>
-      this.agendaApi
-        .availableSlots(request!.doctorId, request!.date)
-        .pipe(
-          map((res) =>
-            res.availableSlots.map((s) => ({
-              startTime: formatTime(s.startTime),
-              endTime: formatTime(s.endTime),
-            })),
-          ),
+      this.agendaApi.availableSlots(request!.doctorId, request!.date).pipe(
+        map((res) =>
+          res.availableSlots.map((s) => ({
+            startTime: formatTime(s.startTime),
+            endTime: formatTime(s.endTime),
+          })),
         ),
+      ),
   });
 
   protected readonly submitting = signal(false);
@@ -190,7 +188,7 @@ export class BookingPageComponent {
               ? 'Solicitud enviada: la clínica confirmará tu cita'
               : 'Cita agendada: queda pendiente de confirmación',
           );
-          this.router.navigate([this.isPatient ? '/appointments' : '/calendar']);
+          this.router.navigate([this.isPatient ? '/appointments' : '/calendar']).finally();
         },
         error: (error) => {
           this.notifications.error(apiErrorMessage(error, 'No se pudo agendar la cita'));

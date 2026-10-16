@@ -9,7 +9,7 @@ export class ChatApi {
   send(message: string): Observable<string> {
     return this.http.post('chat/patient', message, {
       headers: { 'Content-Type': 'text/plain' },
-      responseType: 'text'
+      responseType: 'text',
     });
   }
 }
