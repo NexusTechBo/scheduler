@@ -2,10 +2,6 @@ import { CdkDialogContainer, DialogRef } from '@angular/cdk/dialog';
 import { Component, inject, input, output } from '@angular/core';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
-/**
- * Glass surface for every CDK dialog: title, optional subtitle, close button, body (default slot)
- * and a footer slot (`<div dialogFooter>`). Open dialogs with `Dialog.open(..., { backdropClass: 'glass-backdrop' })`.
- */
 let nextId = 0;
 
 @Component({
@@ -55,7 +51,6 @@ export class DialogFrameComponent {
   protected readonly titleId = `dialog-title-${nextId++}`;
 
   constructor() {
-    // Name the CDK dialog (role="dialog") after this title; same hook MatDialogTitle uses.
     const container = inject(DialogRef, { optional: true })?.containerInstance;
     if (container instanceof CdkDialogContainer) {
       container._addAriaLabelledBy(this.titleId);

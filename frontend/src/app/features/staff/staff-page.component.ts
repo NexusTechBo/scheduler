@@ -17,7 +17,6 @@ import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { StaffFormData, StaffFormDialogComponent } from './staff-form-dialog.component';
 import { StaffResourceService } from './services/staff-resource.service';
 
-/** ADMINISTRATOR: doctors and assistants of the clinic (backend `/api/personal`). */
 @Component({
   selector: 'app-staff-page',
   imports: [FormsModule, PageHeaderComponent, SegmentedTabsComponent, PaginationComponent, EmptyStateComponent, UiIconComponent],

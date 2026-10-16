@@ -64,7 +64,6 @@ export class PatientsPageComponent {
       })
       .closed.pipe(
         filter(Boolean),
-        // New patients of a doctor are linked to them right away so they show up in "Mis pacientes".
         switchMap((saved) =>
           !patient && this.isDoctor
             ? this.staffApi
@@ -79,7 +78,6 @@ export class PatientsPageComponent {
           this.resource.reloadPatients();
         },
         error: (error) => {
-          // Only assignPatient can fail here: the dialog already created the patient.
           this.notifications.error(
             'Paciente creado, pero no se pudo asignar: ' + apiErrorMessage(error),
           );

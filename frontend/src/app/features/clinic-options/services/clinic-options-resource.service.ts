@@ -5,7 +5,6 @@ import { ClinicsApi } from '../../../core/api/clinics.api';
 import { apiErrorMessage } from '../../../core/http/api-error';
 import { Clinic } from '../../../core/models/api.models';
 
-/** Public clinics list (`GET /api/clinics`), shown before login because the backend is multi-tenant. */
 @Injectable()
 export class ClinicOptionsResourceService {
   private readonly _clinicsApi = inject(ClinicsApi);

@@ -1,10 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiError } from '../models/api.models';
 
-/**
- * The backend has no machine-readable error codes, only English messages (see GlobalExceptionHandler).
- * Known business messages are translated here; anything else falls back to a generic text per status.
- */
 const KNOWN_MESSAGES: [RegExp, string][] = [
   [/invalid credentials/i, 'Correo o contraseña incorrectos'],
   [/invalid clinic/i, 'La clínica seleccionada no existe, elige otra'],
@@ -55,7 +51,6 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error in
 
   const body = error.error as Partial<ApiError> | string | null;
   if (body && typeof body === 'object') {
-    // Untranslated Bean Validation messages are English: drop them and fall back to the status text.
     const details = new Set(
       (body.errors ?? []).map((e) => translate(e.message ?? '')).filter((m): m is string => !!m),
     );

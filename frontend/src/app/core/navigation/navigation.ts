@@ -8,10 +8,6 @@ export interface NavItem {
   roles: Role[];
 }
 
-/**
- * Role groups shared by routes (roleGuard) and the sidebar so both always agree.
- * They mirror the backend @PreAuthorize rules of each endpoint the page depends on.
- */
 export const ROLES = {
   staff: ['ADMINISTRATOR', 'DOCTOR', 'ASSISTANT'],
   everyone: ['ADMINISTRATOR', 'DOCTOR', 'ASSISTANT', 'PATIENT'],

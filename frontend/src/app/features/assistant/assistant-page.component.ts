@@ -16,10 +16,6 @@ interface ChatMessage {
 
 const STORAGE_PREFIX = 'scheduler.chat.';
 
-/**
- * PATIENT chat with the scheduling agent (Spring AI + Gemini). The backend keeps the model memory per patient;
- * the transcript is mirrored in sessionStorage only so it survives navigation inside the tab.
- */
 @Component({
   selector: 'app-assistant-page',
   imports: [FormsModule, RouterLink, PageHeaderComponent, UiIconComponent],
@@ -43,7 +39,6 @@ export class AssistantPageComponent {
       try {
         sessionStorage.setItem(this.storageKey, JSON.stringify(messages));
       } catch {
-        /* storage unavailable: transcript just won't persist */
       }
       queueMicrotask(() => {
         const element = this.scroller()?.nativeElement;

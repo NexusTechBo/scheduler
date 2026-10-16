@@ -2,10 +2,6 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard, homeRedirect, roleGuard } from './core/auth/auth.guards';
 import { ROLES } from './core/navigation/navigation';
 
-/**
- * Every page inside the shell declares the roles allowed by the backend endpoints it uses.
- * Keep `core/navigation/navigation.ts` in sync when adding a page.
- */
 export const routes: Routes = [
   {
     path: '',

@@ -9,7 +9,6 @@ import { ScheduleException } from '../../../core/models/api.models';
 import { formatTime, toIso } from '../../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../../core/utils/labels.util';
 
-/** DOCTOR: own weekly blocks, upcoming schedule exceptions and the free slots preview for one date. */
 @Injectable()
 export class AvailabilityResourceService {
   private readonly _agendaApi = inject(AgendaApi);
@@ -18,7 +17,6 @@ export class AvailabilityResourceService {
   private readonly _doctorId = this._auth.userId()!;
   public readonly today = toIso(new Date());
 
-  /** ISO date (`yyyy-MM-dd`) of the free slots preview. */
   public previewDate = signal(this.today);
 
   private _availabilityResource = rxResource({
@@ -66,7 +64,6 @@ export class AvailabilityResourceService {
 
   public setPreviewDate = (iso: string) => iso && this.previewDate.set(iso);
 
-  /** After any change to blocks or exceptions every projection is stale. */
   public reloadAvailability = () => {
     this._availabilityResource.reload();
     this._exceptionsResource.reload();

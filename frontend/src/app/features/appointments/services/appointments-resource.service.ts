@@ -25,7 +25,6 @@ export const getDefaultAppointmentFilters = (): AppointmentFilters => ({
   sort: 'startTime,desc',
 });
 
-/** Server state of the appointments list (DOCTOR / PATIENT callers are scoped to themselves by the backend). */
 @Injectable()
 export class AppointmentsResourceService {
   private readonly _appointmentsApi = inject(AppointmentsApi);

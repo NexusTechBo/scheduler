@@ -9,10 +9,6 @@ import { apiErrorMessage } from '../../../core/http/api-error';
 import { Patient } from '../../../core/models/api.models';
 
 export const PATIENTS_PAGE_SIZE = 12;
-/**
- * The backend has no patient search endpoint, so the list is fetched once per scope and filtered client-side.
- * Fine for an MVP clinic size; move to a server-side filter if clinics grow past this.
- */
 const MAX_PATIENTS = 1000;
 
 export type PatientScope = 'mine' | 'all';
@@ -31,11 +27,6 @@ export const getDefaultPatientsQuery = (isDoctor: boolean): PatientsQuery => ({
   page: 0
 });
 
-/**
- * DOCTOR / ASSISTANT: patients of the clinic.
- * "all" = `GET /api/patients`, "mine" = the doctor's assigned list (`GET /api/personal/{id}/patients`).
- * Only `scope` triggers a request; search, inactive toggle and page are applied locally.
- */
 @Injectable()
 export class PatientsResourceService {
   private readonly _patientsApi = inject(PatientsApi);
@@ -57,7 +48,6 @@ export class PatientsResourceService {
         : this._patientsApi.list({ size: MAX_PATIENTS, sort: 'id' }).pipe(map((page) => page.content))
   });
 
-  /** Ids of the doctor's own patients, to offer "assign to me" / "remove" in the "all" tab. */
   private _mineResource = rxResource({
     loader: () => (this.isDoctor ? this._staffApi.patientsOf(this._auth.userId()!) : of([] as Patient[]))
   });

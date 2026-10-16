@@ -21,17 +21,12 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.com
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { AppointmentActionsService } from '../appointments/appointment-actions.service';
 
-/** The board only ever has these 3 columns — they mirror the backend AppointmentStatus enum. */
 const COLUMN_DEFS: { id: AppointmentStatus; title: string; accentClass: string }[] = [
   { id: 'PENDING', title: 'Pendientes', accentClass: 'bg-tertiary' },
   { id: 'CONFIRMED', title: 'Confirmadas', accentClass: 'bg-primary' },
   { id: 'CANCELLED', title: 'Canceladas', accentClass: 'bg-gray-400' },
 ];
 
-/**
- * Kanban of appointments by status. Dragging a card is the same as using the actions:
- * PENDING → CONFIRMED confirms, anything → CANCELLED cancels. Other moves are not allowed by the backend.
- */
 @Component({
   selector: 'app-board',
   imports: [
@@ -55,7 +50,6 @@ export class BoardComponent {
   protected readonly dateTo = signal(toIso(addDays(new Date(), 6)));
   protected readonly showDates = computed(() => this.dateFrom() !== this.dateTo());
 
-  /** Bumped by socket events: unlike reload(), a new request also restarts an in-flight load. */
   private readonly tick = signal(0);
 
   protected readonly resource = rxResource({
@@ -69,7 +63,6 @@ export class BoardComponent {
   });
 
   constructor() {
-    // Live updates: a status change (or a reconnect, to resync) reloads from REST, which applies role filtering.
     const socket = inject(BoardSocket);
     merge(socket.events$, socket.connected$)
       .pipe(debounceTime(300), takeUntilDestroyed())

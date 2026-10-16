@@ -19,7 +19,6 @@ export class CalendarDayCellComponent {
 
   protected readonly today = toIso(new Date());
 
-  /** One dot per status present that day. */
   protected readonly dotTones = computed(() => {
     const present = new Set(this.appointments().map((appointment) => appointment.status));
     return STATUS_ORDER.filter((status) => present.has(status)).map(

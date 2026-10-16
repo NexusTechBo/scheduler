@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 
-/** App-wide gradient + blurred blobs. Layout classes (display, size, padding) go on the host from the caller. */
 @Component({
   selector: 'app-glass-background',
   template: `

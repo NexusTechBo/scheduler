@@ -7,8 +7,6 @@ import { UiIconComponent } from '../ui-icon/ui-icon.component';
   selector: 'app-board-card',
   imports: [UiIconComponent],
   templateUrl: './board-card.component.html',
-  // Consumers bind (click) on the host; Enter/Space re-dispatch it so keyboard users get the same action.
-  // Focus outline comes from the global :focus-visible rule in styles.css.
   host: {
     class: 'block rounded-2xl',
     role: 'button',
@@ -19,7 +17,6 @@ import { UiIconComponent } from '../ui-icon/ui-icon.component';
 })
 export class BoardCardComponent {
   appointment = input.required<AppointmentSummaryItem>();
-  /** Show the day too (when the board spans more than one day). */
   showDate = input(false);
   draggable = input(true);
 

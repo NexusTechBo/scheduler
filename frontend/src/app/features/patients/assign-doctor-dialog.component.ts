@@ -16,7 +16,6 @@ export interface AssignDoctorData {
   patient: Patient;
 }
 
-/** ASSISTANT: manage which doctors treat a patient (doctor_patient relation). */
 @Component({
   selector: 'app-assign-doctor-dialog',
   imports: [DialogFrameComponent, FormsModule, UiIconComponent],

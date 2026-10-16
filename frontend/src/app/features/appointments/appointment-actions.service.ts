@@ -18,10 +18,6 @@ import {
   CancelAppointmentResult,
 } from './cancel-appointment-dialog.component';
 
-/**
- * Confirm / cancel / detail flows shared by the board, the calendar and the appointments list.
- * Every action asks for confirmation, notifies the result and only emits on success.
- */
 @Injectable({ providedIn: 'root' })
 export class AppointmentActionsService {
   private readonly api = inject(AppointmentsApi);
@@ -30,7 +26,6 @@ export class AppointmentActionsService {
   private readonly notifications = inject(NotificationService);
   private readonly dialog = inject(Dialog);
 
-  /** Backend: PATCH confirm/cancel are DOCTOR / ASSISTANT only. */
   canManage(): boolean {
     return this.auth.hasRole(...ROLES.clinical);
   }
@@ -56,7 +51,6 @@ export class AppointmentActionsService {
       );
   }
 
-  /** Asks for an optional reason (quick options or free text) that the patient will see. */
   cancel(id: number, patientName: string): Observable<AppointmentResponse> {
     return this.dialog
       .open<CancelAppointmentResult, CancelAppointmentData>(CancelAppointmentDialogComponent, {
@@ -69,13 +63,11 @@ export class AppointmentActionsService {
       );
   }
 
-  /** Emits `true` when the appointment changed inside the dialog, so callers can reload. */
   openDetail(id: number): Observable<boolean> {
     return this.dialog
       .open<boolean, AppointmentDetailData>(AppointmentDetailDialogComponent, {
         data: { id },
         backdropClass: 'glass-backdrop',
-        // Footer starts with "Cancelar cita"; don't land focus on a destructive action.
         autoFocus: 'first-heading',
       })
       .closed.pipe(map((changed) => changed === true));

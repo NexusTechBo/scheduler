@@ -9,7 +9,6 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { fieldError } from '../../../../shared/utils/validation-messages.util';
 import { REGISTER_FORM } from './constants/register-form.constants';
 
-/** Registers a clinic (new tenant) with its administrator, then logs the administrator in. */
 @Component({
   selector: 'app-register-form',
   imports: [ReactiveFormsModule, RouterLink],

@@ -26,7 +26,6 @@ function partialRangeValid(group: AbstractControl): ValidationErrors | null {
   return endTime <= startTime ? { endBeforeStart: true } : null;
 }
 
-/** Blocks a whole day (vacation, congress…) or a time range of a specific date. */
 @Component({
   selector: 'app-exception-form-dialog',
   imports: [DialogFrameComponent, DateRangePickerComponent, ReactiveFormsModule],

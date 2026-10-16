@@ -9,7 +9,6 @@ export const STAFF_PAGE_SIZE = 12;
 
 export const getDefaultStaffFilters = (): StaffFilters => ({ page: 0, size: STAFF_PAGE_SIZE, sort: 'id', isActive: true });
 
-/** ADMINISTRATOR: server state of the clinic staff list (backend `/api/personal`). */
 @Injectable()
 export class StaffResourceService {
   private readonly _staffApi = inject(StaffApi);
@@ -23,7 +22,6 @@ export class StaffResourceService {
 
   public staff = linkedSignal(() => this._staffResource.value()?.content ?? ([] as Staff[]));
   public pagination = computed(() => this._staffResource.value()?.page ?? null);
-  /** `'all'` or the role id as string, matching the segmented tabs ids. */
   public roleFilter = computed(() => (this.filters().roleId ? String(this.filters().roleId) : 'all'));
   public onlyActive = computed(() => this.filters().isActive === true);
   public isLoading = this._staffResource.isLoading;

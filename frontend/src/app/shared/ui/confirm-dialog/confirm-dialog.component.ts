@@ -31,7 +31,6 @@ export class ConfirmDialogComponent {
   protected readonly ref = inject<DialogRef<boolean>>(DialogRef);
 }
 
-/** `confirm.ask({...}).subscribe(ok => ...)` — emits once, false when dismissed. */
 @Injectable({ providedIn: 'root' })
 export class ConfirmService {
   private readonly dialog = inject(Dialog);

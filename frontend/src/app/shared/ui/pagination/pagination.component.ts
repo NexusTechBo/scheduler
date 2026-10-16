@@ -1,7 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
-/** Zero-based page index, like Spring's Pageable. */
 @Component({
   selector: 'app-pagination',
   imports: [UiIconComponent],

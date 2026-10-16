@@ -16,7 +16,6 @@ import { AvailabilityFormDialogComponent } from './availability-form-dialog.comp
 import { ExceptionFormDialogComponent } from './exception-form-dialog.component';
 import { AvailabilityResourceService } from './services/availability-resource.service';
 
-/** DOCTOR: weekly availability blocks, schedule exceptions and a preview of the resulting free slots. */
 @Component({
   selector: 'app-availability-page',
   imports: [

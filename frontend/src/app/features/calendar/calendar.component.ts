@@ -48,7 +48,6 @@ export class CalendarComponent {
     buildMonthMatrix(this.viewDate().getFullYear(), this.viewDate().getMonth()),
   );
 
-  /** The backend returns one month; days of the neighbour months shown in the grid simply have no data. */
   protected readonly resource = rxResource({
     request: () => ({ month: this.viewDate().getMonth() + 1, year: this.viewDate().getFullYear() }),
     loader: ({ request }) => this.api.calendar(request),

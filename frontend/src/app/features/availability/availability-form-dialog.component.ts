@@ -23,7 +23,6 @@ function endAfterStart(group: AbstractControl): ValidationErrors | null {
   return startTime && endTime && endTime <= startTime ? { endBeforeStart: true } : null;
 }
 
-/** Adds one weekly block. Several days can be selected at once: one POST per day (the API takes a single day). */
 @Component({
   selector: 'app-availability-form-dialog',
   imports: [DialogFrameComponent, ReactiveFormsModule, SelectComponent, TimePickerComponent],
@@ -56,7 +55,6 @@ export class AvailabilityFormDialogComponent {
   private readonly startTime = toSignal(this.form.controls.startTime.valueChanges, {
     initialValue: this.form.controls.startTime.value,
   });
-  /** "Hasta" options start one step after "Desde"; endAfterStart still guards the submit. */
   protected readonly endMin = computed(() => addMinutesToTime(this.startTime(), 30));
 
   constructor() {

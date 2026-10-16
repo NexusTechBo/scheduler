@@ -9,7 +9,6 @@ const PLACEHOLDER_SPECIALTY = 'None';
 export class CatalogsApi {
   private readonly http = inject(HttpClient);
 
-  /** The tenant migration seeds a placeholder specialty "None" (id 1) that must never be offered to users. */
   specialties(): Observable<Specialty[]> {
     return this.http
       .get<Specialty[]>('specialties')
@@ -22,7 +21,6 @@ export class CatalogsApi {
       );
   }
 
-  /** ADMINISTRATOR only. */
   createSpecialty(name: string): Observable<Specialty> {
     return this.http.post<Specialty>('specialties', { name });
   }

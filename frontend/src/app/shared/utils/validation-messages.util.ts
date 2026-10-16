@@ -15,12 +15,10 @@ export function getValidationErrorMessage(errors: ValidationErrors | null): stri
   return VALIDATION_MESSAGES[key]?.(errors[key]) ?? 'Campo inválido';
 }
 
-/** Like Validators.required but also rejects whitespace-only text (backend @NotBlank). */
 export function notBlank(control: AbstractControl): ValidationErrors | null {
   return String(control.value ?? '').trim() ? null : { required: true };
 }
 
-/** Message to show under a field, only once the user has touched it. */
 export function fieldError(control: AbstractControl): string | null {
   return control.touched ? getValidationErrorMessage(control.errors) : null;
 }

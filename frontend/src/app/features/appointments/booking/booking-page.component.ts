@@ -33,12 +33,6 @@ interface DoctorOption {
   specialtyName: string | null;
 }
 
-/**
- * Booking wizard used by every booking role:
- * - PATIENT: picks specialty → doctor → date → slot (patientId is forced to itself by the backend, status PENDING).
- * - ASSISTANT: additionally picks the patient (status CONFIRMED).
- * - DOCTOR: picks the patient; the doctor is always itself.
- */
 @Component({
   selector: 'app-booking-page',
   imports: [
@@ -62,14 +56,12 @@ export class BookingPageComponent {
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
 
-  /** `?date=yyyy-MM-dd` (e.g. coming from the calendar). */
   readonly date = input<string>();
 
   protected readonly isPatient = this.auth.hasRole('PATIENT');
   protected readonly isDoctor = this.auth.hasRole('DOCTOR');
   protected readonly today = toIso(new Date());
 
-  // ── Patient (staff only) ──
   protected readonly patientSearch = signal('');
   protected readonly selectedPatient = signal<Patient | null>(null);
   private readonly patientsResource = rxResource({
@@ -89,7 +81,6 @@ export class BookingPageComponent {
     ).slice(0, 50);
   });
 
-  // ── Doctor ──
   protected readonly specialtyId = signal<number | null>(null);
   protected readonly selectedDoctor = signal<DoctorOption | null>(
     this.isDoctor
@@ -109,7 +100,6 @@ export class BookingPageComponent {
             .pipe(map((page) => page.content)),
   });
 
-  // ── Date & slot ──
   protected readonly selectedDate = signal(this.today);
   protected readonly dateStrip = Array.from({ length: DATE_STRIP_DAYS }, (_, i) => {
     const date = addDays(new Date(), i);
@@ -120,7 +110,6 @@ export class BookingPageComponent {
       month: date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', ''),
     };
   });
-  /** Selected slot, times as `HH:mm`. */
   protected readonly selectedSlot = signal<TimeSlot | null>(null);
 
   protected readonly slotsResource = rxResource({

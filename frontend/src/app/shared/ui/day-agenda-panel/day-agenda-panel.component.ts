@@ -14,7 +14,6 @@ import { UiIconComponent } from '../ui-icon/ui-icon.component';
 export class DayAgendaPanelComponent {
   dayLabel = input.required<string>();
   appointments = input.required<AppointmentSummaryItem[]>();
-  /** Hides the "new appointment" button (roles that cannot book, or past days). */
   canCreate = input(true);
   doctorAsTitle = input(false);
 

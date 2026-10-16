@@ -20,12 +20,6 @@ export interface SelectOption<T> {
 
 let nextId = 0;
 
-/**
- * Glass dropdown replacing native <select>. Select-only combobox (WAI-ARIA APG): focus stays on the
- * trigger, the active option is exposed through aria-activedescendant. Bind with formControlName / ngModel.
- * `id` goes on the trigger (not the host) so `<label for>` works.
- * Listbox lives in a CDK overlay so dialog bodies don't clip it.
- */
 @Component({
   selector: 'app-select',
   imports: [CdkConnectedOverlay, CdkOverlayOrigin, UiIconComponent],
@@ -42,7 +36,6 @@ export class SelectComponent<T> implements ControlValueAccessor {
   ariaLabel = input<string | null>(null);
   ariaLabelledby = input<string | null>(null);
 
-  /** Overridable by subclasses (e.g. the time picker builds its own options). */
   protected readonly items = computed<SelectOption<T>[]>(() => this.options());
   protected readonly icon: UiIconName | null = null;
 
@@ -143,13 +136,11 @@ export class SelectComponent<T> implements ControlValueAccessor {
         return;
       case 'Enter':
       case ' ':
-        // Keyboard handled here; the button's own click activation is suppressed.
         event.preventDefault();
         if (open) this.choose(this.activeIndex());
         else this.open();
         return;
       case 'Escape':
-        // Only swallow Esc while open, so a closed select still lets the dialog close.
         if (open) {
           event.preventDefault();
           this.close();
@@ -165,12 +156,10 @@ export class SelectComponent<T> implements ControlValueAccessor {
     }
   }
 
-  /** On (attach) the pane isn't laid out yet (clientHeight 0): center the active option next frame. */
   protected onAttach(): void {
     requestAnimationFrame(() => this.scrollToActive(true));
   }
 
-  /** Keeps the active option visible; centered on open, minimal scroll while navigating. */
   private scrollToActive(center = false): void {
     const list = document.getElementById(this.listboxId);
     const option = list?.children[this.activeIndex()] as HTMLElement | undefined;
@@ -184,7 +173,6 @@ export class SelectComponent<T> implements ControlValueAccessor {
     this.scrollToActive();
   }
 
-  /** Next enabled index from `from` in `direction`; stays put at the ends. */
   private next(from: number, direction: 1 | -1): number {
     const items = this.items();
     for (let i = from + direction; i >= 0 && i < items.length; i += direction) {
@@ -193,7 +181,6 @@ export class SelectComponent<T> implements ControlValueAccessor {
     return from >= 0 && from < items.length ? from : -1;
   }
 
-  /** Repeated single key cycles matches; fast typing ("14") matches the prefix. */
   private typeahead(key: string): void {
     clearTimeout(this.queryTimer);
     this.queryTimer = setTimeout(() => (this.query = ''), 500);

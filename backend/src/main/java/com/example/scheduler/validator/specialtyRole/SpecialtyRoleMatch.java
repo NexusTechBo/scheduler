@@ -60,7 +60,6 @@ public @interface SpecialtyRoleMatch {
                     buildViolation(context, errorMessage, secondField);
                     return false;
                 }
-
                 return true;
             } catch (Exception e) {
                 return false;

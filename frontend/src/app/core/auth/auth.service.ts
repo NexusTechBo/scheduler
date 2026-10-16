@@ -10,7 +10,6 @@ const CLINIC_KEY = 'scheduler.clinic';
 
 export interface Session {
   token: string;
-  /** Personal.id for staff, Patient.id for patients — the id the backend uses for "self" checks. */
   userId: number;
   role: Role;
   clinicId: number;
@@ -31,7 +30,6 @@ function writeStorage(key: string, value: string | null): void {
     if (value === null) localStorage.removeItem(key);
     else localStorage.setItem(key, value);
   } catch {
-    /* storage unavailable (private mode): the session just won't survive a reload */
   }
 }
 
@@ -53,10 +51,6 @@ function decodeSession(token: string | null): Session | null {
   }
 }
 
-/**
- * Single source of truth for who is logged in. The JWT is the session: there is no refresh endpoint,
- * tokens last 24h and are bound to one clinic (tenant).
- */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authApi = inject(AuthApi);
@@ -66,7 +60,6 @@ export class AuthService {
   private readonly _clinic = signal<Clinic | null>(this.readClinic());
 
   readonly session = this._session.asReadonly();
-  /** Clinic picked on /clinic-options (or the one the current session belongs to). */
   readonly clinic = this._clinic.asReadonly();
   readonly isAuthenticated = computed(() => this._session() !== null);
   readonly role = computed(() => this._session()?.role ?? null);
@@ -110,7 +103,6 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  /** Landing route after login, per role. */
   homeUrl(): string {
     return this.role() === 'PATIENT' ? '/appointments' : '/dashboard';
   }

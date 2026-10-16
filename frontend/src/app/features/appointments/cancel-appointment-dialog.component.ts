@@ -8,7 +8,6 @@ export interface CancelAppointmentData {
 }
 
 export interface CancelAppointmentResult {
-  /** null when no message was left. */
   reason: string | null;
 }
 
@@ -22,7 +21,6 @@ const QUICK_REASONS = [
   'Cambio de horario de la clínica',
 ];
 
-/** Asks for confirmation and an optional reason (shown to the patient). Closes with `undefined` when dismissed. */
 @Component({
   selector: 'app-cancel-appointment-dialog',
   imports: [DialogFrameComponent, UiIconComponent],
@@ -87,7 +85,6 @@ export class CancelAppointmentDialogComponent {
   protected readonly maxLength = REASON_MAX_LENGTH;
   protected readonly reason = signal('');
 
-  /** Picking the selected chip again clears the message. */
   protected pick(option: string): void {
     this.reason.update((current) => (current === option ? '' : option));
   }
