@@ -59,7 +59,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         var startTime = request.startTime();
         if (startTime.isBefore(LocalDateTime.now(clock)))
             throw new BadRequestException("The appointment cannot be in the past");
-        var doctor = personalRepository.findById(request.doctorId())
+        var doctor = personalRepository.findByIdForUpdate(request.doctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + request.doctorId()));
         if (doctor.getRole().getName() != ERole.DOCTOR)
             throw new BadRequestException("Personal with id " + request.doctorId() + " is not a doctor");
@@ -118,6 +118,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancellationReason(request.reason().strip());
         return appointmentMapper.toResponse(saveAndNotify(appointment));
+    }
+
+    @Override
+    @Transactional
+    public void cancelAppointments(List<Appointment> appointments, String reason) {
+        for (Appointment appointment : appointments) {
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointment.setCancellationReason(reason);
+            saveAndNotify(appointment);
+        }
     }
 
     @Override

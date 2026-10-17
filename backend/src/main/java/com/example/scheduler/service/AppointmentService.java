@@ -4,6 +4,7 @@ import com.example.scheduler.dto.appointment.AppointmentRequest;
 import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
+import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.enums.AppointmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,7 @@ public interface AppointmentService {
     Page<AppointmentResponse> findAllAppointments(Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable);
     AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, String role);
     AppointmentResponse cancelAppointmentById(Long AppointmentId, CancelAppointmentRequest request, Long userId, String role);
+    void cancelAppointments(List<Appointment> appointments, String reason);
     Map<AppointmentStatus, List<AppointmentSummaryItem>> getBoardByRange(LocalDate from, LocalDate to, Long doctorId, Long patientId);
     Map<String, List<AppointmentSummaryItem>> getCalendar(int month, int year, Long doctorId, Long patientId);
 }

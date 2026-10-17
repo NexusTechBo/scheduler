@@ -10,6 +10,7 @@ const KNOWN_MESSAGES: [RegExp, string][] = [
   [/overlaps an existing block/i, 'Ese horario se cruza con otro bloque de disponibilidad'],
   [/block date cannot be in the past/i, 'No se puede bloquear una fecha pasada'],
   [/in the past/i, 'No se puede agendar en una fecha pasada'],
+  [/active appointments? in this range/i, 'Hay citas activas en ese horario'],
   [/doctor is not active/i, 'El doctor no está activo'],
   [/patient is not active/i, 'El paciente no está activo'],
   [/is not a doctor/i, 'El miembro del personal seleccionado no es doctor'],
@@ -62,4 +63,12 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error in
   }
 
   return STATUS_FALLBACK[error.status] ?? fallback;
+}
+
+export function activeAppointmentsConflict(error: unknown): number | null {
+  if (!(error instanceof HttpErrorResponse) || error.status !== 409) return null;
+  const match = (error.error as Partial<ApiError> | null)?.message?.match(
+    /(\d+) active appointments? in this range/,
+  );
+  return match ? Number(match[1]) : null;
 }

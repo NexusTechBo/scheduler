@@ -72,10 +72,10 @@ export class AvailabilityPageComponent {
 
   protected addException(): void {
     this.dialog
-      .open<boolean>(ExceptionFormDialogComponent, { backdropClass: 'glass-backdrop' })
+      .open<string>(ExceptionFormDialogComponent, { backdropClass: 'glass-backdrop' })
       .closed.pipe(filter(Boolean))
-      .subscribe(() => {
-        this.notifications.success('Agenda bloqueada');
+      .subscribe((message) => {
+        this.notifications.success(message);
         this.resource.reloadAvailability();
       });
   }

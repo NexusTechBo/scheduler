@@ -26,7 +26,7 @@ public class ScheduleExceptionController {
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
-    @Operation(summary = "POST /api/scheduleException — block a day or a time range of the current doctor")
+    @Operation(summary = "POST /api/scheduleException — block a day or a time range of the current doctor; if it overlaps active appointments, send cancelAppointments=true to cancel them (409 otherwise)")
     public ResponseEntity<ScheduleExceptionResponse> addDoctorScheduleException(@Valid @RequestBody ScheduleExceptionRequest request, Authentication auth){
         return ResponseEntity.status(HttpStatus.CREATED).body(scheduleExceptionService.addDoctorScheduleException(Long.parseLong(auth.getName()), request));
     }

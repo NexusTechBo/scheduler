@@ -119,7 +119,16 @@
                 type="button"
                 class="btn-icon hover:text-red-600!"
                 (click)="removeException(exception)"
-                aria-label="Quitar bloqueo"
+                [attr.aria-label]="
+                  'Quitar bloqueo ' +
+                  formatLongDate(exception.date) +
+                  (exception.isFullDayBlock
+                    ? ''
+                    : ' ' +
+                      formatTime(exception.startTime!) +
+                      ' – ' +
+                      formatTime(exception.endTime!))
+                "
               >
                 <app-ui-icon name="trash" class="h-4 w-4" />
               </button>

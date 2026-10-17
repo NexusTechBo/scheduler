@@ -223,8 +223,9 @@ export interface ScheduleExceptionRequest {
   endTime: string | null;
   isFullDayBlock: boolean;
   reason: string | null;
+  cancelAppointments?: boolean;
 }
 
-export interface ScheduleException extends ScheduleExceptionRequest {
+export interface ScheduleException extends Omit<ScheduleExceptionRequest, 'cancelAppointments'> {
   id: number;
 }
