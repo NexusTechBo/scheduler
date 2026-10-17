@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { AppointmentsApi } from '../../core/api/appointments.api';
@@ -10,6 +10,7 @@ import {
   calendarKeyToIso,
   formatDayLabel,
   formatMonthLabel,
+  isIsoDate,
   toIso,
 } from '../../core/utils/calendar.util';
 import { CalendarDayCellComponent } from '../../shared/ui/calendar-day-cell/calendar-day-cell.component';
@@ -34,6 +35,8 @@ export class CalendarComponent {
   private readonly auth = inject(AuthService);
   private readonly actions = inject(AppointmentActionsService);
   private readonly router = inject(Router);
+
+  readonly date = input<string>();
 
   protected readonly weekdayLabels = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
   protected readonly isPatient = this.auth.hasRole('PATIENT');
@@ -72,6 +75,13 @@ export class CalendarComponent {
     () => this.canBook && this.selectedDate() >= this.today,
   );
 
+  constructor() {
+    effect(() => {
+      const requested = this.date();
+      if (isIsoDate(requested)) untracked(() => this.selectDay(requested));
+    });
+  }
+
   protected appointmentsFor(iso: string): AppointmentSummaryItem[] {
     return this.byDay().get(iso) ?? [];
   }
@@ -98,7 +108,9 @@ export class CalendarComponent {
   }
 
   protected openNewAppointment(): void {
-    this.router.navigate(['/appointments/new'], { queryParams: { date: this.selectedDate() } }).finally();
+    this.router
+      .navigate(['/appointments/new'], { queryParams: { date: this.selectedDate() } })
+      .finally();
   }
 
   protected open(appointment: AppointmentSummaryItem): void {

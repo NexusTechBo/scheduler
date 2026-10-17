@@ -23,6 +23,10 @@ export function parseIso(iso: string): Date {
   return new Date(year, month - 1, day);
 }
 
+export function isIsoDate(value: string | null | undefined): value is string {
+  return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) && toIso(parseIso(value)) === value;
+}
+
 export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);

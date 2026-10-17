@@ -16,6 +16,7 @@ import {
   addDays,
   formatLongDate,
   formatTime,
+  isIsoDate,
   toIso,
   toLocalDateTime,
 } from '../../../core/utils/calendar.util';
@@ -144,13 +145,15 @@ export class BookingPageComponent {
   constructor() {
     effect(() => {
       const requested = this.date();
-      if (requested && requested >= this.today) this.selectedDate.set(requested);
+      if (isIsoDate(requested) && requested >= this.today) this.selectedDate.set(requested);
     });
   }
 
   protected selectSpecialty(id: number | null): void {
     this.specialtyId.set(id);
-    if (!this.isDoctor) this.selectDoctor(null);
+    if (this.isDoctor || id === null) return;
+    const name = this.specialtiesResource.value()?.find((s) => s.id === id)?.name;
+    if (this.selectedDoctor()?.specialtyName !== name) this.selectDoctor(null);
   }
 
   protected selectDoctor(doctor: Staff | null): void {
@@ -188,7 +191,11 @@ export class BookingPageComponent {
               ? 'Solicitud enviada: la clínica confirmará tu cita'
               : 'Cita agendada: queda pendiente de confirmación',
           );
-          this.router.navigate([this.isPatient ? '/appointments' : '/calendar']).finally();
+          if (this.isPatient) this.router.navigate(['/appointments']).finally();
+          else
+            this.router
+              .navigate(['/calendar'], { queryParams: { date: this.selectedDate() } })
+              .finally();
         },
         error: (error) => {
           this.notifications.error(apiErrorMessage(error, 'No se pudo agendar la cita'));

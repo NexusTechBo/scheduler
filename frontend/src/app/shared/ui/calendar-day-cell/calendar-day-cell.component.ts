@@ -29,6 +29,7 @@ export class CalendarDayCellComponent {
     () => this.appointments().filter((appointment) => appointment.status !== 'CANCELLED').length,
   );
   protected readonly ariaLabel = computed(
-    () => `${formatLongDate(this.day().iso)}, ${this.activeCount()} citas`,
+    () =>
+      `${formatLongDate(this.day().iso)}, ${this.activeCount()} ${this.activeCount() === 1 ? 'cita' : 'citas'}`,
   );
 }

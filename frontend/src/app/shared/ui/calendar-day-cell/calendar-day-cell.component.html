@@ -3,7 +3,7 @@
   (click)="select.emit(day().iso)"
   [attr.aria-label]="ariaLabel()"
   [attr.aria-pressed]="selected()"
-  class="flex h-12 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl text-center transition-all sm:h-16 xl:h-24 {{
+  class="flex h-12 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl text-center transition-all sm:h-16 xl:h-full xl:min-h-16 {{
     selected()
       ? 'bg-white/90 shadow-[0_0_0_2px_var(--color-primary),0_10px_24px_-8px_rgb(0,86,179,0.3)]'
       : 'bg-white/25 hover:-translate-y-px hover:bg-white/55'
@@ -25,7 +25,7 @@
 
   <div class="flex h-1.5 items-center gap-1">
     @for (tone of dotTones(); track tone) {
-      <span class="h-[5px] w-1.25 rounded-full {{ tone }}"></span>
+      <span class="h-1.25 w-1.25 rounded-full {{ tone }}"></span>
     }
   </div>
 
