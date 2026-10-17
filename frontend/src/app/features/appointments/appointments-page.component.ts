@@ -40,7 +40,6 @@ export class AppointmentsPageComponent {
 
   protected readonly isPatient = this.auth.hasRole('PATIENT');
   protected readonly canBook = this.auth.hasRole(...ROLES.booking);
-  protected readonly canManage = this.actions.canManage();
 
   protected readonly tabs: SegmentedTabItem[] = [
     { id: 'ALL', label: 'Todas' },
@@ -53,7 +52,8 @@ export class AppointmentsPageComponent {
     this.resource.setStatus(id as AppointmentStatusFilter);
   }
 
-  protected open(row: AppointmentRow): void {
+  protected open(row: AppointmentRow, event: MouseEvent): void {
+    if (event.detail > 1) return;
     this.actions
       .openDetail(row.id)
       .subscribe((changed) => changed && this.resource.reloadAppointments());
@@ -69,7 +69,7 @@ export class AppointmentsPageComponent {
   protected cancel(row: AppointmentRow, event: Event): void {
     event.stopPropagation();
     this.actions
-      .cancel(row.id, row.patientName)
+      .cancel(row.id, row.patientName, row.doctorName)
       .subscribe(() => this.resource.reloadAppointments());
   }
 }

@@ -14,7 +14,11 @@ let nextId = 0;
     >
       <div class="mb-5 flex shrink-0 items-start justify-between gap-3 pr-10">
         <div>
-          <h2 [id]="titleId" class="text-xl font-extrabold text-gray-900 outline-none">
+          <h2
+            [id]="titleId"
+            tabindex="-1"
+            class="text-xl font-extrabold text-gray-900 outline-none"
+          >
             {{ title() }}
           </h2>
           @if (subtitle()) {

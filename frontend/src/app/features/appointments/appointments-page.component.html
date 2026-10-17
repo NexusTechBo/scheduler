@@ -63,19 +63,17 @@
             }
             <th>Doctor</th>
             <th>Estado</th>
-            @if (canManage) {
-              <th class="text-right">Acciones</th>
-            }
+            <th class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
           @for (row of resource.appointments(); track row.id) {
-            <tr class="cursor-pointer" (click)="open(row)">
+            <tr class="cursor-pointer" (click)="open(row, $event)">
               <td>
                 <button
                   type="button"
                   class="inline-flex min-h-6 cursor-pointer items-center whitespace-nowrap rounded-lg font-bold text-gray-900 hover:text-primary"
-                  (click)="open(row); $event.stopPropagation()"
+                  (click)="open(row, $event); $event.stopPropagation()"
                 >
                   {{ row.dayLabel }}
                 </button>
@@ -103,30 +101,28 @@
                   </p>
                 }
               </td>
-              @if (canManage) {
-                <td>
-                  <div class="flex justify-end gap-1.5">
-                    @if (actions.canConfirm(row.status)) {
-                      <button
-                        type="button"
-                        class="btn btn-sm bg-primary/10 text-primary hover:bg-primary/20"
-                        (click)="confirm(row, $event)"
-                      >
-                        Confirmar
-                      </button>
-                    }
-                    @if (actions.canCancel(row.status)) {
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-danger"
-                        (click)="cancel(row, $event)"
-                      >
-                        Cancelar cita
-                      </button>
-                    }
-                  </div>
-                </td>
-              }
+              <td>
+                <div class="flex justify-end gap-1.5">
+                  @if (actions.canConfirm(row.status)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm bg-primary/10 text-primary hover:bg-primary/20"
+                      (click)="confirm(row, $event)"
+                    >
+                      Confirmar
+                    </button>
+                  }
+                  @if (actions.canCancel(row.status)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-danger"
+                      (click)="cancel(row, $event)"
+                    >
+                      Cancelar cita
+                    </button>
+                  }
+                </div>
+              </td>
             </tr>
           }
         </tbody>

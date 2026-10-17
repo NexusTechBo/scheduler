@@ -12,10 +12,8 @@ spring:
     hibernate:
       ddl-auto: none
     open-in-view: false
-    show-sql: true
     properties:
       hibernate:
-        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         multiTenancy: SCHEMA
   flyway:
@@ -46,10 +44,6 @@ twilio:
   account-sid: "TU_ACCOUNT_SID"
   auth-token: "TU_AUTH_TOKEN"
   whatsapp-number: "whatsapp:+14155238886"
-
-logging:
-  level:
-    org.hibernate.orm.jdbc.bind: TRACE
 
 server:
   port: ${PORT}

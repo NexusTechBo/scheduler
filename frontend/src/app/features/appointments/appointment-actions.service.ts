@@ -27,7 +27,7 @@ export class AppointmentActionsService {
   private readonly dialog = inject(Dialog);
 
   canManage(): boolean {
-    return this.auth.hasRole(...ROLES.clinical);
+    return this.auth.hasRole(...ROLES.staff);
   }
 
   canConfirm(status: AppointmentStatus): boolean {
@@ -35,7 +35,7 @@ export class AppointmentActionsService {
   }
 
   canCancel(status: AppointmentStatus): boolean {
-    return this.canManage() && status !== 'CANCELLED';
+    return this.auth.hasRole(...ROLES.everyone) && status !== 'CANCELLED';
   }
 
   confirm(id: number, patientName: string): Observable<AppointmentResponse> {
@@ -51,10 +51,10 @@ export class AppointmentActionsService {
       );
   }
 
-  cancel(id: number, patientName: string): Observable<AppointmentResponse> {
+  cancel(id: number, patientName: string, doctorName: string): Observable<AppointmentResponse> {
     return this.dialog
       .open<CancelAppointmentResult, CancelAppointmentData>(CancelAppointmentDialogComponent, {
-        data: { patientName },
+        data: { patientName, doctorName, asPatient: this.auth.hasRole('PATIENT') },
         backdropClass: 'glass-backdrop',
       })
       .closed.pipe(
@@ -69,6 +69,7 @@ export class AppointmentActionsService {
         data: { id },
         backdropClass: 'glass-backdrop',
         autoFocus: 'first-heading',
+        disableClose: true,
       })
       .closed.pipe(map((changed) => changed === true));
   }

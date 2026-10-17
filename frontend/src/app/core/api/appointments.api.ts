@@ -33,10 +33,8 @@ export class AppointmentsApi {
     return this.http.patch<AppointmentResponse>(`appointments/${id}/confirm`, null);
   }
 
-  cancel(id: number, reason?: string | null): Observable<AppointmentResponse> {
-    return this.http.patch<AppointmentResponse>(`appointments/${id}/cancel`, {
-      reason: reason || null,
-    });
+  cancel(id: number, reason: string): Observable<AppointmentResponse> {
+    return this.http.patch<AppointmentResponse>(`appointments/${id}/cancel`, { reason });
   }
 
   board(query: {

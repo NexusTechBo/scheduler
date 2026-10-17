@@ -93,7 +93,7 @@ export class BoardComponent {
     if (target === 'CONFIRMED' && appointment.status === 'PENDING')
       action = this.actions.confirm(appointment.id, appointment.clientName);
     if (target === 'CANCELLED')
-      action = this.actions.cancel(appointment.id, appointment.clientName);
+      action = this.actions.cancel(appointment.id, appointment.clientName, appointment.doctorName);
 
     if (!action) {
       this.notifications.error(
