@@ -5,13 +5,12 @@ import { CatalogsApi } from '../../../core/api/catalogs.api';
 import { apiErrorMessage } from '../../../core/http/api-error';
 import { Specialty } from '../../../core/models/api.models';
 
-/** ADMINISTRATOR: specialties catalog (`GET /api/specialties`, not paginated). */
 @Injectable()
 export class SpecialtiesResourceService {
   private readonly _catalogsApi = inject(CatalogsApi);
 
   private _specialtiesResource = rxResource({
-    loader: () => this._catalogsApi.specialties()
+    loader: () => this._catalogsApi.specialties(),
   });
 
   public specialties = linkedSignal(() => this._specialtiesResource.value() ?? ([] as Specialty[]));

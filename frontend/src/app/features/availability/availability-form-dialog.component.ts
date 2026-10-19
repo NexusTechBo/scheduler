@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DialogRef } from '@angular/cdk/dialog';
 import {
   AbstractControl,
@@ -23,7 +23,6 @@ function endAfterStart(group: AbstractControl): ValidationErrors | null {
   return startTime && endTime && endTime <= startTime ? { endBeforeStart: true } : null;
 }
 
-/** Adds one weekly block. Several days can be selected at once: one POST per day (the API takes a single day). */
 @Component({
   selector: 'app-availability-form-dialog',
   imports: [DialogFrameComponent, ReactiveFormsModule, SelectComponent, TimePickerComponent],
@@ -56,10 +55,14 @@ export class AvailabilityFormDialogComponent {
   private readonly startTime = toSignal(this.form.controls.startTime.valueChanges, {
     initialValue: this.form.controls.startTime.value,
   });
-  /** "Hasta" options start one step after "Desde"; endAfterStart still guards the submit. */
   protected readonly endMin = computed(() => addMinutesToTime(this.startTime(), 30));
 
+  constructor() {
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.error.set(null));
+  }
+
   protected toggleDay(day: DayOfWeek): void {
+    this.error.set(null);
     this.selectedDays.update((days) => {
       const next = new Set(days);
       if (next.has(day)) next.delete(day);

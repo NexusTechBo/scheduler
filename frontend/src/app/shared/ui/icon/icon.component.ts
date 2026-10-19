@@ -7,7 +7,7 @@ import { IconName } from '../../../core/icons/icon-registry';
   selector: 'app-icon',
   imports: [AsyncPipe, IconPipe],
   template: `<span class="block h-full w-full" [innerHTML]="name() | icon | async"></span>`,
-  host: { class: 'inline-block' }
+  host: { class: 'inline-block' },
 })
 export class IconComponent {
   name = input.required<IconName>();

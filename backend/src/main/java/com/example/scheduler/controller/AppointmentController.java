@@ -11,6 +11,8 @@ import com.example.scheduler.service.AppointmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -81,14 +83,14 @@ public class AppointmentController {
     }
 
     @PatchMapping("/{appointmentId}/confirm")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'ASSISTANT')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')")
     @Operation(summary = "PATCH /api/appointments/{id}/confirm — confirm a pending appointment")
     public ResponseEntity<AppointmentResponse> confirmAppointmentById(@PathVariable Long appointmentId, Authentication auth) {
         return ResponseEntity.ok(appointmentService.confirmAppointmentById(appointmentId, Long.parseLong(auth.getName()), SecurityUtils.extractRole(auth)));
     }
 
     @PatchMapping("/{appointmentId}/cancel")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'ASSISTANT')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT', 'PATIENT')")
     @Operation(summary = "PATCH /api/appointments/{id}/cancel — cancel an appointment with an optional {reason} shown to the patient, releases the slot back to AVAILABLE")
     public ResponseEntity<AppointmentResponse> cancelAppointmentById(
             @PathVariable Long appointmentId,
@@ -133,8 +135,8 @@ public class AppointmentController {
     @GetMapping("/calendar")
     @Operation(summary = "GET /api/appointments/calendar — appointments grouped by day, filtered by ?month={month}&year={year}&doctorId={id}&clientId={id}")
     public ResponseEntity<Map<String, List<AppointmentSummaryItem>>> getCalendar(
-            @RequestParam int month,
-            @RequestParam int year,
+            @RequestParam @Min(1) @Max(12) int month,
+            @RequestParam @Min(1900) @Max(9999) int year,
             @RequestParam(required = false) Long doctorId,
             @RequestParam(required = false) Long patientId,
             Authentication auth) {

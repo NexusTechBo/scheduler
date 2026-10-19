@@ -15,14 +15,25 @@
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <label class="field-label" for="patient-email">Email</label>
-        <input id="patient-email" type="email" class="field-input" formControlName="email" autocomplete="off" />
+        <input
+          id="patient-email"
+          type="email"
+          class="field-input"
+          formControlName="email"
+          autocomplete="off"
+        />
         @if (errorOf('email'); as message) {
           <p class="field-error">{{ message }}</p>
         }
       </div>
       <div>
         <label class="field-label" for="patient-phone">Teléfono (opcional)</label>
-        <input id="patient-phone" class="field-input" formControlName="phoneNumber" autocomplete="off" />
+        <input
+          id="patient-phone"
+          class="field-input"
+          formControlName="phoneNumber"
+          autocomplete="off"
+        />
       </div>
     </div>
 
@@ -37,13 +48,21 @@
         </div>
         <div>
           <label class="field-label" for="patient-password">Contraseña inicial</label>
-          <input id="patient-password" type="password" class="field-input" formControlName="password" autocomplete="new-password" />
+          <input
+            id="patient-password"
+            type="password"
+            class="field-input"
+            formControlName="password"
+            autocomplete="new-password"
+          />
           @if (errorOf('password'); as message) {
             <p class="field-error">{{ message }}</p>
           }
         </div>
       </div>
-      <p class="text-xs text-gray-500">El paciente podrá iniciar sesión con su email y esta contraseña.</p>
+      <p class="text-xs text-gray-500">
+        El paciente podrá iniciar sesión con su email y esta contraseña.
+      </p>
     }
 
     @if (error(); as message) {

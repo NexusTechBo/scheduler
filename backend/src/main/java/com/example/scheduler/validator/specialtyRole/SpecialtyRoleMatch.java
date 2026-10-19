@@ -1,13 +1,13 @@
 package com.example.scheduler.validator.specialtyRole;
 
 import com.example.scheduler.enums.ERole;
+import com.example.scheduler.enums.ESpecialty;
 import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
 
 import java.lang.annotation.*;
-import java.lang.reflect.Method;
 
 @Documented
 @Constraint(validatedBy = SpecialtyRoleMatch.SpecialtyRoleMatchValidator.class)
@@ -49,7 +49,8 @@ public @interface SpecialtyRoleMatch {
                 var isDoctor = roleId.equals(ERole.DOCTOR.getId());
                 var isAssistant = roleId.equals(ERole.ASSISTANT.getId());
                 var existsSpecialty = specialtyId != null;
-                if (isDoctor && !existsSpecialty) {
+                var isDefaultSpecialty = ESpecialty.DEFAULT.getId().equals(specialtyId);
+                if (isDoctor && (!existsSpecialty || isDefaultSpecialty)) {
                     var errorMessage = "The doctor role should have a specialty";
                     buildViolation(context, errorMessage, secondField);
                     return false;
@@ -59,7 +60,6 @@ public @interface SpecialtyRoleMatch {
                     buildViolation(context, errorMessage, secondField);
                     return false;
                 }
-
                 return true;
             } catch (Exception e) {
                 return false;

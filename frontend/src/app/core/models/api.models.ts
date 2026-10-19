@@ -1,13 +1,5 @@
-/**
- * Contracts of the scheduler backend (Spring Boot). Field names mirror the Java DTO records 1:1 —
- * when a DTO changes in backend/src/main/java/.../dto, update this file (see the `api-sync` skill).
- *
- * Wire formats: LocalDate = "yyyy-MM-dd", LocalTime = "HH:mm:ss", LocalDateTime = "yyyy-MM-ddTHH:mm:ss" (no zone).
- */
-
 export type Role = 'ADMINISTRATOR' | 'DOCTOR' | 'ASSISTANT' | 'PATIENT';
 
-/** Fixed ids seeded in public.roles (V1__init_public_schema.sql). */
 export const ROLE_ID: Record<Role, number> = {
   ADMINISTRATOR: 1,
   DOCTOR: 2,
@@ -20,7 +12,6 @@ export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 export type DayOfWeek =
   'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
-/** Spring Data `Page` serialized in VIA_DTO mode. */
 export interface Page<T> {
   content: T[];
   page: {
@@ -34,7 +25,6 @@ export interface Page<T> {
 export interface PageQuery {
   page?: number;
   size?: number;
-  /** e.g. "startTime,desc" */
   sort?: string;
 }
 
@@ -44,8 +34,6 @@ export interface ApiError {
   timestamp: string;
   errors?: { field: string; message: string }[] | null;
 }
-
-// ── Auth ─────────────────────────────────────────────────────────────
 
 export interface LoginRequest {
   email: string;
@@ -57,7 +45,6 @@ export interface LoginResponse {
   token: string;
 }
 
-/** Claims written by JwtUtil.generate. `sub` is Personal.id for staff and Patient.id for patients. */
 export interface TokenPayload {
   sub: string;
   role: Role;
@@ -76,8 +63,6 @@ export interface ProfileResponse {
   role: Role;
   specialtyName: string | null;
 }
-
-// ── Clinics ──────────────────────────────────────────────────────────
 
 export interface Clinic {
   id: number;
@@ -102,8 +87,6 @@ export interface ClinicCreatedResponse {
   adminEmail: string;
 }
 
-// ── Appointments ─────────────────────────────────────────────────────
-
 export interface AppointmentRequest {
   doctorId: number;
   patientId: number;
@@ -122,19 +105,15 @@ export interface AppointmentResponse {
   patientName: string;
   patientEmail: string;
   status: AppointmentStatus;
-  /** Optional message left by staff when cancelling; null otherwise. */
   cancellationReason: string | null;
   createdAt: string;
 }
 
-/** Item of GET /appointments/board and /appointments/calendar. */
 export interface AppointmentSummaryItem {
   id: number;
   clientName: string;
   doctorName: string;
-  /** "yyyy-MM-dd" */
   appointmentDate: string;
-  /** "HH:mm:ss" */
   appointmentTime: string;
   startTime: string;
   endTime: string;
@@ -145,7 +124,6 @@ export interface AppointmentSummaryItem {
 
 export type AppointmentBoard = Record<AppointmentStatus, AppointmentSummaryItem[]>;
 
-/** Keys are "MM-dd-yyyy". */
 export type AppointmentCalendar = Record<string, AppointmentSummaryItem[]>;
 
 export interface AppointmentFilters extends PageQuery {
@@ -153,8 +131,6 @@ export interface AppointmentFilters extends PageQuery {
   patientId?: number;
   status?: AppointmentStatus;
 }
-
-// ── Patients ─────────────────────────────────────────────────────────
 
 export interface Patient {
   id: number;
@@ -178,8 +154,6 @@ export interface PatientUpdateRequest {
   phoneNumber?: string | null;
 }
 
-// ── Staff (backend: "personal") ──────────────────────────────────────
-
 export interface Staff {
   id: number;
   name: string;
@@ -195,7 +169,6 @@ export interface StaffRegisterRequest {
   ci: string;
   password: string;
   roleId: number;
-  /** Required for doctors, must be empty for assistants (SpecialtyRoleMatch). */
   specialtyId: number | null;
 }
 
@@ -216,14 +189,10 @@ export interface AssignPatientRequest {
   doctorId: number;
 }
 
-// ── Catalogs ─────────────────────────────────────────────────────────
-
 export interface Specialty {
   id: number;
   name: string;
 }
-
-// ── Doctor agenda ────────────────────────────────────────────────────
 
 export interface AvailabilityRequest {
   dayOfWeek: DayOfWeek;
@@ -254,8 +223,9 @@ export interface ScheduleExceptionRequest {
   endTime: string | null;
   isFullDayBlock: boolean;
   reason: string | null;
+  cancelAppointments?: boolean;
 }
 
-export interface ScheduleException extends ScheduleExceptionRequest {
+export interface ScheduleException extends Omit<ScheduleExceptionRequest, 'cancelAppointments'> {
   id: number;
 }

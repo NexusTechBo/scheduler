@@ -25,7 +25,6 @@ import { TopbarComponent } from '../../shared/ui/topbar/topbar.component';
 export class ShellComponent {
   private readonly auth = inject(AuthService);
 
-  /** Mobile drawer state; from `lg` up the sidebar is always visible. */
   protected readonly navOpen = signal(false);
   private readonly drawerTrap = viewChild.required(CdkTrapFocus);
   private focusBeforeOpen: HTMLElement | null = null;
@@ -52,7 +51,6 @@ export class ShellComponent {
       )
       .subscribe(() => this.navOpen.set(false));
 
-    // Growing past `lg` while the drawer is open would leave the focus trap active on the static sidebar.
     fromEvent<MediaQueryListEvent>(matchMedia('(min-width: 1024px)'), 'change')
       .pipe(
         filter((event) => event.matches),
@@ -64,10 +62,9 @@ export class ShellComponent {
   protected openNav(): void {
     this.focusBeforeOpen = document.activeElement as HTMLElement | null;
     this.navOpen.set(true);
-    this.drawerTrap().focusTrap.focusFirstTabbableElementWhenReady();
+    this.drawerTrap().focusTrap.focusFirstTabbableElementWhenReady().finally();
   }
 
-  /** Tapping the current route's link fires no NavigationEnd, so close on any link click. */
   protected onNavClick(event: MouseEvent): void {
     if (event.target instanceof Element && event.target.closest('a')) this.closeNav();
   }

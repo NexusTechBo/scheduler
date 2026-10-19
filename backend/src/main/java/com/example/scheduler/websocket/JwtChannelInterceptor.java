@@ -1,5 +1,7 @@
 package com.example.scheduler.websocket;
 
+import com.example.scheduler.config.tenant.TenantContext;
+import com.example.scheduler.security.ActiveUserChecker;
 import com.example.scheduler.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -15,9 +17,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Authenticates the STOMP CONNECT frame with the REST JWT and only allows subscribing to the caller's own clinic board.
- */
 @Component
 @RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
@@ -25,6 +24,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     static final String CLINIC_ID = "clinicId";
 
     private final JwtUtil jwtUtil;
+    private final ActiveUserChecker activeUserChecker;
 
     @Override
     public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
@@ -33,7 +33,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         switch (accessor.getCommand()) {
             case CONNECT -> authenticate(accessor);
             case SUBSCRIBE -> authorizeSubscription(accessor);
-            case SEND -> throw new MessageDeliveryException("Sending is not supported"); // push-only
+            case SEND -> throw new MessageDeliveryException("Sending is not supported");
             default -> { }
         }
         return message;
@@ -48,8 +48,15 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         var clinicId = claims.get(CLINIC_ID, Long.class);
         if (clinicId == null || accessor.getSessionAttributes() == null)
             throw new MessageDeliveryException("Invalid token");
-        accessor.getSessionAttributes().put(CLINIC_ID, clinicId);
         var role = claims.get("role", String.class);
+        TenantContext.setCurrentTenant("clinic_" + clinicId);
+        try {
+            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role))
+                throw new MessageDeliveryException("Invalid token");
+        } finally {
+            TenantContext.clear();
+        }
+        accessor.getSessionAttributes().put(CLINIC_ID, clinicId);
         var authorities = role != null ? List.of(new SimpleGrantedAuthority("ROLE_" + role)) : List.<SimpleGrantedAuthority>of();
         accessor.setUser(new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities));
     }

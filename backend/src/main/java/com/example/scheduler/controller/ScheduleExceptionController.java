@@ -5,8 +5,10 @@ import com.example.scheduler.dto.ScheduleException.ScheduleExceptionResponse;
 import com.example.scheduler.service.ScheduleExceptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -24,9 +26,9 @@ public class ScheduleExceptionController {
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
-    @Operation(summary = "POST /api/scheduleException — block a day or a time range of the current doctor")
-    public ResponseEntity<ScheduleExceptionResponse> addDoctorScheduleException(@RequestBody ScheduleExceptionRequest request, Authentication auth){
-        return ResponseEntity.ok(scheduleExceptionService.addDoctorScheduleException(Long.parseLong(auth.getName()), request));
+    @Operation(summary = "POST /api/scheduleException — block a day or a time range of the current doctor; if it overlaps active appointments, send cancelAppointments=true to cancel them (409 otherwise)")
+    public ResponseEntity<ScheduleExceptionResponse> addDoctorScheduleException(@Valid @RequestBody ScheduleExceptionRequest request, Authentication auth){
+        return ResponseEntity.status(HttpStatus.CREATED).body(scheduleExceptionService.addDoctorScheduleException(Long.parseLong(auth.getName()), request));
     }
 
     @GetMapping

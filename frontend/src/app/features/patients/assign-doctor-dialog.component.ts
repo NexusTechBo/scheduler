@@ -16,11 +16,10 @@ export interface AssignDoctorData {
   patient: Patient;
 }
 
-/** ASSISTANT: manage which doctors treat a patient (doctor_patient relation). */
 @Component({
   selector: 'app-assign-doctor-dialog',
   imports: [DialogFrameComponent, FormsModule, UiIconComponent],
-  templateUrl: './assign-doctor-dialog.component.html'
+  templateUrl: './assign-doctor-dialog.component.html',
 })
 export class AssignDoctorDialogComponent {
   private readonly staffApi = inject(StaffApi);
@@ -33,9 +32,12 @@ export class AssignDoctorDialogComponent {
   protected readonly doctorToAdd = signal<number | null>(null);
   protected readonly initials = initials;
 
-  protected readonly assignedResource = rxResource({ loader: () => this.patientsApi.doctors(this.data.patient.id) });
+  protected readonly assignedResource = rxResource({
+    loader: () => this.patientsApi.doctors(this.data.patient.id),
+  });
   private readonly doctorsResource = rxResource({
-    loader: () => this.staffApi.doctors({ isActive: true, size: 200 }).pipe(map((page) => page.content))
+    loader: () =>
+      this.staffApi.doctors({ isActive: true, size: 200 }).pipe(map((page) => page.content)),
   });
 
   protected readonly available = computed(() => {
@@ -56,7 +58,7 @@ export class AssignDoctorDialogComponent {
       error: (error) => {
         this.notifications.error(apiErrorMessage(error));
         this.busy.set(false);
-      }
+      },
     });
   }
 
@@ -70,7 +72,7 @@ export class AssignDoctorDialogComponent {
       error: (error) => {
         this.notifications.error(apiErrorMessage(error));
         this.busy.set(false);
-      }
+      },
     });
   }
 

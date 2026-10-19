@@ -13,7 +13,6 @@ export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   CANCELLED: 'Cancelada',
 };
 
-/** Tailwind classes per status — keep in sync with the board columns. */
 export const STATUS_STYLE: Record<AppointmentStatus, { dot: string; badge: string }> = {
   PENDING: { dot: 'bg-tertiary', badge: 'bg-tertiary/10 text-tertiary' },
   CONFIRMED: { dot: 'bg-primary', badge: 'bg-primary/10 text-primary' },
@@ -29,11 +28,6 @@ export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] 
   { value: 'SATURDAY', label: 'Sábado', short: 'Sáb' },
   { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
 ];
-
-/** JS Date#getDay() (0 = Sunday) → backend DayOfWeek. */
-export function dayOfWeekOf(date: Date): DayOfWeek {
-  return DAYS_OF_WEEK[(date.getDay() + 6) % 7].value;
-}
 
 export function initials(name: string | null | undefined): string {
   if (!name) return '?';

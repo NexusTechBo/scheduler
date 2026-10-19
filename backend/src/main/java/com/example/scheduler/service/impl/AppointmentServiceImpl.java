@@ -8,6 +8,7 @@ import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
+import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
@@ -22,8 +23,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,22 +49,32 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ScheduleExceptionRepository  scheduleExceptionRepository;
     private final DoctorAvailabilityRepository  doctorAvailabilityRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     @Override
     @Transactional
     public AppointmentResponse bookAppointment(AppointmentRequest request, Long userId, String role) {
-        // A patient can only book for itself. Every new appointment starts PENDING until staff confirms it.
         var isPatient = ERole.PATIENT.name().equals(role);
         var patientId = isPatient ? userId : request.patientId();
         var startTime = request.startTime();
-        if (isBlocked(request.doctorId(), startTime.toLocalDate()))
-            throw new BusinessException("That schedule is blocked");
+        if (startTime.isBefore(LocalDateTime.now(clock)))
+            throw new BadRequestException("The appointment cannot be in the past");
+        var doctor = personalRepository.findByIdForUpdate(request.doctorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + request.doctorId()));
+        if (doctor.getRole().getName() != ERole.DOCTOR)
+            throw new BadRequestException("Personal with id " + request.doctorId() + " is not a doctor");
+        if (!doctor.isActive())
+            throw new BusinessException("The doctor is not active");
+        var patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
+        if (!patient.isActive())
+            throw new BusinessException("The patient is not active");
         var endTime = findSlotEnd(request.doctorId(), startTime)
-                .orElseThrow(() -> new BusinessException("That Schedule is out of journey"));
+                .orElseThrow(() -> new BusinessException("The doctor does not attend at that time"));
+        if (isBlocked(request.doctorId(), startTime, endTime))
+            throw new BusinessException("That schedule is blocked");
         if (isSlotTaken(request.doctorId(), startTime, endTime))
             throw new BusinessException("That slot is already taken");
-        var doctor = personalRepository.getReferenceById(request.doctorId());
-        var patient = patientRepository.getReferenceById(patientId);
         var appointment = Appointment.builder()
                 .doctor(doctor)
                 .patient(patient)
@@ -105,8 +116,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
             throw new BusinessException("This appointment is already cancelled");
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointment.setCancellationReason(StringUtils.hasText(request.reason()) ? request.reason().strip() : null);
+        appointment.setCancellationReason(request.reason().strip());
         return appointmentMapper.toResponse(saveAndNotify(appointment));
+    }
+
+    @Override
+    @Transactional
+    public void cancelAppointments(List<Appointment> appointments, String reason) {
+        for (Appointment appointment : appointments) {
+            appointment.setStatus(AppointmentStatus.CANCELLED);
+            appointment.setCancellationReason(reason);
+            saveAndNotify(appointment);
+        }
     }
 
     @Override
@@ -153,10 +174,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getPatient().getId());
     }
 
-    /** Saves and publishes a board event, pushed to the clinic's subscribers after commit. */
     private Appointment saveAndNotify(Appointment appointment) {
         var saved = appointmentRepository.save(appointment);
-        // The tenant is "clinic_<id>" (set by JwtAuthFilter), so the clinic id is known without another query.
         var clinicId = Long.valueOf(TenantContext.getCurrentTenant().substring("clinic_".length()));
         eventPublisher.publishEvent(new AppointmentChangedEvent(clinicId, new BoardEvent(saved.getId(), saved.getStatus())));
         return saved;
@@ -176,19 +195,15 @@ public class AppointmentServiceImpl implements AppointmentService {
                 throw new ForbiddenException("Not authorize to do this");
     }
 
-    private boolean isBlocked(Long doctorId, LocalDate date) {
-        return scheduleExceptionRepository.existsByDoctorIdAndDateAndIsFullDayBlockTrue(
-                doctorId, date
-        );
+    private boolean isBlocked(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
+        return scheduleExceptionRepository.findByDoctorIdAndDate(doctorId, startTime.toLocalDate()).stream()
+                .anyMatch(e -> e.blocks(startTime.toLocalTime(), endTime.toLocalTime()));
     }
 
-    /**
-     * End of the slot starting at {@code startTime}: an active block of that day must contain it on its slot grid
-     * ((start - block start) % slot == 0) with the whole slot before the block ends. Empty when no block matches.
-     */
     private Optional<LocalDateTime> findSlotEnd(Long doctorId, LocalDateTime startTime) {
         var time = startTime.toLocalTime();
         return doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, startTime.getDayOfWeek()).stream()
+                .filter(a -> a.getSlotDurationMinutes() != null && a.getSlotDurationMinutes() > 0)
                 .filter(a -> {
                     var slotSeconds = a.getSlotDurationMinutes() * 60L;
                     var offset = Duration.between(a.getStartTime(), time).toSeconds();

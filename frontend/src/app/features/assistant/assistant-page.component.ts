@@ -16,15 +16,11 @@ interface ChatMessage {
 
 const STORAGE_PREFIX = 'scheduler.chat.';
 
-/**
- * PATIENT chat with the scheduling agent (Spring AI + Gemini). The backend keeps the model memory per patient;
- * the transcript is mirrored in sessionStorage only so it survives navigation inside the tab.
- */
 @Component({
   selector: 'app-assistant-page',
   imports: [FormsModule, RouterLink, PageHeaderComponent, UiIconComponent],
   templateUrl: './assistant-page.component.html',
-  host: { class: 'flex min-h-0 flex-1 flex-col' }
+  host: { class: 'flex min-h-0 flex-1 flex-col' },
 })
 export class AssistantPageComponent {
   private readonly chatApi = inject(ChatApi);
@@ -32,7 +28,11 @@ export class AssistantPageComponent {
   private readonly storageKey = `${STORAGE_PREFIX}${this.auth.session()?.clinicId}.${this.auth.userId()}`;
   private readonly scroller = viewChild<ElementRef<HTMLElement>>('scroller');
 
-  protected readonly suggestions = ['Quiero agendar una cita', '¿Qué especialidades tienen?', '¿Cuáles son mis próximas citas?'];
+  protected readonly suggestions = [
+    'Quiero agendar una cita',
+    '¿Qué especialidades tienen?',
+    '¿Cuáles son mis próximas citas?',
+  ];
   protected readonly messages = signal<ChatMessage[]>(this.restore());
   protected readonly draft = signal('');
   protected readonly sending = signal(false);
@@ -42,9 +42,7 @@ export class AssistantPageComponent {
       const messages = this.messages();
       try {
         sessionStorage.setItem(this.storageKey, JSON.stringify(messages));
-      } catch {
-        /* storage unavailable: transcript just won't persist */
-      }
+      } catch {}
       queueMicrotask(() => {
         const element = this.scroller()?.nativeElement;
         element?.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
@@ -63,16 +61,20 @@ export class AssistantPageComponent {
       .send(message)
       .pipe(finalize(() => this.sending.set(false)))
       .subscribe({
-        next: (reply) => this.messages.update((list) => [...list, { from: 'assistant', text: reply }]),
+        next: (reply) =>
+          this.messages.update((list) => [...list, { from: 'assistant', text: reply }]),
         error: (error) =>
           this.messages.update((list) => [
             ...list,
             {
               from: 'assistant',
-              text: apiErrorMessage(error, 'El asistente no está disponible en este momento. Intenta de nuevo.'),
-              error: true
-            }
-          ])
+              text: apiErrorMessage(
+                error,
+                'El asistente no está disponible en este momento. Intenta de nuevo.',
+              ),
+              error: true,
+            },
+          ]),
       });
   }
 

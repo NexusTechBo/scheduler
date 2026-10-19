@@ -18,7 +18,6 @@ const ACCENT_CLASSES: Record<CardAccent, { badge: string; icon: string }> = {
 })
 export class ClinicOptionCardComponent {
   clinic = input.required<Clinic>();
-  /** Marks the clinic used last time on this device. */
   highlighted = input(false);
   accent = input<CardAccent>('primary');
 

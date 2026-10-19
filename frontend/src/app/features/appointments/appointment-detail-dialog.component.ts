@@ -1,7 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Observable } from 'rxjs';
+import { Observable, filter, merge } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { AppointmentResponse } from '../../core/models/api.models';
 import { datePart, formatLongDate, formatTime } from '../../core/utils/calendar.util';
@@ -24,6 +24,7 @@ export class AppointmentDetailDialogComponent {
   private readonly ref = inject<DialogRef<boolean>>(DialogRef);
   private readonly api = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private changed = false;
   protected readonly busy = signal(false);
@@ -40,6 +41,14 @@ export class AppointmentDetailDialogComponent {
       ? `${formatTime(appointment.startTime)} – ${formatTime(appointment.endTime)}`
       : '';
   });
+
+  constructor() {
+    merge(
+      this.ref.backdropClick.pipe(filter((event) => event.detail <= 1)),
+      this.ref.keydownEvents.pipe(filter((event) => event.key === 'Escape')),
+    ).subscribe(() => this.close());
+  }
+
   protected readonly canConfirm = computed(() => {
     const appointment = this.appointment();
     return !!appointment && this.actions.canConfirm(appointment.status);
@@ -54,7 +63,9 @@ export class AppointmentDetailDialogComponent {
   }
 
   protected cancel(appointment: AppointmentResponse): void {
-    this.apply(this.actions.cancel(appointment.id, appointment.patientName));
+    this.apply(
+      this.actions.cancel(appointment.id, appointment.patientName, appointment.doctorName),
+    );
   }
 
   protected close(): void {
@@ -69,7 +80,10 @@ export class AppointmentDetailDialogComponent {
         this.changed = true;
         this.resource.set(updated);
       },
-      complete: () => this.busy.set(false),
+      complete: () => {
+        this.busy.set(false);
+        this.host.nativeElement.querySelector('h2')?.focus();
+      },
     });
   }
 }

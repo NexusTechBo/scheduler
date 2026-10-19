@@ -16,6 +16,7 @@ import {
   addDays,
   formatLongDate,
   formatTime,
+  isIsoDate,
   toIso,
   toLocalDateTime,
 } from '../../../core/utils/calendar.util';
@@ -33,12 +34,6 @@ interface DoctorOption {
   specialtyName: string | null;
 }
 
-/**
- * Booking wizard used by every booking role:
- * - PATIENT: picks specialty → doctor → date → slot (patientId is forced to itself by the backend, status PENDING).
- * - ASSISTANT: additionally picks the patient (status CONFIRMED).
- * - DOCTOR: picks the patient; the doctor is always itself.
- */
 @Component({
   selector: 'app-booking-page',
   imports: [
@@ -62,14 +57,12 @@ export class BookingPageComponent {
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
 
-  /** `?date=yyyy-MM-dd` (e.g. coming from the calendar). */
   readonly date = input<string>();
 
   protected readonly isPatient = this.auth.hasRole('PATIENT');
   protected readonly isDoctor = this.auth.hasRole('DOCTOR');
   protected readonly today = toIso(new Date());
 
-  // ── Patient (staff only) ──
   protected readonly patientSearch = signal('');
   protected readonly selectedPatient = signal<Patient | null>(null);
   private readonly patientsResource = rxResource({
@@ -89,7 +82,6 @@ export class BookingPageComponent {
     ).slice(0, 50);
   });
 
-  // ── Doctor ──
   protected readonly specialtyId = signal<number | null>(null);
   protected readonly selectedDoctor = signal<DoctorOption | null>(
     this.isDoctor
@@ -109,7 +101,6 @@ export class BookingPageComponent {
             .pipe(map((page) => page.content)),
   });
 
-  // ── Date & slot ──
   protected readonly selectedDate = signal(this.today);
   protected readonly dateStrip = Array.from({ length: DATE_STRIP_DAYS }, (_, i) => {
     const date = addDays(new Date(), i);
@@ -120,7 +111,6 @@ export class BookingPageComponent {
       month: date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', ''),
     };
   });
-  /** Selected slot, times as `HH:mm`. */
   protected readonly selectedSlot = signal<TimeSlot | null>(null);
 
   protected readonly slotsResource = rxResource({
@@ -129,16 +119,14 @@ export class BookingPageComponent {
       return doctor ? { doctorId: doctor.id, date: this.selectedDate() } : undefined;
     },
     loader: ({ request }) =>
-      this.agendaApi
-        .availableSlots(request!.doctorId, request!.date)
-        .pipe(
-          map((res) =>
-            res.availableSlots.map((s) => ({
-              startTime: formatTime(s.startTime),
-              endTime: formatTime(s.endTime),
-            })),
-          ),
+      this.agendaApi.availableSlots(request!.doctorId, request!.date).pipe(
+        map((res) =>
+          res.availableSlots.map((s) => ({
+            startTime: formatTime(s.startTime),
+            endTime: formatTime(s.endTime),
+          })),
         ),
+      ),
   });
 
   protected readonly submitting = signal(false);
@@ -157,13 +145,15 @@ export class BookingPageComponent {
   constructor() {
     effect(() => {
       const requested = this.date();
-      if (requested && requested >= this.today) this.selectedDate.set(requested);
+      if (isIsoDate(requested) && requested >= this.today) this.selectedDate.set(requested);
     });
   }
 
   protected selectSpecialty(id: number | null): void {
     this.specialtyId.set(id);
-    if (!this.isDoctor) this.selectDoctor(null);
+    if (this.isDoctor || id === null) return;
+    const name = this.specialtiesResource.value()?.find((s) => s.id === id)?.name;
+    if (this.selectedDoctor()?.specialtyName !== name) this.selectDoctor(null);
   }
 
   protected selectDoctor(doctor: Staff | null): void {
@@ -201,7 +191,11 @@ export class BookingPageComponent {
               ? 'Solicitud enviada: la clínica confirmará tu cita'
               : 'Cita agendada: queda pendiente de confirmación',
           );
-          this.router.navigate([this.isPatient ? '/appointments' : '/calendar']);
+          if (this.isPatient) this.router.navigate(['/appointments']).finally();
+          else
+            this.router
+              .navigate(['/calendar'], { queryParams: { date: this.selectedDate() } })
+              .finally();
         },
         error: (error) => {
           this.notifications.error(apiErrorMessage(error, 'No se pudo agendar la cita'));

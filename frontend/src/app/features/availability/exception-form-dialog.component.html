@@ -58,7 +58,7 @@
     </div>
 
     <p class="text-xs text-gray-500">
-      Las citas ya agendadas en ese horario no se cancelan automáticamente.
+      Si hay citas agendadas en ese horario, te pediremos confirmar antes de cancelarlas.
     </p>
 
     @if (error(); as message) {
@@ -68,7 +68,13 @@
 
   <div dialogFooter class="contents">
     <button type="button" class="btn btn-secondary" (click)="close()">Cancelar</button>
-    <button type="submit" form="exception-form" class="btn btn-primary" [disabled]="saving()">
+    <button
+      #submitButton
+      type="submit"
+      form="exception-form"
+      class="btn btn-primary"
+      [disabled]="saving()"
+    >
       {{ saving() ? 'Guardando…' : 'Bloquear' }}
     </button>
   </div>

@@ -12,7 +12,6 @@ import { ClinicOptionsResourceService } from './services/clinic-options-resource
 
 const ACCENTS: CardAccent[] = ['primary', 'secondary', 'tertiary'];
 
-/** Entry point for anonymous users: the backend is multi-tenant, so a clinic must be chosen before logging in. */
 @Component({
   selector: 'app-clinic-options',
   imports: [ClinicOptionCardComponent, EmptyStateComponent, GlassBackgroundComponent, RouterLink],
@@ -29,6 +28,6 @@ export class ClinicOptionsComponent {
 
   protected selectClinic(clinic: Clinic): void {
     this.auth.selectClinic(clinic);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login']).finally();
   }
 }

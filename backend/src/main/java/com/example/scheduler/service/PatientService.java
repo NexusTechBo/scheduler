@@ -13,8 +13,7 @@ public interface PatientService {
     Page<PatientResponse> findAllPatients(Pageable pageable);
     PatientResponse createPatient(PatientRegisterRequest request);
     PatientResponse findPatientById(Long patientId);
-    PatientResponse findPatientByPhoneNumber(String phoneNumber);
     PatientResponse updatePatientById(Long patientId, PatientRequest request);
     void deactivatePatientById(Long patientId);
-    List<PersonalResponse> getDoctorsOfPatient(Long patientId);
+    List<PersonalResponse> getDoctorsOfPatient(Long patientId, Long userId, String role);
 }

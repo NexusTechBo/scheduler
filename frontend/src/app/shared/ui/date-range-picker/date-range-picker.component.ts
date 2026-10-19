@@ -26,12 +26,6 @@ interface DayState {
   disabled: boolean;
 }
 
-/**
- * Airbnb-style calendar popover, replaces native date inputs.
- * - `range` (default): `[from]`/`[to]` + `(rangeChange)`, for the backend's ?from&to filters.
- * - `single`: one click selects and closes; bind with `formControlName` / `ngModel` (value = ISO date).
- * Rendered in a CDK overlay so it isn't clipped by scrolling dialog bodies.
- */
 @Component({
   selector: 'app-date-range-picker',
   imports: [CdkTrapFocus, CdkConnectedOverlay, CdkOverlayOrigin],
@@ -49,10 +43,8 @@ export class DateRangePickerComponent implements ControlValueAccessor {
   mode = input<'range' | 'single'>('range');
   from = input('');
   to = input('');
-  /** Inclusive ISO bounds; days outside are disabled. */
   min = input<string | null>(null);
   max = input<string | null>(null);
-  /** Field name for the trigger's accessible name, e.g. "Fecha" → "Fecha: 6 oct". */
   ariaLabel = input<string | null>(null);
 
   rangeChange = output<DateRange>();
@@ -64,7 +56,6 @@ export class DateRangePickerComponent implements ControlValueAccessor {
 
   protected readonly isOpen = signal(false);
   protected readonly disabled = signal(false);
-  /** Single-mode value (CVA). */
   protected readonly value = signal('');
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};

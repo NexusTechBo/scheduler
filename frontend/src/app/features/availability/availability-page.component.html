@@ -15,7 +15,6 @@
 </app-page-header>
 
 <div class="min-h-0 flex-1 space-y-5 overflow-y-auto pb-2">
-  <!-- Weekly schedule -->
   <section class="glass-panel rounded-3xl p-6">
     <h2 class="mb-4 text-xl font-extrabold text-gray-900">Horario semanal</h2>
     @if (resource.isWeekLoading()) {
@@ -50,7 +49,7 @@
                   </div>
                   <button
                     type="button"
-                    class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white/80 text-gray-500 opacity-60 hover:text-red-600 hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+                    class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white/80 text-gray-500 opacity-60 hover:text-red-600 hover:opacity-100 group-hover:opacity-100"
                     (click)="removeAvailability(block, day.label)"
                     [attr.aria-label]="
                       'Quitar horario ' +
@@ -79,7 +78,6 @@
   </section>
 
   <div class="grid gap-5 xl:grid-cols-2">
-    <!-- Exceptions -->
     <section class="glass-panel rounded-3xl p-6">
       <h2 class="mb-1 text-xl font-extrabold text-gray-900">Bloqueos próximos</h2>
       <p class="mb-4 text-sm font-medium text-gray-500">Vacaciones, congresos o reuniones</p>
@@ -119,9 +117,18 @@
               </div>
               <button
                 type="button"
-                class="btn-icon hover:!text-red-600"
+                class="btn-icon hover:text-red-600!"
                 (click)="removeException(exception)"
-                aria-label="Quitar bloqueo"
+                [attr.aria-label]="
+                  'Quitar bloqueo ' +
+                  formatLongDate(exception.date) +
+                  (exception.isFullDayBlock
+                    ? ''
+                    : ' ' +
+                      formatTime(exception.startTime!) +
+                      ' – ' +
+                      formatTime(exception.endTime!))
+                "
               >
                 <app-ui-icon name="trash" class="h-4 w-4" />
               </button>
@@ -139,7 +146,6 @@
       }
     </section>
 
-    <!-- Preview -->
     <section class="glass-panel rounded-3xl p-6">
       <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>

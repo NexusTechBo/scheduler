@@ -7,6 +7,7 @@ import com.example.scheduler.dto.personal.PersonalRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
 import com.example.scheduler.entity.*;
 import com.example.scheduler.enums.ERole;
+import com.example.scheduler.enums.ESpecialty;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
@@ -38,9 +39,10 @@ public class PersonalServiceImpl implements PersonalService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
+    public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, String role, Pageable pageable) {
         if(specialtyId != null) getSpecialtyOrThrowById(specialtyId);
-        return personalRepository.findAllDoctorsByFilters(specialtyId, isActive, pageable)
+        var active = isActive == null || ERole.PATIENT.name().equals(role) ? Boolean.TRUE : isActive;
+        return personalRepository.findAllDoctorsByFilters(specialtyId, active, pageable)
                 .map(personalMapper::toResponse);
     }
 
@@ -58,7 +60,7 @@ public class PersonalServiceImpl implements PersonalService {
         var account = accountRepository.findByCi(request.ci())
                 .orElseGet(() -> {
                     if(accountRepository.existsByEmail(request.email()))
-                        throw new BadRequestException("Account with email " + request.email() + " is already exists");
+                        throw new BadRequestException("Account with email " + request.email() + " already exists");
                     return Account.builder()
                             .name(request.name())
                             .password(passwordEncoder.encode(request.password()))
@@ -89,13 +91,14 @@ public class PersonalServiceImpl implements PersonalService {
     public PersonalResponse updatePersonalById(Long personalId, PersonalRequest request) {
         var personal = getPersonalOrThrowById(personalId);
         if(!personal.getAccount().getEmail().equals(request.email()) && accountRepository.existsByEmail(request.email())){
-            throw new BadRequestException("Account with email " + request.email() + " is already exists");
+            throw new BadRequestException("Account with email " + request.email() + " already exists");
         }
         personalMapper.toEntityUpdated(request, personal);
-        // null keeps the current specialty (assistants and self-updates send none)
         if (request.specialtyId() != null) {
             if (personal.getRole().getName() != ERole.DOCTOR)
                 throw new BadRequestException("Only doctors can have a specialty");
+            if (request.specialtyId().equals(ESpecialty.DEFAULT.getId()))
+                throw new BadRequestException("The doctor role should have a specialty");
             personal.setSpecialty(getSpecialtyOrThrowById(request.specialtyId()));
         }
         return personalMapper.toResponse(personalRepository.save(personal));
@@ -112,7 +115,7 @@ public class PersonalServiceImpl implements PersonalService {
     @Override
     @Transactional
     public void assignPatient(AssignAndRemoveRequest request, Long userId, String role) {
-        var doctor = getPersonalPatientsOrThrowById(request.doctorId());
+        var doctor = getDoctorPatientsOrThrowById(request.doctorId());
         var patient = getPatientOrThrowById(request.patientId());
         verifyDoctorPermission(role, doctor.getId(), userId);
         if (!doctor.getPatients().contains(patient)) {
@@ -124,7 +127,7 @@ public class PersonalServiceImpl implements PersonalService {
     @Override
     @Transactional
     public void removePatient(AssignAndRemoveRequest request, Long userId, String role) {
-        var doctor = getPersonalPatientsOrThrowById(request.doctorId());
+        var doctor = getDoctorPatientsOrThrowById(request.doctorId());
         var patient = getPatientOrThrowById(request.patientId());
         verifyDoctorPermission(role, doctor.getId(), userId);
         if (doctor.getPatients().contains(patient)) {
@@ -134,19 +137,23 @@ public class PersonalServiceImpl implements PersonalService {
     }
 
     @Override
-    public List<PatientResponse> getPatientsOfDoctor(Long doctorId) {
-        var doctor = getPersonalPatientsOrThrowById(doctorId);
+    public List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, String role) {
+        verifyDoctorPermission(role, doctorId, userId);
+        var doctor = getDoctorPatientsOrThrowById(doctorId);
         return patientMapper.toResponseList(doctor.getPatients());
     }
 
     private Personal getPersonalOrThrowById(Long personalId) {
         return personalRepository.findById(personalId)
-                .orElseThrow(() -> new ResourceNotFoundException("Personal not fount with id: " + personalId));
+                .orElseThrow(() -> new ResourceNotFoundException("Personal not found with id: " + personalId));
     }
 
-    private Personal getPersonalPatientsOrThrowById(Long personalId) {
-        return personalRepository.findDoctorPatientsById(personalId)
-                .orElseThrow(() -> new ResourceNotFoundException("Personal not fount with id: " + personalId));
+    private Personal getDoctorPatientsOrThrowById(Long personalId) {
+        var personal = personalRepository.findDoctorPatientsById(personalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Personal not found with id: " + personalId));
+        if (personal.getRole().getName() != ERole.DOCTOR)
+            throw new BadRequestException("Personal with id " + personalId + " is not a doctor");
+        return personal;
     }
 
     private Specialty getSpecialtyOrThrowById(Long specialtyId) {

@@ -5,9 +5,12 @@ import com.example.scheduler.dto.account.ProfileResponse;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.entity.Account;
+import com.example.scheduler.entity.Patient;
+import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.exception.UnauthorizedException;
+import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PatientRepository;
 import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.security.JwtUtil;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private final ClinicRepository clinicRepository;
     private final PatientRepository patientRepository;
     private final PersonalRepository personalRepository;
     private final PasswordEncoder passwordEncoder;
@@ -28,11 +32,13 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
+        if (!clinicRepository.existsById(request.clinicId()))
+            throw new UnauthorizedException("Invalid clinic");
         var schemaName = "clinic_" + request.clinicId();
         try {
             TenantContext.setCurrentTenant(schemaName);
-            var personal = personalRepository.findByAccountEmail(request.email()).orElse(null);
-            var patient = patientRepository.findByAccountEmail(request.email()).orElse(null);
+            var personal = personalRepository.findByAccountEmail(request.email()).filter(Personal::isActive).orElse(null);
+            var patient = patientRepository.findByAccountEmail(request.email()).filter(Patient::isActive).orElse(null);
             if (personal == null && patient == null) {
                 throw new UnauthorizedException("Invalid Credentials");
             }

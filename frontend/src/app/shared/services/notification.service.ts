@@ -11,7 +11,7 @@ export interface Notification {
 const AUTO_DISMISS_MS = 4000;
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class NotificationService {
   private readonly _notifications = signal<Notification[]>([]);

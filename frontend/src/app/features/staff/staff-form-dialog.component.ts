@@ -11,11 +11,9 @@ import { DialogFrameComponent } from '../../shared/ui/dialog-frame/dialog-frame.
 import { fieldError } from '../../shared/utils/validation-messages.util';
 
 export interface StaffFormData {
-  /** Absent → create. */
   staff?: Staff;
 }
 
-/** Only DOCTOR and ASSISTANT can be created (backend @ValidRole); doctors need a specialty, assistants must not have one. */
 @Component({
   selector: 'app-staff-form-dialog',
   imports: [DialogFrameComponent, ReactiveFormsModule],
@@ -56,7 +54,6 @@ export class StaffFormDialogComponent {
   );
 
   constructor() {
-    // PersonalResponse only carries the specialty name: preselect its id once the catalog arrives.
     const current = this.data.staff?.specialtyName;
     effect(() => {
       const match = (this.specialtiesResource.value() ?? []).find(

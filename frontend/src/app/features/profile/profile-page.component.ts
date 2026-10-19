@@ -13,11 +13,6 @@ import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.com
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { fieldError } from '../../shared/utils/validation-messages.util';
 
-/**
- * Self-service profile. Each role updates through a different endpoint:
- * PATIENT → PUT /patients/update, DOCTOR/ASSISTANT → PUT /personal/update, ADMINISTRATOR → PUT /personal/update/{id}.
- * The JWT keeps the old name until the next login (no refresh endpoint).
- */
 @Component({
   selector: 'app-profile-page',
   imports: [ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent],

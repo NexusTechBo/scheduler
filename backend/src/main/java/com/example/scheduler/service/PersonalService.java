@@ -12,7 +12,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface PersonalService {
-    Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable);
+    Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, String role, Pageable pageable);
     Page<PersonalResponse> findAllPersonal(Long specialtyId, Boolean isActive, Long roleId, Pageable pageable);
     PersonalResponse createPersonal(PersonalRegisterRequest request);
     PersonalResponse findPersonalById(Long personalId);
@@ -20,5 +20,5 @@ public interface PersonalService {
     void deactivatePersonalById(Long personalId);
     void assignPatient(AssignAndRemoveRequest request, Long userId, String role);
     void removePatient(AssignAndRemoveRequest request, Long userId, String role);
-    List<PatientResponse> getPatientsOfDoctor(Long doctorId);
+    List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, String role);
 }

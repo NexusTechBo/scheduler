@@ -27,7 +27,8 @@ public class SpecialtyServiceImpl implements SpecialtyService {
     @Override
     @Transactional
     public SpecialtyResponse createSpecialty(SpecialtyRequest request) {
-        if (specialtyRepository.existsByName(request.name())) throw new BusinessException("This specialty already exists");
-        return specialtyMapper.toResponse(specialtyRepository.save(specialtyMapper.toEntity(request)));
+        var name = request.name().strip();
+        if (specialtyRepository.existsByNameIgnoreCase(name)) throw new BusinessException("This specialty already exists");
+        return specialtyMapper.toResponse(specialtyRepository.save(specialtyMapper.toEntity(new SpecialtyRequest(name))));
     }
 }

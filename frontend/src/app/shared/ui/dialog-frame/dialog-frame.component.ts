@@ -2,10 +2,6 @@ import { CdkDialogContainer, DialogRef } from '@angular/cdk/dialog';
 import { Component, inject, input, output } from '@angular/core';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
-/**
- * Glass surface for every CDK dialog: title, optional subtitle, close button, body (default slot)
- * and a footer slot (`<div dialogFooter>`). Open dialogs with `Dialog.open(..., { backdropClass: 'glass-backdrop' })`.
- */
 let nextId = 0;
 
 @Component({
@@ -18,7 +14,13 @@ let nextId = 0;
     >
       <div class="mb-5 flex shrink-0 items-start justify-between gap-3 pr-10">
         <div>
-          <h2 [id]="titleId" class="text-xl font-extrabold text-gray-900 outline-none">{{ title() }}</h2>
+          <h2
+            [id]="titleId"
+            tabindex="-1"
+            class="text-xl font-extrabold text-gray-900 outline-none"
+          >
+            {{ title() }}
+          </h2>
           @if (subtitle()) {
             <p class="text-sm font-medium text-gray-500">{{ subtitle() }}</p>
           }
@@ -29,18 +31,17 @@ let nextId = 0;
         <ng-content />
       </div>
 
-      <div class="mt-6 flex shrink-0 flex-wrap justify-end gap-2.5 empty:hidden">
+      <div class="mt-6 shrink-0 flex-wrap justify-end gap-2.5 empty:hidden">
         <ng-content select="[dialogFooter]" />
       </div>
 
-      <!-- Last in DOM so CDK's default autoFocus lands on the first field/action, not on "Cerrar". -->
       <button
         type="button"
         class="btn-icon absolute right-5 top-5"
         (click)="closed.emit()"
         aria-label="Cerrar"
       >
-        <app-ui-icon name="x" class="h-[18px] w-[18px]" />
+        <app-ui-icon name="x" class="h-4.5 w-4.5" />
       </button>
     </div>
   `,
@@ -55,7 +56,6 @@ export class DialogFrameComponent {
   protected readonly titleId = `dialog-title-${nextId++}`;
 
   constructor() {
-    // Name the CDK dialog (role="dialog") after this title; same hook MatDialogTitle uses.
     const container = inject(DialogRef, { optional: true })?.containerInstance;
     if (container instanceof CdkDialogContainer) {
       container._addAriaLabelledBy(this.titleId);

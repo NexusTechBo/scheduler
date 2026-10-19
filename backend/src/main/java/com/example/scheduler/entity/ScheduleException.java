@@ -37,4 +37,9 @@ public class ScheduleException {
 
     @Column(nullable = true)
     private String reason;
+
+    public boolean blocks(LocalTime start, LocalTime end) {
+        if (Boolean.TRUE.equals(isFullDayBlock)) return true;
+        return startTime != null && endTime != null && start.isBefore(endTime) && end.isAfter(startTime);
+    }
 }

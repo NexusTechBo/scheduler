@@ -83,7 +83,7 @@
                   [class]="
                     staff.active
                       ? 'bg-secondary/10 text-secondary'
-                      : 'bg-gray-900/[0.06] text-gray-500'
+                      : 'bg-gray-900/6 text-gray-500'
                   "
                 >
                   {{ staff.active ? 'Activo' : 'Inactivo' }}
@@ -103,7 +103,7 @@
                   @if (staff.active && staff.id !== myId) {
                     <button
                       type="button"
-                      class="btn-icon hover:!text-red-600"
+                      class="btn-icon hover:text-red-600!"
                       title="Desactivar"
                       aria-label="Desactivar"
                       (click)="deactivate(staff)"

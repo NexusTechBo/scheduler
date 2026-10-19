@@ -1,9 +1,5 @@
 import { Component, computed, input } from '@angular/core';
 
-/**
- * Inline stroke icons (24x24, currentColor). Prefer this over pasting <svg> in templates.
- * For full-color/brand SVG files use `<app-icon>` + core/icons/icon-registry.ts instead.
- */
 const PATHS = {
   home: 'M3 10.5 12 3l9 7.5M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9',
   board: 'M9 3v18M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z',

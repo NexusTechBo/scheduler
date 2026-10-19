@@ -12,10 +12,8 @@ spring:
     hibernate:
       ddl-auto: none
     open-in-view: false
-    show-sql: true
     properties:
       hibernate:
-        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         multiTenancy: SCHEMA
   flyway:
@@ -47,10 +45,6 @@ twilio:
   auth-token: "TU_AUTH_TOKEN"
   whatsapp-number: "whatsapp:+14155238886"
 
-logging:
-  level:
-    org.hibernate.orm.jdbc.bind: TRACE
-
 server:
   port: ${PORT}
 
@@ -62,3 +56,6 @@ jwt:
 
 security:
   public-paths: /api/auth/login, /api/clinics, /swagger-ui/**, /v3/api-docs/**
+
+app:
+  zone: ${APP_ZONE:America/La_Paz}

@@ -16,7 +16,6 @@ import { AppointmentSummaryItem } from '../../../core/models/api.models';
 export class BoardColumnComponent {
   column = input.required<BoardColumn>();
   showDates = input(false);
-  /** Disables drag & drop (roles that cannot change appointment status). */
   readonly = input(false);
 
   dropped = output<CdkDragDrop<AppointmentSummaryItem[]>>();

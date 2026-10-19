@@ -5,7 +5,7 @@ import { NotificationService } from '../../services/notification.service';
   selector: 'app-notification',
   imports: [],
   templateUrl: './notification.component.html',
-  styleUrl: './notification.component.scss'
+  styleUrl: './notification.component.scss',
 })
 export class NotificationComponent {
   private readonly _notificationService = inject(NotificationService);

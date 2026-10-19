@@ -16,7 +16,6 @@ import { AvailabilityFormDialogComponent } from './availability-form-dialog.comp
 import { ExceptionFormDialogComponent } from './exception-form-dialog.component';
 import { AvailabilityResourceService } from './services/availability-resource.service';
 
-/** DOCTOR: weekly availability blocks, schedule exceptions and a preview of the resulting free slots. */
 @Component({
   selector: 'app-availability-page',
   imports: [
@@ -73,10 +72,10 @@ export class AvailabilityPageComponent {
 
   protected addException(): void {
     this.dialog
-      .open<boolean>(ExceptionFormDialogComponent, { backdropClass: 'glass-backdrop' })
+      .open<string>(ExceptionFormDialogComponent, { backdropClass: 'glass-backdrop' })
       .closed.pipe(filter(Boolean))
-      .subscribe(() => {
-        this.notifications.success('Agenda bloqueada');
+      .subscribe((message) => {
+        this.notifications.success(message);
         this.resource.reloadAvailability();
       });
   }

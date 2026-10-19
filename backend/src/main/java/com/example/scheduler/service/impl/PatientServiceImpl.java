@@ -9,6 +9,7 @@ import com.example.scheduler.entity.Patient;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
+import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
@@ -22,8 +23,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -44,15 +47,17 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional
     public PatientResponse createPatient(PatientRegisterRequest request) {
+        var phoneNumber = normalizePhoneNumber(request.phoneNumber());
         var account = accountRepository.findByCi(request.ci())
                 .orElseGet(() -> {
                     if(accountRepository.existsByEmail(request.email()))
-                        throw new BadRequestException("Account with email " + request.email() + " is already exists");
+                        throw new BadRequestException("Account with email " + request.email() + " already exists");
+                    verifyPhoneNumberFree(phoneNumber);
                     return Account.builder()
                             .name(request.name())
                             .password(passwordEncoder.encode(request.password()))
                             .email(request.email())
-                            .phoneNumber(request.phoneNumber())
+                            .phoneNumber(phoneNumber)
                             .ci(request.ci())
                             .build();
                 });
@@ -73,17 +78,14 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public PatientResponse findPatientByPhoneNumber(String phoneNumber) {
-        return patientMapper.toResponse(patientRepository.findByAccountPhoneNumber(phoneNumber)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with phone number: " + phoneNumber)));
-    }
-
-    @Override
     @Transactional
     public PatientResponse updatePatientById(Long patientId, PatientRequest request) {
         var patient = getPatientOrThrowById(patientId);
+        request = new PatientRequest(request.name(), request.email(), normalizePhoneNumber(request.phoneNumber()));
         if(!patient.getAccount().getEmail().equals(request.email()) && accountRepository.existsByEmail(request.email()))
-            throw new BadRequestException("Account with email " + request.email() + " is already exists");
+            throw new BadRequestException("Account with email " + request.email() + " already exists");
+        if (!Objects.equals(patient.getAccount().getPhoneNumber(), request.phoneNumber()))
+            verifyPhoneNumberFree(request.phoneNumber());
         patientMapper.toEntityUpdated(request, patient);
         return patientMapper.toResponse(patientRepository.save(patient));
     }
@@ -97,9 +99,20 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public List<PersonalResponse> getDoctorsOfPatient(Long patientId) {
+    public List<PersonalResponse> getDoctorsOfPatient(Long patientId, Long userId, String role) {
+        if (ERole.PATIENT.name().equals(role) && !patientId.equals(userId))
+            throw new ForbiddenException("Not authorize to do this");
         var patient = getPatientDoctorsOrThrowById(patientId);
         return personalMapper.toResponseList(patient.getDoctors());
+    }
+
+    private static String normalizePhoneNumber(String phoneNumber) {
+        return StringUtils.hasText(phoneNumber) ? phoneNumber.strip() : null;
+    }
+
+    private void verifyPhoneNumberFree(String phoneNumber) {
+        if (phoneNumber != null && accountRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException("Account with phone number " + phoneNumber + " already exists");
     }
 
     private Patient getPatientOrThrowById(Long patientId) {

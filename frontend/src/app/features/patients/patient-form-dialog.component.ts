@@ -9,7 +9,6 @@ import { fieldError } from '../../shared/utils/validation-messages.util';
 import { DialogFrameComponent } from '../../shared/ui/dialog-frame/dialog-frame.component';
 
 export interface PatientFormData {
-  /** Absent → create. */
   patient?: Patient;
 }
 
@@ -27,7 +26,6 @@ export class PatientFormDialogComponent {
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  /** Mirrors PatientRegisterRequest / PatientRequest validation. CI and password only exist on create. */
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: [this.data.patient?.name ?? '', Validators.required],
     email: [this.data.patient?.email ?? '', [Validators.required, Validators.email]],

@@ -12,5 +12,6 @@ public record ScheduleExceptionRequest(
         LocalTime endTime,
         @NotNull
         Boolean isFullDayBlock,
-        String reason
+        String reason,
+        Boolean cancelAppointments
 ) {}

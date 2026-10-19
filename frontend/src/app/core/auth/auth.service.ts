@@ -10,7 +10,6 @@ const CLINIC_KEY = 'scheduler.clinic';
 
 export interface Session {
   token: string;
-  /** Personal.id for staff, Patient.id for patients — the id the backend uses for "self" checks. */
   userId: number;
   role: Role;
   clinicId: number;
@@ -30,9 +29,7 @@ function writeStorage(key: string, value: string | null): void {
   try {
     if (value === null) localStorage.removeItem(key);
     else localStorage.setItem(key, value);
-  } catch {
-    /* storage unavailable (private mode): the session just won't survive a reload */
-  }
+  } catch {}
 }
 
 function decodeSession(token: string | null): Session | null {
@@ -45,7 +42,7 @@ function decodeSession(token: string | null): Session | null {
       role: payload.role,
       clinicId: Number(payload.clinicId),
       username: payload.username,
-      expiresAt: payload.exp * 1000
+      expiresAt: payload.exp * 1000,
     };
     return session.expiresAt > Date.now() ? session : null;
   } catch {
@@ -53,10 +50,6 @@ function decodeSession(token: string | null): Session | null {
   }
 }
 
-/**
- * Single source of truth for who is logged in. The JWT is the session: there is no refresh endpoint,
- * tokens last 24h and are bound to one clinic (tenant).
- */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authApi = inject(AuthApi);
@@ -66,7 +59,6 @@ export class AuthService {
   private readonly _clinic = signal<Clinic | null>(this.readClinic());
 
   readonly session = this._session.asReadonly();
-  /** Clinic picked on /clinic-options (or the one the current session belongs to). */
   readonly clinic = this._clinic.asReadonly();
   readonly isAuthenticated = computed(() => this._session() !== null);
   readonly role = computed(() => this._session()?.role ?? null);
@@ -101,16 +93,15 @@ export class AuthService {
       tap((session) => {
         writeStorage(TOKEN_KEY, session.token);
         this._session.set(session);
-      })
+      }),
     );
   }
 
   logout(): void {
     this.clearSession();
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login']).finally();
   }
 
-  /** Landing route after login, per role. */
   homeUrl(): string {
     return this.role() === 'PATIENT' ? '/appointments' : '/dashboard';
   }

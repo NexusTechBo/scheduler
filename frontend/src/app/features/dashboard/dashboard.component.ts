@@ -58,7 +58,6 @@ export class DashboardComponent {
       }),
   });
 
-  /** Administrators also get a staff overview (GET /personal is ADMINISTRATOR only). */
   private readonly staffResource = rxResource({
     loader: () =>
       this.isAdmin

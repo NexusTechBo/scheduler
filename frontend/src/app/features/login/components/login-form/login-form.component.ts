@@ -34,7 +34,7 @@ export class LoginFormComponent {
     if (this.submitting()) return;
     const clinic = this.clinic();
     if (!clinic) {
-      this.router.navigate(['/clinic-options']);
+      this.router.navigate(['/clinic-options']).finally();
       return;
     }
     if (this.form.invalid) {
