@@ -2,9 +2,11 @@ package com.example.scheduler.controller;
 
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
-import com.example.scheduler.dto.personal.PersonalRegisterRequest;
 import com.example.scheduler.dto.personal.PersonalRequest;
+import com.example.scheduler.dto.personal.PersonalUpdateRequest;
+import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.SecurityUtils;
 import com.example.scheduler.service.PersonalService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,15 +33,14 @@ public class PersonalController {
     private final PersonalService personalService;
 
     @GetMapping("/doctors")
-    @PreAuthorize("hasAnyRole('PATIENT', 'ASSISTANT')")
-    @Operation(summary = "GET /api/personal/doctors — list doctors, filter by ?specialtyId={specialtyId}&isActive={isActive} (default active only; a PATIENT always gets active only)")
+    @PreAuthorize("hasAnyRole('ASSISTANT')")
+    @Operation(summary = "GET /api/personal/doctors — list doctors, filter by ?specialtyId={specialtyId}&isActive={isActive} (default active only)")
     public ResponseEntity<Page<PersonalResponse>> findAllDoctors(
             @RequestParam(required = false) Long specialtyId,
             @RequestParam(required = false) Boolean isActive,
-            @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
-            Authentication auth
+            @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return ResponseEntity.ok(personalService.findAllDoctors(specialtyId, isActive, SecurityUtils.extractRole(auth), pageable));
+        return ResponseEntity.ok(personalService.findAllDoctors(specialtyId, isActive, pageable));
     }
 
     @GetMapping
@@ -48,16 +49,16 @@ public class PersonalController {
     public ResponseEntity<Page<PersonalResponse>> findAllPersonal(
             @RequestParam(required = false) Long specialtyId,
             @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false) Long roleId,
+            @RequestParam(required = false) ERole role,
             @PageableDefault(sort = "id", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return ResponseEntity.ok(personalService.findAllPersonal(specialtyId, isActive, roleId, pageable));
+        return ResponseEntity.ok(personalService.findAllPersonal(specialtyId, isActive, role, pageable));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
     @Operation(summary = "POST /api/personal/{personalId} — create a personal user")
-    public ResponseEntity<PersonalResponse> createPersonal(@Valid @RequestBody PersonalRegisterRequest request){
+    public ResponseEntity<PersonalResponse> createPersonal(@Valid @RequestBody PersonalRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(personalService.createPersonal(request));
     }
 
@@ -70,17 +71,16 @@ public class PersonalController {
 
     @PutMapping("/update/{personalId}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
-    @Operation(summary = "PUT /api/personal/{personalId} — update a personal by id")
-    public ResponseEntity<PersonalResponse> updatePersonalById(@PathVariable Long personalId, @Valid @RequestBody PersonalRequest request) {
-        return ResponseEntity.ok(personalService.updatePersonalById(personalId, request));
+    @Operation(summary = "PUT /api/personal/update/{personalId} — admin updates another doctor/assistant (name, email, phone, specialty, role, optional password reset)")
+    public ResponseEntity<PersonalResponse> updatePersonalByAdmin(@PathVariable Long personalId, @Valid @RequestBody PersonalUpdateRequest request) {
+        return ResponseEntity.ok(personalService.updatePersonalByAdmin(personalId, request));
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'ASSISTANT')")
-    @Operation(summary = "PUT /api/personal — update self personal information")
-    public ResponseEntity<PersonalResponse> updatePersonalProfile(@Valid @RequestBody PersonalRequest request, Authentication auth) {
-        var selfRequest = new PersonalRequest(request.name(), request.email(), null);
-        return ResponseEntity.ok(personalService.updatePersonalById(Long.parseLong(auth.getName()), selfRequest));
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')")
+    @Operation(summary = "PUT /api/personal/update — update own profile (name, email, phone, password with current password)")
+    public ResponseEntity<PersonalResponse> updateOwnProfile(@Valid @RequestBody PersonalProfileUpdateRequest request, Authentication auth) {
+        return ResponseEntity.ok(personalService.updateOwnProfile(Long.parseLong(auth.getName()), request));
     }
 
     @DeleteMapping("/{personalId}")

@@ -19,12 +19,12 @@ public @interface ValidRole {
 
     Class<? extends Payload>[] payload() default {};
 
-    class ValidRoleValidator implements ConstraintValidator<ValidRole, Long> {
+    class ValidRoleValidator implements ConstraintValidator<ValidRole, ERole> {
 
         @Override
-        public boolean isValid(Long value, ConstraintValidatorContext context) {
+        public boolean isValid(ERole value, ConstraintValidatorContext context) {
             if(value == null) return true;
-            return value.equals(ERole.ASSISTANT.getId()) || value.equals(ERole.DOCTOR.getId());
+            return value == ERole.ASSISTANT || value == ERole.DOCTOR;
         }
     }
 }

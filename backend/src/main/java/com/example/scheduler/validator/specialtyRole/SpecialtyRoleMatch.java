@@ -1,7 +1,6 @@
 package com.example.scheduler.validator.specialtyRole;
 
 import com.example.scheduler.enums.ERole;
-import com.example.scheduler.enums.ESpecialty;
 import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -43,20 +42,19 @@ public @interface SpecialtyRoleMatch {
         public boolean isValid(Object value, ConstraintValidatorContext context) {
             if (value == null) return true;
             try {
-                var roleId = (Long) getFieldValue(value, firstField);
+                var role = (ERole) getFieldValue(value, firstField);
                 var specialtyId = (Long) getFieldValue(value, secondField);
-                if (roleId == null) return true;
-                var isDoctor = roleId.equals(ERole.DOCTOR.getId());
-                var isAssistant = roleId.equals(ERole.ASSISTANT.getId());
+                if (role == null) return true;
+                var isDoctor = role == ERole.DOCTOR;
+                var isAssistant = role == ERole.ASSISTANT;
                 var existsSpecialty = specialtyId != null;
-                var isDefaultSpecialty = ESpecialty.DEFAULT.getId().equals(specialtyId);
-                if (isDoctor && (!existsSpecialty || isDefaultSpecialty)) {
+                if (isDoctor && !existsSpecialty) {
                     var errorMessage = "The doctor role should have a specialty";
                     buildViolation(context, errorMessage, secondField);
                     return false;
                 }
                 if (isAssistant && existsSpecialty) {
-                    var errorMessage = "The assistant role shouldn't have a specialty";
+                    var errorMessage = "Only doctors can have a specialty";
                     buildViolation(context, errorMessage, secondField);
                     return false;
                 }

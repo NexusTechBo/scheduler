@@ -44,11 +44,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         log.warn("Active user lookup failed for user {}: {}", userId, e.getMessage());
                         return;
                     }
-                    List<SimpleGrantedAuthority> authorities = role != null
-                            ? List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                            : List.of();
+                    var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
                     SecurityContextHolder.getContext().setAuthentication(
-                            new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities));
+                            new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities)
+                    );
                 });
             }
             chain.doFilter(request, response);

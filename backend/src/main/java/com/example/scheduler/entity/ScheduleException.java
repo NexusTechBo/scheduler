@@ -26,16 +26,16 @@ public class ScheduleException {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false)
+    @Column
     private LocalTime startTime;
 
-    @Column(nullable = false)
+    @Column
     private LocalTime endTime;
 
     @Column(nullable = false)
     private Boolean isFullDayBlock;
 
-    @Column(nullable = true)
+    @Column
     private String reason;
 
     public boolean blocks(LocalTime start, LocalTime end) {

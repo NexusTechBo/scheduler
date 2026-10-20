@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface AppointmentService {
-    AppointmentResponse bookAppointment(AppointmentRequest request, Long userId, String role);
+    AppointmentResponse bookAppointment(AppointmentRequest request);
     AppointmentResponse findAppointmentById(Long appointmentId, Long userId, String role);
     Page<AppointmentResponse> findAllAppointments(Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable);
     AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, String role);

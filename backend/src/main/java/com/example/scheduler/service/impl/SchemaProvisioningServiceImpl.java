@@ -21,7 +21,7 @@ public class SchemaProvisioningServiceImpl implements SchemaProvisioningService,
 
     @Override
     public void run(@NonNull ApplicationArguments args) {
-        jdbcTemplate.queryForList("SELECT id FROM public.clinics", Long.class)
+        jdbcTemplate.queryForList("SELECT id FROM clinics", Long.class)
                 .forEach(id -> createTenantSchema("clinic_" + id));
     }
 

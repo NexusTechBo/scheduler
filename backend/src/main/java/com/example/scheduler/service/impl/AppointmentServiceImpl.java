@@ -53,27 +53,27 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional
-    public AppointmentResponse bookAppointment(AppointmentRequest request, Long userId, String role) {
-        var isPatient = ERole.PATIENT.name().equals(role);
-        var patientId = isPatient ? userId : request.patientId();
+    public AppointmentResponse bookAppointment(AppointmentRequest request) {
+        var patientId = request.patientId();
+        var doctorId = request.doctorId();
         var startTime = request.startTime();
-        if (startTime.isBefore(LocalDateTime.now(clock)))
-            throw new BadRequestException("The appointment cannot be in the past");
-        var doctor = personalRepository.findByIdForUpdate(request.doctorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + request.doctorId()));
-        if (doctor.getRole().getName() != ERole.DOCTOR)
+        var endTime = findSlotEnd(request.doctorId(), startTime)
+                .orElseThrow(() -> new BusinessException("The doctor does not attend at that time"));
+        var doctor = personalRepository.findByIdForUpdate(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
+        var patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
+        if (doctor.getRole() != ERole.DOCTOR)
             throw new BadRequestException("Personal with id " + request.doctorId() + " is not a doctor");
         if (!doctor.isActive())
             throw new BusinessException("The doctor is not active");
-        var patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
         if (!patient.isActive())
             throw new BusinessException("The patient is not active");
-        var endTime = findSlotEnd(request.doctorId(), startTime)
-                .orElseThrow(() -> new BusinessException("The doctor does not attend at that time"));
-        if (isBlocked(request.doctorId(), startTime, endTime))
+        if (startTime.isBefore(LocalDateTime.now(clock)))
+            throw new BadRequestException("The appointment cannot be in the past");
+        if (isBlocked(doctorId, startTime, endTime))
             throw new BusinessException("That schedule is blocked");
-        if (isSlotTaken(request.doctorId(), startTime, endTime))
+        if (isSlotTaken(doctorId, startTime, endTime))
             throw new BusinessException("That slot is already taken");
         var appointment = Appointment.builder()
                 .doctor(doctor)
@@ -116,7 +116,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
             throw new BusinessException("This appointment is already cancelled");
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointment.setCancellationReason(request.reason().strip());
+        appointment.setCancellationReason(request.reason());
         return appointmentMapper.toResponse(saveAndNotify(appointment));
     }
 
@@ -163,8 +163,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         var startTime = appointment.getStartTime();
         return new AppointmentSummaryItem(
                 appointment.getId(),
-                appointment.getPatient().getAccount().getName(),
-                appointment.getDoctor().getAccount().getName(),
+                appointment.getPatient().getName(),
+                appointment.getDoctor().getName(),
                 startTime.toLocalDate(),
                 startTime.toLocalTime(),
                 startTime,
@@ -177,7 +177,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private Appointment saveAndNotify(Appointment appointment) {
         var saved = appointmentRepository.save(appointment);
         var clinicId = Long.valueOf(TenantContext.getCurrentTenant().substring("clinic_".length()));
-        eventPublisher.publishEvent(new AppointmentChangedEvent(clinicId, new BoardEvent(saved.getId(), saved.getStatus())));
+        eventPublisher.publishEvent(
+                new AppointmentChangedEvent(clinicId, new BoardEvent(saved.getId(), saved.getStatus())));
         return saved;
     }
 
@@ -189,9 +190,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void verifyPermission(Appointment appointment, Long userId, String role) {
         if(role.equals(ERole.DOCTOR.name()))
             if (!appointment.getDoctor().getId().equals(userId))
-                throw new ForbiddenException("Not authorize to do this");
-        if(role.equals(ERole.PATIENT.name()))
-            if (!appointment.getPatient().getId().equals(userId))
                 throw new ForbiddenException("Not authorize to do this");
     }
 
@@ -207,7 +205,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .filter(a -> {
                     var slotSeconds = a.getSlotDurationMinutes() * 60L;
                     var offset = Duration.between(a.getStartTime(), time).toSeconds();
-                    return offset >= 0 && offset % slotSeconds == 0
+                    return offset >= 0
+                            && offset % slotSeconds == 0
                             && Duration.between(time, a.getEndTime()).toSeconds() >= slotSeconds;
                 })
                 .findFirst()

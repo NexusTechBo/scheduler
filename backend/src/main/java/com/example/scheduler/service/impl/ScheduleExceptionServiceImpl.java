@@ -3,6 +3,7 @@ package com.example.scheduler.service.impl;
 import com.example.scheduler.dto.ScheduleException.ScheduleExceptionRequest;
 import com.example.scheduler.dto.ScheduleException.ScheduleExceptionResponse;
 import com.example.scheduler.entity.Appointment;
+import com.example.scheduler.entity.ScheduleException;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
@@ -39,6 +40,8 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     @Override
     @Transactional
     public ScheduleExceptionResponse addDoctorScheduleException(Long doctorId, ScheduleExceptionRequest request) {
+        var doctor = doctorRepository.findByIdForUpdate(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
         if (request.date().isBefore(LocalDate.now(clock)))
             throw new BadRequestException("The block date cannot be in the past");
         if (!request.isFullDayBlock()) {
@@ -47,18 +50,38 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
             if (!request.endTime().isAfter(request.startTime()))
                 throw new BadRequestException("The end time must be after the start time");
         }
-        var doctor = doctorRepository.findByIdForUpdate(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
         var affected = findAffectedAppointments(doctorId, request);
         if (!affected.isEmpty() && !Boolean.TRUE.equals(request.cancelAppointments()))
-            throw new BusinessException((affected.size() == 1 ? "There is 1 active appointment" : "There are " + affected.size() + " active appointments")
+            throw new BusinessException((affected.size() == 1 ? "There is " + affected.size() + " active appointment" : "There are " + affected.size() + " active appointments")
                     + " in this range. Send cancelAppointments=true to block it and cancel them");
-        var scheduleException = mapper.toEntity(request);
-        scheduleException.setDoctor(doctor);
-        var saved = scheduleExceptionRepository.save(scheduleException);
+        var fullDay = request.isFullDayBlock();
+        var scheduleException = scheduleExceptionRepository.save(ScheduleException.builder()
+                .doctor(doctor)
+                .date(request.date())
+                .startTime(fullDay ? null : request.startTime())
+                .endTime(fullDay ? null : request.endTime())
+                .isFullDayBlock(fullDay)
+                .reason(request.reason())
+                .build());
         if (!affected.isEmpty())
             appointmentService.cancelAppointments(affected, cancellationReason(request.reason()));
-        return mapper.toResponse(saved);
+        return mapper.toResponse(scheduleException);
+    }
+
+    @Override
+    public List<ScheduleExceptionResponse> findDoctorScheduleExceptions(Long doctorId, LocalDate from) {
+        var schedulesException = scheduleExceptionRepository.findByDoctorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(doctorId, from);
+        return mapper.toResponseList(schedulesException);
+    }
+
+    @Override
+    @Transactional
+    public void deleteDoctorScheduleExceptionById(Long scheduleExceptionId, Long doctorId) {
+        var scheduleException = scheduleExceptionRepository.findById(scheduleExceptionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Schedule exception not found with id: " + scheduleExceptionId));
+        if (!scheduleException.getDoctor().getId().equals(doctorId))
+            throw new ForbiddenException("Not authorize to do this");
+        scheduleExceptionRepository.delete(scheduleException);
     }
 
     private List<Appointment> findAffectedAppointments(Long doctorId, ScheduleExceptionRequest request) {
@@ -74,25 +97,6 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     }
 
     private String cancellationReason(String reason) {
-        return reason == null || reason.isBlank() ? DEFAULT_CANCELLATION_REASON : reason.strip();
-    }
-
-    @Override
-    public List<ScheduleExceptionResponse> findDoctorScheduleExceptions(Long doctorId, LocalDate from) {
-        var since = from != null ? from : LocalDate.now(clock);
-        return scheduleExceptionRepository.findByDoctorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(doctorId, since)
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    @Transactional
-    public void deleteDoctorScheduleExceptionById(Long scheduleExceptionId, Long doctorId) {
-        var scheduleException = scheduleExceptionRepository.findById(scheduleExceptionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Schedule exception not found with id: " + scheduleExceptionId));
-        if (!scheduleException.getDoctor().getId().equals(doctorId))
-            throw new ForbiddenException("Not authorize to do this");
-        scheduleExceptionRepository.delete(scheduleException);
+        return reason == null || reason.isBlank() ? DEFAULT_CANCELLATION_REASON : reason;
     }
 }

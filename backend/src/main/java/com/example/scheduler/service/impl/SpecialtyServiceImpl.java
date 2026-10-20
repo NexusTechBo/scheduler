@@ -2,6 +2,7 @@ package com.example.scheduler.service.impl;
 
 import com.example.scheduler.dto.specialty.SpecialtyRequest;
 import com.example.scheduler.dto.specialty.SpecialtyResponse;
+import com.example.scheduler.entity.Specialty;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.mapper.SpecialtyMapper;
 import com.example.scheduler.repository.SpecialtyRepository;
@@ -27,8 +28,8 @@ public class SpecialtyServiceImpl implements SpecialtyService {
     @Override
     @Transactional
     public SpecialtyResponse createSpecialty(SpecialtyRequest request) {
-        var name = request.name().strip();
-        if (specialtyRepository.existsByNameIgnoreCase(name)) throw new BusinessException("This specialty already exists");
-        return specialtyMapper.toResponse(specialtyRepository.save(specialtyMapper.toEntity(new SpecialtyRequest(name))));
+        if (specialtyRepository.existsByNameIgnoreCase(request.name()))
+            throw new BusinessException("This specialty already exists");
+        return specialtyMapper.toResponse(specialtyRepository.save(Specialty.builder().name(request.name()).build()));
     }
 }

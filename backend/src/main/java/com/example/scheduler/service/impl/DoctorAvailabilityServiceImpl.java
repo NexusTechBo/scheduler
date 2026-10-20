@@ -33,7 +33,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService {
-    private final DoctorAvailabilityRepository availabilityRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final ScheduleExceptionRepository scheduleExceptionRepository;
     private final AppointmentRepository appointmentRepository;
     private final PersonalRepository personalRepository;
@@ -43,40 +43,44 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Override
     @Transactional
     public DoctorAvailabilityResponse addDoctorAvailability(Long doctorId, DoctorAvailabilityRequest request) {
+        // Locks the doctor row so this serializes with booking and with an admin role change.
+        var doctor = personalRepository.findByIdForUpdate(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
+        if (doctor.getRole() != ERole.DOCTOR || !doctor.isActive())
+            throw new ForbiddenException("Only an active doctor can add availabilities");
         if (request.startTime().isAfter(request.endTime()) || request.startTime().equals(request.endTime()))
             throw new BadRequestException("The end time must be after the start time");
-        var overlaps = availabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, request.dayOfWeek()).stream()
-                .anyMatch(a -> request.startTime().isBefore(a.getEndTime()) && request.endTime().isAfter(a.getStartTime()));
+        var overlaps = doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, request.dayOfWeek()).stream()
+                .anyMatch(a ->
+                        request.startTime().isBefore(a.getEndTime()) && request.endTime().isAfter(a.getStartTime())
+                );
         if (overlaps)
             throw new BusinessException("That availability overlaps an existing block");
-        var doctor = personalRepository.findById(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
         var availability = DoctorAvailability.builder()
                 .doctor(doctor)
                 .dayOfWeek(request.dayOfWeek())
                 .startTime(request.startTime())
                 .endTime(request.endTime())
                 .slotDurationMinutes(request.slotDurationMinutes())
-                .active(true)
                 .build();
-        return mapper.toResponse(availabilityRepository.save(availability));
+        return mapper.toResponse(doctorAvailabilityRepository.save(availability));
     }
 
     @Override
     public List<DoctorAvailabilityResponse> getDoctorAvailabilities(Long doctorId) {
-        return mapper.toResponseList(availabilityRepository.findByDoctorIdAndActiveTrue(doctorId));
+        return mapper.toResponseList(doctorAvailabilityRepository.findByDoctorIdAndActiveTrue(doctorId));
     }
 
     @Override
     public DoctorAvailabilitySlotsResponse getDoctorAvailableSlots(Long doctorId, LocalDate date) {
         var now = LocalDateTime.now(clock);
-        var isActiveDoctor = personalRepository.findById(doctorId)
-                .filter(p -> p.isActive() && p.getRole().getName() == ERole.DOCTOR)
+        var dayOfWeek = date.getDayOfWeek();
+        var isActiveDoctor = personalRepository
+                .findByIdAndRoleAndActiveIsTrue(doctorId, ERole.DOCTOR)
                 .isPresent();
         if (!isActiveDoctor || date.isBefore(now.toLocalDate()))
             return new DoctorAvailabilitySlotsResponse(date, doctorId, List.of());
-        var dayOfWeek = date.getDayOfWeek();
-        var availabilities = availabilityRepository
+        var availabilities = doctorAvailabilityRepository
                 .findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, dayOfWeek);
         if (availabilities.isEmpty())
             return new DoctorAvailabilitySlotsResponse(date, doctorId, List.of());
@@ -94,8 +98,11 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
                 .distinct()
                 .filter(slot -> !isToday || slot.startTime().isAfter(now.toLocalTime()))
                 .filter(slot -> exceptions.stream().noneMatch(e -> e.blocks(slot.startTime(), slot.endTime())))
-                .filter(slot -> existingAppointments.stream().noneMatch(a ->
-                        slot.startTime().isBefore(a.getEndTime().toLocalTime()) && slot.endTime().isAfter(a.getStartTime().toLocalTime())))
+                .filter(slot -> existingAppointments.stream()
+                        .noneMatch(a ->
+                                slot.startTime().isBefore(a.getEndTime().toLocalTime()) && slot.endTime().isAfter(a.getStartTime().toLocalTime())
+                        )
+                )
                 .sorted(Comparator.comparing(Slot::startTime))
                 .toList();
         return new DoctorAvailabilitySlotsResponse(date, doctorId, availableSlots);
@@ -104,8 +111,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Override
     @Transactional
     public void deactivateDoctorAvailabilityById(Long availabilityId, Long doctorId) {
-        var availability = availabilityRepository.findById(availabilityId)
-                .filter(DoctorAvailability::getActive)
+        var availability = doctorAvailabilityRepository.findByIdAndActiveIsTrue(availabilityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Availability not found with id: " + availabilityId));
         if (!availability.getDoctor().getId().equals(doctorId))
             throw new ForbiddenException("Not authorize to do this");

@@ -1,5 +1,6 @@
 package com.example.scheduler.dto.personal;
 
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.validator.role.ValidRole;
 import com.example.scheduler.validator.specialtyRole.SpecialtyRoleMatch;
 import jakarta.validation.constraints.Email;
@@ -8,22 +9,20 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @SpecialtyRoleMatch(
-        first = "roleId",
+        first = "role",
         second = "specialtyId"
 )
-public record PersonalRegisterRequest(
+public record PersonalUpdateRequest(
         @NotBlank
         String name,
         @NotBlank
         @Email
         String email,
-        @NotBlank
-        String ci,
-        @NotBlank
+        String phoneNumber,
         @Size(min = 8)
         String password,
         @NotNull
         @ValidRole
-        Long roleId,
+        ERole role,
         Long specialtyId
 ) {}
