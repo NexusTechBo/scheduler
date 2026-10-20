@@ -64,7 +64,7 @@ public class PatientServiceImpl implements PatientService {
         var patient = getPatientOrThrowById(patientId);
         if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
             throw new BusinessException("This patient already exists");
-        if (!Objects.equals(patient.getEmail(), request.email()) && patientRepository.existsByEmail(request.email()))
+        if (!patient.getEmail().equals(request.email()) && patientRepository.existsByEmail(request.email()))
             throw new BadRequestException("Patient with email " + request.email() + " already exists");
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null && !Objects.equals(patient.getPhoneNumber(), phoneNumber) && patientRepository.existsByPhoneNumber(phoneNumber))

@@ -126,7 +126,7 @@ public class PersonalServiceImpl implements PersonalService {
     }
 
     private void updateContactData(Personal personal, String name, String email, String rawPhoneNumber) {
-        if (!Objects.equals(personal.getEmail(), email) && personalRepository.existsByEmail(email))
+        if (!personal.getEmail().equals(email) && personalRepository.existsByEmail(email))
             throw new BadRequestException("Personal with email " + email + " already exists");
         var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber);
         if (phoneNumber != null && !Objects.equals(personal.getPhoneNumber(), phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))

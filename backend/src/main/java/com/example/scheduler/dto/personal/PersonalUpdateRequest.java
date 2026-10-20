@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/** Body an administrator sends to update another staff member; {@code password} resets it when present. */
 @SpecialtyRoleMatch(
         first = "role",
         second = "specialtyId"
@@ -20,10 +19,10 @@ public record PersonalUpdateRequest(
         @Email
         String email,
         String phoneNumber,
-        Long specialtyId,
+        @Size(min = 8)
+        String password,
         @NotNull
         @ValidRole
         ERole role,
-        @Size(min = 8)
-        String password
+        Long specialtyId
 ) {}
