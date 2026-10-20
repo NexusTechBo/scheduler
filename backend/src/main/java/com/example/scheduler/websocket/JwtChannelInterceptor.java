@@ -21,8 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
 
-    static final String CLINIC_ID = "clinicId";
-
     private final JwtUtil jwtUtil;
     private final ActiveUserChecker activeUserChecker;
 
@@ -41,29 +39,31 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 
     private void authenticate(StompHeaderAccessor accessor) {
         var header = accessor.getFirstNativeHeader("Authorization");
+        var attrs = accessor.getSessionAttributes();
         if (header == null || !header.startsWith("Bearer "))
             throw new MessageDeliveryException("Missing bearer token");
-        var claims = jwtUtil.parse(header.substring(7))
-                .orElseThrow(() -> new MessageDeliveryException("Invalid token"));
-        var clinicId = claims.get(CLINIC_ID, Long.class);
-        if (clinicId == null || accessor.getSessionAttributes() == null)
-            throw new MessageDeliveryException("Invalid token");
-        var role = claims.get("role", String.class);
-        TenantContext.setCurrentTenant("clinic_" + clinicId);
-        try {
-            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role))
+        jwtUtil.parse(header.substring(7)).ifPresent(claims -> {
+            var clinicId = claims.get("clinicId", Long.class);
+            TenantContext.setCurrentTenant("clinic_" + clinicId);
+            try {
+                if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject())))
+                    throw new MessageDeliveryException("Invalid token");
+            } finally {
+                TenantContext.clear();
+            }
+            if (attrs == null)
                 throw new MessageDeliveryException("Invalid token");
-        } finally {
-            TenantContext.clear();
-        }
-        accessor.getSessionAttributes().put(CLINIC_ID, clinicId);
-        var authorities = role != null ? List.of(new SimpleGrantedAuthority("ROLE_" + role)) : List.<SimpleGrantedAuthority>of();
-        accessor.setUser(new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities));
+            attrs.put("clinicId", clinicId);
+            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class)));
+            accessor.setUser(
+                    new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities)
+            );
+        });
     }
 
     private void authorizeSubscription(StompHeaderAccessor accessor) {
         var attrs = accessor.getSessionAttributes();
-        if (accessor.getUser() == null || attrs == null || !(attrs.get(CLINIC_ID) instanceof Long clinicId))
+        if (accessor.getUser() == null || attrs == null || !(attrs.get("clinicId") instanceof Long clinicId))
             throw new MessageDeliveryException("Not authenticated");
         if (!AppointmentChangedEvent.boardTopic(clinicId).equals(accessor.getDestination()))
             throw new MessageDeliveryException("Forbidden destination");

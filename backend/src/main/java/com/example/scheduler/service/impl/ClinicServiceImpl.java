@@ -4,18 +4,15 @@ import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.clinic.ClinicCreatedResponse;
 import com.example.scheduler.dto.clinic.ClinicRequest;
 import com.example.scheduler.dto.clinic.ClinicResponse;
-import com.example.scheduler.entity.Account;
 import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
-import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.mapper.ClinicMapper;
-import com.example.scheduler.repository.AccountRepository;
 import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PersonalRepository;
-import com.example.scheduler.repository.RoleRepository;
 import com.example.scheduler.service.ClinicService;
 import com.example.scheduler.service.SchemaProvisioningService;
+import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,8 +27,6 @@ public class ClinicServiceImpl implements ClinicService {
 
     private final ClinicRepository clinicRepository;
     private final ClinicMapper clinicMapper;
-    private final RoleRepository roleRepository;
-    private final AccountRepository accountRepository;
     private final PersonalRepository personalRepository;
     private final PasswordEncoder passwordEncoder;
     private final SchemaProvisioningService schemaProvisioningService;
@@ -42,12 +37,10 @@ public class ClinicServiceImpl implements ClinicService {
         var clinicName = request.name().strip();
         if (clinicRepository.existsByNameIgnoreCase(clinicName))
             throw new BusinessException("A clinic with this name already exists");
-        if (accountRepository.findByCi(request.adminCi()).isEmpty() && accountRepository.existsByEmail(request.adminEmail()))
-            throw new BadRequestException("Account with email " + request.adminEmail() + " already exists");
+        var subdomain = Utils.subdomainFor(clinicName);
         var tx = new TransactionTemplate(transactionManager);
         var clinic = tx.execute(_ -> {
-            var entity = clinicMapper.toEntity(request);
-            entity.setName(clinicName);
+            var entity = clinicMapper.toEntity(request, subdomain);
             return clinicRepository.save(entity);
         });
         var schemaName = "clinic_" + clinic.getId();
@@ -55,24 +48,22 @@ public class ClinicServiceImpl implements ClinicService {
         try {
             TenantContext.setCurrentTenant(schemaName);
             return tx.execute(_ -> {
-                var account = accountRepository.findByCi(request.adminCi())
-                        .orElseGet(() -> Account.builder()
-                                    .name(request.adminName())
-                                    .password(passwordEncoder.encode(request.adminPassword()))
-                                    .email(request.adminEmail())
-                                    .ci(request.adminCi())
-                                    .build());
-                var adminRole = roleRepository.getByName(ERole.ADMINISTRATOR);
                 var admin = personalRepository.save(Personal.builder()
-                        .account(account)
-                        .role(adminRole)
+                        .username(request.adminUsername() + subdomain)
+                        .name(request.adminName())
+                        .password(passwordEncoder.encode(request.adminPassword()))
+                        .email(request.adminEmail())
+                        .ci(request.adminCi())
+                        .role(ERole.ADMINISTRATOR)
                         .build());
                 return new ClinicCreatedResponse(
                         clinic.getId(),
                         clinic.getName(),
                         clinic.getPhoneNumber(),
+                        clinic.getSubdomain(),
                         admin.getId(),
-                        account.getEmail());
+                        admin.getUsername(),
+                        admin.getEmail());
             });
         } finally {
             TenantContext.clear();

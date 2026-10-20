@@ -21,4 +21,7 @@ public class Clinic {
 
     @Column(nullable = false)
     private String phoneNumber;
+
+    @Column(nullable = false, unique = true, updatable = false)
+    private String subdomain;
 }

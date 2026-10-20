@@ -2,6 +2,8 @@ package com.example.scheduler.dto.clinic;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record ClinicRequest(
@@ -11,6 +13,9 @@ public record ClinicRequest(
         String phoneNumber,
         @NotBlank
         String adminName,
+        @NotNull
+        @Pattern(regexp = "^[a-z0-9._-]{3,50}$", message = "must be 3-50 characters: lowercase letters, digits, '.', '_' or '-'")
+        String adminUsername,
         @NotBlank
         @Email
         String adminEmail,

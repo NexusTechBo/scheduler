@@ -9,5 +9,6 @@ public record PersonalRequest(
         @NotBlank
         @Email
         String email,
+        String phoneNumber,
         Long specialtyId
 ) {}

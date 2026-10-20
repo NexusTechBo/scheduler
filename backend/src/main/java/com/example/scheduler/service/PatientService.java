@@ -1,6 +1,5 @@
 package com.example.scheduler.service;
 
-import com.example.scheduler.dto.patient.PatientRegisterRequest;
 import com.example.scheduler.dto.patient.PatientRequest;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
@@ -11,9 +10,9 @@ import java.util.List;
 
 public interface PatientService {
     Page<PatientResponse> findAllPatients(Pageable pageable);
-    PatientResponse createPatient(PatientRegisterRequest request);
+    PatientResponse createPatient(PatientRequest request);
     PatientResponse findPatientById(Long patientId);
     PatientResponse updatePatientById(Long patientId, PatientRequest request);
     void deactivatePatientById(Long patientId);
-    List<PersonalResponse> getDoctorsOfPatient(Long patientId, Long userId, String role);
+    List<PersonalResponse> getDoctorsOfPatient(Long patientId);
 }

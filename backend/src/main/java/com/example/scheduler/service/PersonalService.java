@@ -12,8 +12,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface PersonalService {
-    Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, String role, Pageable pageable);
-    Page<PersonalResponse> findAllPersonal(Long specialtyId, Boolean isActive, Long roleId, Pageable pageable);
+    Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable);
+    Page<PersonalResponse> findAllPersonal(Long specialtyId, Boolean isActive, ERole role, Pageable pageable);
     PersonalResponse createPersonal(PersonalRegisterRequest request);
     PersonalResponse findPersonalById(Long personalId);
     PersonalResponse updatePersonalById(Long personalId, PersonalRequest request);

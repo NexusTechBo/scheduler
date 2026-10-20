@@ -1,9 +1,9 @@
 package com.example.scheduler.controller;
 
-import com.example.scheduler.dto.account.ProfileResponse;
+import com.example.scheduler.dto.personal.PersonalResponse;
+import com.example.scheduler.dto.personal.ProfileResponse;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
-import com.example.scheduler.security.SecurityUtils;
 import com.example.scheduler.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,7 +28,7 @@ public class AuthController {
 
     @GetMapping("/me")
     @Operation(summary = "GET /api/auth/me — profile of the authenticated user")
-    public ResponseEntity<ProfileResponse> findProfile(Authentication auth) {
-        return ResponseEntity.ok(authService.findProfile(Long.parseLong(auth.getName()), SecurityUtils.extractRole(auth)));
+    public ResponseEntity<PersonalResponse> findProfile(Authentication auth) {
+        return ResponseEntity.ok(authService.findProfile(Long.parseLong(auth.getName())));
     }
 }

@@ -13,15 +13,23 @@ import java.util.List;
 @Builder
 @EqualsAndHashCode(of = "id")
 @Entity
-@Table(name = "patients", uniqueConstraints = @UniqueConstraint(columnNames = {"patient_account_id"}))
+@Table(name = "patients")
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false,  fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "patient_account_id")
-    private Account account;
+    @Column(nullable = false, unique = true)
+    private String ci;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(unique = true)
+    private String phoneNumber;
 
     @Column(nullable = false)
     @Builder.Default
@@ -30,8 +38,4 @@ public class Patient {
     @ManyToMany(mappedBy = "patients",  fetch = FetchType.LAZY)
     @Builder.Default
     private List<Personal> doctors = new ArrayList<>();
-
-    @ManyToOne(optional = false,  fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id")
-    private Role role;
 }

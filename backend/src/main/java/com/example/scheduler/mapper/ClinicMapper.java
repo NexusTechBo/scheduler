@@ -13,5 +13,5 @@ public interface ClinicMapper {
     List<ClinicResponse> toResponseList(List<Clinic> clinics);
     ClinicResponse toResponse(Clinic clinic);
     @Mapping(target = "id", ignore = true)
-    Clinic toEntity(ClinicRequest request);
+    Clinic toEntity(ClinicRequest request, String subdomain);
 }

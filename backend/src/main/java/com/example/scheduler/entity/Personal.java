@@ -1,5 +1,6 @@
 package com.example.scheduler.entity;
 
+import com.example.scheduler.enums.ERole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,23 +14,37 @@ import java.util.List;
 @Builder
 @EqualsAndHashCode(of = "id")
 @Entity
-@Table(name = "personal", uniqueConstraints = @UniqueConstraint(columnNames = {"personal_account_id"}))
+@Table(name = "personal")
 public class Personal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false,  fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "personal_account_id")
-    private Account account;
+    @Column(nullable = false, unique = true, updatable = false)
+    private String username;
+
+    @Column(nullable = false, unique = true)
+    private String ci;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(unique = true)
+    private String phoneNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialty_id")
     private Specialty specialty;
 
-    @ManyToOne(optional = false,  fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id")
-    private Role role;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private ERole role;
 
     @Column(nullable = false)
     @Builder.Default

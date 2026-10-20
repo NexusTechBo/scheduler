@@ -9,11 +9,9 @@ import com.example.scheduler.mapper.*;
 import com.example.scheduler.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -26,11 +24,9 @@ public class FlowScheduleTool {
     private final PatientMapper patientMapper;
 
 
-    @Tool(description = "Step 1: Return the patient information", name = "getPatientUser")
-    public PatientResponse getPatientUser(){
-        var patientId = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
-        var patient = getPatientOrThrowById(Long.parseLong(patientId));
-        return patientMapper.toResponse(patient);
+    @Tool(description = "Step 1: Return the patient information by its phone number", name = "getPatientByPhoneNumber")
+    public PatientResponse getPatientByPhoneNumber(String phoneNumber){
+        return patientMapper.toResponse(getPatientOrThrowByPhoneNumber(phoneNumber));
     }
 
     @Tool(description = "Step 2: Return the specialties", name = "findAllSpecialties")
@@ -50,8 +46,8 @@ public class FlowScheduleTool {
                 .orElseThrow(() -> new ResourceNotFoundException("Specialty not found with id: " + specialtyId));
     }
 
-    private Patient getPatientOrThrowById(Long patientId) {
-        return patientRepository.findById(patientId)
+    private Patient getPatientOrThrowByPhoneNumber(String phoneNumber) {
+        return patientRepository.findByPhoneNumber(phoneNumber == null ? null : phoneNumber.strip())
                 .orElseThrow(() -> new  ResourceNotFoundException("Patient not found"));
     }
 }

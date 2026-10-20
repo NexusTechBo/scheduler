@@ -17,10 +17,8 @@ import java.util.Optional;
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
     @Query("SELECT a FROM Appointment a " +
             "JOIN FETCH a.doctor d " +
-            "JOIN FETCH d.account ad " +
-            "JOIN FETCH d.specialty sp " +
+            "LEFT JOIN FETCH d.specialty sp " +
             "JOIN FETCH a.patient p " +
-            "JOIN FETCH p.account ap " +
             "WHERE (:doctorId IS NULL OR a.doctor.id = :doctorId) AND " +
             "(:patientId IS NULL OR a.patient.id = :patientId) AND " +
             "(:status IS NULL OR a.status = :status)")
@@ -28,9 +26,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     @Query("SELECT a FROM Appointment a  " +
             "JOIN FETCH a.doctor d " +
-            "JOIN FETCH d.account ad " +
             "JOIN FETCH a.patient p " +
-            "JOIN FETCH p.account ap " +
             "WHERE (:doctorId IS NULL OR a.doctor.id = :doctorId) AND " +
             "(:patientId IS NULL OR a.patient.id = :patientId) AND " +
             "a.startTime >= :from AND a.startTime < :to " +
@@ -69,6 +65,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     );
 
     @NullMarked
-    @EntityGraph(attributePaths = {"doctor.specialty", "doctor.account", "patient.account"})
+    @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
     Optional<Appointment> findById(Long id);
 }

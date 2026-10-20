@@ -6,19 +6,32 @@ CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.specialties (
 
 CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.personal (
     id BIGSERIAL PRIMARY KEY,
-    personal_account_id BIGINT NOT NULL REFERENCES public.accounts(id),
+    username VARCHAR(255) NOT NULL,
+    ci VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(255),
     specialty_id BIGINT REFERENCES ${flyway:defaultSchema}.specialties(id),
-    role_id BIGINT NOT NULL REFERENCES public.roles(id),
+    role VARCHAR(50) NOT NULL
+        CHECK (role IN ('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')),
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT uq_${flyway:defaultSchema}_personal_account UNIQUE (personal_account_id)
+    CONSTRAINT uq_${flyway:defaultSchema}_personal_username UNIQUE (username),
+    CONSTRAINT uq_${flyway:defaultSchema}_personal_ci UNIQUE (ci),
+    CONSTRAINT uq_${flyway:defaultSchema}_personal_email UNIQUE (email),
+    CONSTRAINT uq_${flyway:defaultSchema}_personal_phone_number UNIQUE (phone_number)
 );
 
 CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.patients (
     id BIGSERIAL PRIMARY KEY,
-    patient_account_id BIGINT NOT NULL REFERENCES public.accounts(id),
-    role_id BIGINT NOT NULL REFERENCES public.roles(id),
+    ci VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(255),
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT uq_${flyway:defaultSchema}_patients_account UNIQUE (patient_account_id)
+    CONSTRAINT uq_${flyway:defaultSchema}_patients_ci UNIQUE (ci),
+    CONSTRAINT uq_${flyway:defaultSchema}_patients_email UNIQUE (email),
+    CONSTRAINT uq_${flyway:defaultSchema}_patients_phone_number UNIQUE (phone_number)
 );
 
 CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.appointments (
@@ -28,9 +41,14 @@ CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.appointments (
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    cancellation_reason VARCHAR(500),
     version BIGINT,
     created_at TIMESTAMP NOT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_${flyway:defaultSchema}_appointments_doctor_start_active
+    ON ${flyway:defaultSchema}.appointments (doctor_id, start_time)
+    WHERE status <> 'CANCELLED';
 
 CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.doctor_availabilities (
     id BIGSERIAL PRIMARY KEY,
@@ -58,10 +76,3 @@ CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.doctor_patient (
     PRIMARY KEY (doctor_id, patient_id)
 );
 
-INSERT INTO ${flyway:defaultSchema}.specialties (id, name) VALUES (1, 'None') ON CONFLICT (id) DO NOTHING;
-
-SELECT setval(
-    pg_get_serial_sequence('${flyway:defaultSchema}.specialties', 'id'),
-    (SELECT MAX(id) FROM ${flyway:defaultSchema}.specialties),
-    true
-);

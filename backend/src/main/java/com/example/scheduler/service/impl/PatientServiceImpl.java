@@ -1,26 +1,19 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.dto.patient.PatientRegisterRequest;
 import com.example.scheduler.dto.patient.PatientRequest;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
-import com.example.scheduler.entity.Account;
 import com.example.scheduler.entity.Patient;
-import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
-import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
-import com.example.scheduler.repository.AccountRepository;
 import com.example.scheduler.repository.PatientRepository;
-import com.example.scheduler.repository.RoleRepository;
 import com.example.scheduler.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -33,11 +26,8 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
-    private final RoleRepository  roleRepository;
-    private final AccountRepository accountRepository;
     private final PatientMapper patientMapper;
     private final PersonalMapper personalMapper;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Page<PatientResponse> findAllPatients(Pageable pageable) {
@@ -46,30 +36,14 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional
-    public PatientResponse createPatient(PatientRegisterRequest request) {
-        var phoneNumber = normalizePhoneNumber(request.phoneNumber());
-        var account = accountRepository.findByCi(request.ci())
-                .orElseGet(() -> {
-                    if(accountRepository.existsByEmail(request.email()))
-                        throw new BadRequestException("Account with email " + request.email() + " already exists");
-                    verifyPhoneNumberFree(phoneNumber);
-                    return Account.builder()
-                            .name(request.name())
-                            .password(passwordEncoder.encode(request.password()))
-                            .email(request.email())
-                            .phoneNumber(phoneNumber)
-                            .ci(request.ci())
-                            .build();
-                });
-        if (account.getId() != null)
-            if (patientRepository.existsByAccountCi(request.ci()))
-                throw new BusinessException("This user already exists");
-        var role = roleRepository.getByName(ERole.PATIENT);
-        var patient = Patient.builder()
-                .account(account)
-                .role(role)
-                .build();
-        return patientMapper.toResponse(patientRepository.save(patient));
+    public PatientResponse createPatient(PatientRequest request) {
+        if (patientRepository.existsByCi(request.ci()))
+            throw new BusinessException("This patient already exists");
+        if (patientRepository.existsByEmail(request.email()))
+            throw new BadRequestException("Patient with email " + request.email() + " already exists");
+        if (request.phoneNumber() != null && patientRepository.existsByPhoneNumber(request.phoneNumber()))
+            throw new BusinessException("Patient with phone number " + request.phoneNumber() + " already exists");
+        return patientMapper.toResponse(patientRepository.save(patientMapper.toEntity(request)));
     }
 
     @Override
@@ -81,11 +55,12 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public PatientResponse updatePatientById(Long patientId, PatientRequest request) {
         var patient = getPatientOrThrowById(patientId);
-        request = new PatientRequest(request.name(), request.email(), normalizePhoneNumber(request.phoneNumber()));
-        if(!patient.getAccount().getEmail().equals(request.email()) && accountRepository.existsByEmail(request.email()))
-            throw new BadRequestException("Account with email " + request.email() + " already exists");
-        if (!Objects.equals(patient.getAccount().getPhoneNumber(), request.phoneNumber()))
-            verifyPhoneNumberFree(request.phoneNumber());
+        if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
+            throw new BusinessException("This patient already exists");
+        if (!patient.getEmail().equals(request.email()) && patientRepository.existsByEmail(request.email()))
+            throw new BadRequestException("Patient with email " + request.email() + " already exists");
+        if (request.phoneNumber() != null && !patient.getPhoneNumber().equals(request.phoneNumber()) && patientRepository.existsByPhoneNumber(request.phoneNumber()))
+            throw new BusinessException("Patient with phone number " + request.phoneNumber() + " already exists");
         patientMapper.toEntityUpdated(request, patient);
         return patientMapper.toResponse(patientRepository.save(patient));
     }
@@ -99,20 +74,9 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public List<PersonalResponse> getDoctorsOfPatient(Long patientId, Long userId, String role) {
-        if (ERole.PATIENT.name().equals(role) && !patientId.equals(userId))
-            throw new ForbiddenException("Not authorize to do this");
+    public List<PersonalResponse> getDoctorsOfPatient(Long patientId) {
         var patient = getPatientDoctorsOrThrowById(patientId);
         return personalMapper.toResponseList(patient.getDoctors());
-    }
-
-    private static String normalizePhoneNumber(String phoneNumber) {
-        return StringUtils.hasText(phoneNumber) ? phoneNumber.strip() : null;
-    }
-
-    private void verifyPhoneNumberFree(String phoneNumber) {
-        if (phoneNumber != null && accountRepository.existsByPhoneNumber(phoneNumber))
-            throw new BusinessException("Account with phone number " + phoneNumber + " already exists");
     }
 
     private Patient getPatientOrThrowById(Long patientId) {
