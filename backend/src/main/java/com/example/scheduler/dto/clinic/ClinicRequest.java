@@ -9,6 +9,9 @@ import jakarta.validation.constraints.Size;
 public record ClinicRequest(
         @NotBlank
         String name,
+        @NotNull
+        @Pattern(regexp = "^[a-z0-9]{3,50}$", message = "must be 3-50 characters: lowercase letters or digits")
+        String subdomain,
         @NotBlank
         String phoneNumber,
         @NotBlank

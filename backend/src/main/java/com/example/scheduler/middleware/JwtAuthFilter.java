@@ -39,7 +39,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     var role = claims.get("role", String.class);
                     var userId = Long.valueOf(claims.getSubject());
                     try {
-                        if (!activeUserChecker.isActive(userId)) return;
+                        if (!activeUserChecker.isActive(userId, role)) return;
                     } catch (DataAccessException e) {
                         log.warn("Active user lookup failed for user {}: {}", userId, e.getMessage());
                         return;

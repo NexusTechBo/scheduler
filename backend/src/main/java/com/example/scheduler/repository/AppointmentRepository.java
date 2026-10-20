@@ -57,6 +57,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("excludedStatuses") List<AppointmentStatus> excludedStatuses
     );
 
+    boolean existsByDoctorIdAndStatusNotAndStartTimeAfter(Long doctorId, AppointmentStatus status, LocalDateTime time);
+
     List<Appointment> findByDoctorIdAndStartTimeBetweenAndStatusNot(
             Long doctorId,
             LocalDateTime start,

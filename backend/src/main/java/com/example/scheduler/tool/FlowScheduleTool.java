@@ -47,7 +47,7 @@ public class FlowScheduleTool {
     }
 
     private Patient getPatientOrThrowByPhoneNumber(String phoneNumber) {
-        return patientRepository.findByPhoneNumber(phoneNumber == null ? null : phoneNumber.strip())
+        return patientRepository.findByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new  ResourceNotFoundException("Patient not found"));
     }
 }

@@ -11,12 +11,12 @@ import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
 import com.example.scheduler.repository.PatientRepository;
 import com.example.scheduler.service.PatientService;
+import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -41,9 +41,16 @@ public class PatientServiceImpl implements PatientService {
             throw new BusinessException("This patient already exists");
         if (patientRepository.existsByEmail(request.email()))
             throw new BadRequestException("Patient with email " + request.email() + " already exists");
-        if (request.phoneNumber() != null && patientRepository.existsByPhoneNumber(request.phoneNumber()))
-            throw new BusinessException("Patient with phone number " + request.phoneNumber() + " already exists");
-        return patientMapper.toResponse(patientRepository.save(patientMapper.toEntity(request)));
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        if (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException("Patient with phone number " + phoneNumber + " already exists");
+        var patient = Patient.builder()
+                .ci(request.ci())
+                .name(request.name())
+                .email(request.email())
+                .phoneNumber(phoneNumber)
+                .build();
+        return patientMapper.toResponse(patientRepository.save(patient));
     }
 
     @Override
@@ -57,11 +64,12 @@ public class PatientServiceImpl implements PatientService {
         var patient = getPatientOrThrowById(patientId);
         if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
             throw new BusinessException("This patient already exists");
-        if (!patient.getEmail().equals(request.email()) && patientRepository.existsByEmail(request.email()))
+        if (!Objects.equals(patient.getEmail(), request.email()) && patientRepository.existsByEmail(request.email()))
             throw new BadRequestException("Patient with email " + request.email() + " already exists");
-        if (request.phoneNumber() != null && !patient.getPhoneNumber().equals(request.phoneNumber()) && patientRepository.existsByPhoneNumber(request.phoneNumber()))
-            throw new BusinessException("Patient with phone number " + request.phoneNumber() + " already exists");
-        patientMapper.toEntityUpdated(request, patient);
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        if (phoneNumber != null && !Objects.equals(patient.getPhoneNumber(), phoneNumber) && patientRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException("Patient with phone number " + phoneNumber + " already exists");
+        patientMapper.toEntityUpdated(request, patient, phoneNumber);
         return patientMapper.toResponse(patientRepository.save(patient));
     }
 

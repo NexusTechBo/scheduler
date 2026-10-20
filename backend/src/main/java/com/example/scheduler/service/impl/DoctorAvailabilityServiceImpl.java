@@ -43,8 +43,11 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Override
     @Transactional
     public DoctorAvailabilityResponse addDoctorAvailability(Long doctorId, DoctorAvailabilityRequest request) {
-        var doctor = personalRepository.findById(doctorId)
+        // Locks the doctor row so this serializes with booking and with an admin role change.
+        var doctor = personalRepository.findByIdForUpdate(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
+        if (doctor.getRole() != ERole.DOCTOR || !doctor.isActive())
+            throw new ForbiddenException("Only an active doctor can add availabilities");
         if (request.startTime().isAfter(request.endTime()) || request.startTime().equals(request.endTime()))
             throw new BadRequestException("The end time must be after the start time");
         var overlaps = doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, request.dayOfWeek()).stream()
@@ -59,7 +62,6 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
                 .startTime(request.startTime())
                 .endTime(request.endTime())
                 .slotDurationMinutes(request.slotDurationMinutes())
-                .active(true)
                 .build();
         return mapper.toResponse(doctorAvailabilityRepository.save(availability));
     }

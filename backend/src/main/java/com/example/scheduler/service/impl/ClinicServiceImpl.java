@@ -4,6 +4,7 @@ import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.clinic.ClinicCreatedResponse;
 import com.example.scheduler.dto.clinic.ClinicRequest;
 import com.example.scheduler.dto.clinic.ClinicResponse;
+import com.example.scheduler.entity.Clinic;
 import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BusinessException;
@@ -12,7 +13,6 @@ import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.service.ClinicService;
 import com.example.scheduler.service.SchemaProvisioningService;
-import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,14 +34,18 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
-        var clinicName = request.name().strip();
-        if (clinicRepository.existsByNameIgnoreCase(clinicName))
+        if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
             throw new BusinessException("A clinic with this name already exists");
-        var subdomain = Utils.subdomainFor(clinicName);
+        var subdomain = "@" + request.subdomain() + ".com";
+        if (clinicRepository.existsBySubdomain(subdomain))
+            throw new BusinessException("The subdomain " + subdomain + " is already taken");
         var tx = new TransactionTemplate(transactionManager);
         var clinic = tx.execute(_ -> {
-            var entity = clinicMapper.toEntity(request, subdomain);
-            return clinicRepository.save(entity);
+            return clinicRepository.save(Clinic.builder()
+                    .name(request.name())
+                    .phoneNumber(request.phoneNumber())
+                    .subdomain(subdomain)
+                    .build());
         });
         var schemaName = "clinic_" + clinic.getId();
         schemaProvisioningService.createTenantSchema(schemaName);

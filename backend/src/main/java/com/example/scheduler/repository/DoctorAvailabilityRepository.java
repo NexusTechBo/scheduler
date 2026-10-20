@@ -15,4 +15,5 @@ public interface DoctorAvailabilityRepository extends JpaRepository<DoctorAvaila
     List<DoctorAvailability> findByDoctorIdAndDayOfWeekAndActiveTrue(Long doctorId, DayOfWeek dayOfWeek);
     @EntityGraph(attributePaths = {"doctor.specialty"})
     Optional<DoctorAvailability> findByIdAndActiveIsTrue(Long id);
+    boolean existsByDoctorIdAndActiveTrue(Long doctorId);
 }

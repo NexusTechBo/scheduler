@@ -5,7 +5,6 @@ import com.example.scheduler.entity.*;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.SchemaProvisioningService;
-import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.boot.ApplicationArguments;
@@ -31,8 +30,8 @@ public class DataSeeder implements ApplicationRunner {
     public void run(@NonNull ApplicationArguments args) {
         if (clinicRepository.count() > 0) return;
 
-        Clinic downtown = clinicRepository.save(Clinic.builder().name("Downtown Clinic").phoneNumber("+1-555-2001").subdomain(Utils.subdomainFor("Downtown Clinic")).build());
-        Clinic uptown = clinicRepository.save(Clinic.builder().name("Uptown Clinic").phoneNumber("+1-555-2002").subdomain(Utils.subdomainFor("Uptown Clinic")).build());
+        Clinic downtown = clinicRepository.save(Clinic.builder().name("Downtown Clinic").phoneNumber("+1-555-2001").subdomain("@downtownclinic.com").build());
+        Clinic uptown = clinicRepository.save(Clinic.builder().name("Uptown Clinic").phoneNumber("+1-555-2002").subdomain("@uptownclinic.com").build());
 
         String pwd = passwordEncoder.encode("password123");
 

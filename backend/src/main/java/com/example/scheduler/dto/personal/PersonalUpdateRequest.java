@@ -6,30 +6,24 @@ import com.example.scheduler.validator.specialtyRole.SpecialtyRoleMatch;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/** Body an administrator sends to update another staff member; {@code password} resets it when present. */
 @SpecialtyRoleMatch(
         first = "role",
         second = "specialtyId"
 )
-public record PersonalRegisterRequest(
-        @NotNull
-        @Pattern(regexp = "^[a-z0-9._-]{3,50}$", message = "must be 3-50 characters: lowercase letters, digits, '.', '_' or '-'")
-        String username,
+public record PersonalUpdateRequest(
         @NotBlank
         String name,
         @NotBlank
         @Email
         String email,
-        @NotBlank
-        String ci,
-        @NotBlank
-        @Size(min = 8)
-        String password,
         String phoneNumber,
+        Long specialtyId,
         @NotNull
         @ValidRole
         ERole role,
-        Long specialtyId
+        @Size(min = 8)
+        String password
 ) {}

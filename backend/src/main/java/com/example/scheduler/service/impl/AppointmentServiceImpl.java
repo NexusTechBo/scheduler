@@ -116,7 +116,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
             throw new BusinessException("This appointment is already cancelled");
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointment.setCancellationReason(request.reason().strip());
+        appointment.setCancellationReason(request.reason());
         return appointmentMapper.toResponse(saveAndNotify(appointment));
     }
 

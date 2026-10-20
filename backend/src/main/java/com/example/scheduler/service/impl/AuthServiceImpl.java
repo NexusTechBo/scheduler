@@ -4,8 +4,7 @@ import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
-import com.example.scheduler.dto.personal.ProfileResponse;
-import com.example.scheduler.entity.Personal;
+import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.exception.UnauthorizedException;
 import com.example.scheduler.mapper.PersonalMapper;
@@ -14,6 +13,7 @@ import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.security.JwtUtil;
 import com.example.scheduler.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,19 +32,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        var username = request.username().strip().toLowerCase(Locale.ROOT);
+        var username = request.username().toLowerCase(Locale.ROOT);
         var at = username.lastIndexOf('@');
-        var clinic = clinicRepository.findBySubdomain(username.substring(at)).orElse(null);
-        if (clinic == null)
-            throw new UnauthorizedException("Invalid Credentials");
+        if (at < 0)
+            throw new BadRequestException("Invalid Credentials");
+        var clinic = clinicRepository.findBySubdomain(username.substring(at))
+                .orElseThrow(() -> new UnauthorizedException("Invalid Credentials"));
         try {
             TenantContext.setCurrentTenant("clinic_" + clinic.getId());
             var personal = personalRepository.findByUsername(username)
                     .orElseThrow(() -> new UnauthorizedException("Invalid Credentials"));
+            if (!personal.isActive())
+                throw new UnauthorizedException("You user is not active");
             if (!passwordEncoder.matches(request.password(), personal.getPassword()))
                 throw new UnauthorizedException("Invalid Credentials");
-            if (!personal.isActive())
-                throw new UnauthorizedException("You user is not active.");
             return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic.getId(), personal.getName()));
         } finally {
             TenantContext.clear();

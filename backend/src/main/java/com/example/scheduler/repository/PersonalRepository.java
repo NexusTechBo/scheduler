@@ -61,5 +61,5 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    boolean existsByIdAndActiveTrue(Long id);
+    boolean existsByIdAndActiveTrueAndRole(Long id, ERole role);
 }

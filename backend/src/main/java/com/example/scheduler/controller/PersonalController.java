@@ -2,8 +2,9 @@ package com.example.scheduler.controller;
 
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
-import com.example.scheduler.dto.personal.PersonalRegisterRequest;
 import com.example.scheduler.dto.personal.PersonalRequest;
+import com.example.scheduler.dto.personal.PersonalUpdateRequest;
+import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.SecurityUtils;
@@ -57,7 +58,7 @@ public class PersonalController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
     @Operation(summary = "POST /api/personal/{personalId} — create a personal user")
-    public ResponseEntity<PersonalResponse> createPersonal(@Valid @RequestBody PersonalRegisterRequest request){
+    public ResponseEntity<PersonalResponse> createPersonal(@Valid @RequestBody PersonalRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(personalService.createPersonal(request));
     }
 
@@ -70,16 +71,16 @@ public class PersonalController {
 
     @PutMapping("/update/{personalId}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
-    @Operation(summary = "PUT /api/personal/{personalId} — update a personal by id")
-    public ResponseEntity<PersonalResponse> updatePersonalById(@PathVariable Long personalId, @Valid @RequestBody PersonalRequest request) {
-        return ResponseEntity.ok(personalService.updatePersonalById(personalId, request));
+    @Operation(summary = "PUT /api/personal/update/{personalId} — admin updates another doctor/assistant (name, email, phone, specialty, role, optional password reset)")
+    public ResponseEntity<PersonalResponse> updatePersonalByAdmin(@PathVariable Long personalId, @Valid @RequestBody PersonalUpdateRequest request) {
+        return ResponseEntity.ok(personalService.updatePersonalByAdmin(personalId, request));
     }
 
     @PutMapping("/update")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'ASSISTANT')")
-    @Operation(summary = "PUT /api/personal — update self personal information")
-    public ResponseEntity<PersonalResponse> updatePersonalProfile(@Valid @RequestBody PersonalRequest request, Authentication auth) {
-        return ResponseEntity.ok(personalService.updatePersonalById(Long.parseLong(auth.getName()), request));
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')")
+    @Operation(summary = "PUT /api/personal/update — update own profile (name, email, phone, password with current password)")
+    public ResponseEntity<PersonalResponse> updateOwnProfile(@Valid @RequestBody PersonalProfileUpdateRequest request, Authentication auth) {
+        return ResponseEntity.ok(personalService.updateOwnProfile(Long.parseLong(auth.getName()), request));
     }
 
     @DeleteMapping("/{personalId}")

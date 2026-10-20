@@ -3,10 +3,12 @@ package com.example.scheduler.service.impl;
 import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
-import com.example.scheduler.dto.personal.PersonalRegisterRequest;
 import com.example.scheduler.dto.personal.PersonalRequest;
+import com.example.scheduler.dto.personal.PersonalUpdateRequest;
+import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
 import com.example.scheduler.entity.*;
+import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
@@ -16,14 +18,16 @@ import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.PersonalService;
+import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,6 +42,9 @@ public class PersonalServiceImpl implements PersonalService {
     private final PersonalMapper personalMapper;
     private final PatientMapper patientMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AppointmentRepository appointmentRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final Clock clock;
 
     @Override
     public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
@@ -56,7 +63,7 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     @Transactional
-    public PersonalResponse createPersonal(PersonalRegisterRequest request) {
+    public PersonalResponse createPersonal(PersonalRequest request) {
         var username = request.username() + getCurrentClinic().getSubdomain();
         if (personalRepository.existsByUsername(username))
             throw new BusinessException("The username " + username + " is already taken");
@@ -64,15 +71,16 @@ public class PersonalServiceImpl implements PersonalService {
             throw new BusinessException("This personal already exists");
         if (personalRepository.existsByEmail(request.email()))
             throw new BadRequestException("Personal with email " + request.email() + " already exists");
-        if (request.phoneNumber() != null && personalRepository.existsByPhoneNumber(request.phoneNumber()))
-            throw new BusinessException("Personal with phone number " + request.phoneNumber() + " already exists");
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        if (phoneNumber != null && personalRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException("Personal with phone number " + phoneNumber + " already exists");
         var personal = Personal.builder()
                 .username(username)
                 .ci(request.ci())
                 .name(request.name())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .phoneNumber(request.phoneNumber())
+                .phoneNumber(phoneNumber)
                 .role(request.role())
                 .specialty(getSpecialtyOrThrowById(request.specialtyId()))
                 .build();
@@ -86,19 +94,46 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     @Transactional
-    public PersonalResponse updatePersonalById(Long personalId, PersonalRequest request) {
-        var personal = getPersonalOrThrowById(personalId);
-        if(!personal.getEmail().equals(request.email()) && personalRepository.existsByEmail(request.email()))
-            throw new BadRequestException("Personal with email " + request.email() + " already exists");
-        if (request.phoneNumber() != null && !personal.getPhoneNumber().equals(request.phoneNumber()) && personalRepository.existsByPhoneNumber(request.phoneNumber()))
-            throw new BusinessException("Personal with phone number " + request.phoneNumber() + " already exists");
-        personalMapper.toEntityUpdated(request, personal);
-        if (request.specialtyId() != null) {
-            if (personal.getRole() != ERole.DOCTOR)
-                throw new BadRequestException("Only doctors can have a specialty");
-            personal.setSpecialty(getSpecialtyOrThrowById(request.specialtyId()));
+    public PersonalResponse updatePersonalByAdmin(Long personalId, PersonalUpdateRequest request) {
+        var personal = personalRepository.findByIdForUpdate(personalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Personal not found with id: " + personalId));
+        if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT) {
+            var now = LocalDateTime.now(clock);
+            if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(personalId, AppointmentStatus.CANCELLED, now))
+                throw new BusinessException("The doctor has upcoming appointments; cancel them before changing the role");
+            if (doctorAvailabilityRepository.existsByDoctorIdAndActiveTrue(personalId))
+                throw new BusinessException("The doctor has active availabilities; remove them before changing the role");
         }
+        updateContactData(personal, request.name(), request.email(), request.phoneNumber());
+        personal.setRole(request.role());
+        personal.setSpecialty(getSpecialtyOrThrowById(request.specialtyId()));
+        if (request.password() != null)
+            personal.setPassword(passwordEncoder.encode(request.password()));
         return personalMapper.toResponse(personalRepository.save(personal));
+    }
+
+    @Override
+    @Transactional
+    public PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request) {
+        var personal = getPersonalOrThrowById(userId);
+        if (request.newPassword() != null) {
+            if (request.currentPassword() == null || !passwordEncoder.matches(request.currentPassword(), personal.getPassword()))
+                throw new BadRequestException("The current password is incorrect");
+            personal.setPassword(passwordEncoder.encode(request.newPassword()));
+        }
+        updateContactData(personal, request.name(), request.email(), request.phoneNumber());
+        return personalMapper.toResponse(personalRepository.save(personal));
+    }
+
+    private void updateContactData(Personal personal, String name, String email, String rawPhoneNumber) {
+        if (!Objects.equals(personal.getEmail(), email) && personalRepository.existsByEmail(email))
+            throw new BadRequestException("Personal with email " + email + " already exists");
+        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber);
+        if (phoneNumber != null && !Objects.equals(personal.getPhoneNumber(), phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException("Personal with phone number " + phoneNumber + " already exists");
+        personal.setName(name);
+        personal.setEmail(email);
+        personal.setPhoneNumber(phoneNumber);
     }
 
     @Override

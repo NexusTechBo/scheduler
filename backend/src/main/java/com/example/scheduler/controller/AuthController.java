@@ -1,7 +1,6 @@
 package com.example.scheduler.controller;
 
 import com.example.scheduler.dto.personal.PersonalResponse;
-import com.example.scheduler.dto.personal.ProfileResponse;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.service.AuthService;

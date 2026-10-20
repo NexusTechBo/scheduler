@@ -35,7 +35,7 @@ public class ScheduleExceptionController {
     @PreAuthorize("hasRole('DOCTOR')")
     @Operation(summary = "GET /api/scheduleException — list the current doctor's blocks from ?from={date} (default today)")
     public ResponseEntity<List<ScheduleExceptionResponse>> findDoctorScheduleExceptions(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             Authentication auth) {
         return ResponseEntity.ok(scheduleExceptionService.findDoctorScheduleExceptions(Long.parseLong(auth.getName()), from));
     }

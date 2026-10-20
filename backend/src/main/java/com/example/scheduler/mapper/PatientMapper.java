@@ -13,10 +13,7 @@ public interface PatientMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "doctors", ignore = true)
-    Patient toEntity(PatientRequest request);
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "active", ignore = true)
-    @Mapping(target = "doctors", ignore = true)
-    void toEntityUpdated(PatientRequest request, @MappingTarget Patient patient);
+    @Mapping(target = "phoneNumber", source = "phoneNumber")
+    void toEntityUpdated(PatientRequest request, @MappingTarget Patient patient, String phoneNumber);
     List<PatientResponse> toResponseList(List<Patient> patients);
 }
