@@ -57,7 +57,7 @@ public class PersonalController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
-    @Operation(summary = "POST /api/personal/{personalId} — create a personal user")
+    @Operation(summary = "POST /api/personal — create a personal user")
     public ResponseEntity<PersonalResponse> createPersonal(@Valid @RequestBody PersonalRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(personalService.createPersonal(request));
     }

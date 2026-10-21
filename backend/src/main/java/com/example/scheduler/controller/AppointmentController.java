@@ -57,21 +57,7 @@ public class AppointmentController {
             @PageableDefault(sort = "startTime", direction = Sort.Direction.ASC) Pageable pageable,
             Authentication auth
     ) {
-        var role = SecurityUtils.extractRole(auth);
-        if(role.equals(ERole.DOCTOR.name())){
-            return ResponseEntity.ok(appointmentService.findAllAppointments(
-                    Long.parseLong(auth.getName()),
-                    patientId,
-                    status,
-                    pageable)
-            );
-        }
-        return ResponseEntity.ok(appointmentService.findAllAppointments(
-                doctorId,
-                patientId,
-                status,
-                pageable)
-        );
+        return ResponseEntity.ok(appointmentService.findAllAppointments(scopedDoctorId(doctorId, auth), patientId, status, pageable));
     }
 
     @PatchMapping("/{appointmentId}/confirm")
@@ -92,52 +78,29 @@ public class AppointmentController {
     }
 
     @GetMapping("/board")
-    @Operation(summary = "GET /api/appointments/board — appointments grouped by status, filtered by ?from={date}&to={date}&doctorId={id}&clientId={id}")
+    @Operation(summary = "GET /api/appointments/board — appointments grouped by status, filtered by ?from={date}&to={date}&doctorId={id}&patientId={id}")
     public ResponseEntity<Map<AppointmentStatus, List<AppointmentSummaryItem>>> getBoardByRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) Long doctorId,
             @RequestParam(required = false) Long patientId,
             Authentication auth) {
-        var role = SecurityUtils.extractRole(auth);
-        if(role.equals(ERole.DOCTOR.name())){
-            return ResponseEntity.ok(appointmentService.getBoardByRange(
-                    from,
-                    to,
-                    Long.parseLong(auth.getName()),
-                    patientId)
-            );
-        }
-        return ResponseEntity.ok(appointmentService.getBoardByRange(
-                from,
-                to,
-                doctorId,
-                patientId)
-        );
+        return ResponseEntity.ok(appointmentService.getBoardByRange(from, to, scopedDoctorId(doctorId, auth), patientId));
     }
 
     @GetMapping("/calendar")
-    @Operation(summary = "GET /api/appointments/calendar — appointments grouped by day, filtered by ?month={month}&year={year}&doctorId={id}&clientId={id}")
+    @Operation(summary = "GET /api/appointments/calendar — appointments grouped by day, filtered by ?month={month}&year={year}&doctorId={id}&patientId={id}")
     public ResponseEntity<Map<String, List<AppointmentSummaryItem>>> getCalendar(
             @RequestParam @Min(1) @Max(12) int month,
             @RequestParam @Min(1900) @Max(9999) int year,
             @RequestParam(required = false) Long doctorId,
             @RequestParam(required = false) Long patientId,
             Authentication auth) {
-        var role = SecurityUtils.extractRole(auth);
-        if(role.equals(ERole.DOCTOR.name())){
-            return ResponseEntity.ok(appointmentService.getCalendar(
-                    month,
-                    year,
-                    Long.parseLong(auth.getName()),
-                    patientId)
-            );
-        }
-        return ResponseEntity.ok(appointmentService.getCalendar(
-                month,
-                year,
-                doctorId,
-                patientId)
-        );
+        return ResponseEntity.ok(appointmentService.getCalendar(month, year, scopedDoctorId(doctorId, auth), patientId));
+    }
+
+    /** A DOCTOR only sees its own appointments, so the doctorId filter is forced to the caller. */
+    private static Long scopedDoctorId(Long doctorId, Authentication auth) {
+        return ERole.DOCTOR.name().equals(SecurityUtils.extractRole(auth)) ? Long.parseLong(auth.getName()) : doctorId;
     }
 }

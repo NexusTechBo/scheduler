@@ -188,9 +188,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private void verifyPermission(Appointment appointment, Long userId, String role) {
-        if(role.equals(ERole.DOCTOR.name()))
+        if (ERole.DOCTOR.name().equals(role))
             if (!appointment.getDoctor().getId().equals(userId))
-                throw new ForbiddenException("Not authorize to do this");
+                throw new ForbiddenException("Not authorized to do this");
     }
 
     private boolean isBlocked(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {

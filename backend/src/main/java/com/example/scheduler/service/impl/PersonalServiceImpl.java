@@ -204,8 +204,8 @@ public class PersonalServiceImpl implements PersonalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
     }
 
-    public void verifyDoctorPermission(String role, Long accountId, Long userId) {
-        if (role.equals(ERole.DOCTOR.name()) && !accountId.equals(userId))
-            throw new ForbiddenException("Not authorize to do this");
+    private void verifyDoctorPermission(String role, Long accountId, Long userId) {
+        if (ERole.DOCTOR.name().equals(role) && !accountId.equals(userId))
+            throw new ForbiddenException("Not authorized to do this");
     }
 }

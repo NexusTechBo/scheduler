@@ -80,7 +80,7 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
         var scheduleException = scheduleExceptionRepository.findById(scheduleExceptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Schedule exception not found with id: " + scheduleExceptionId));
         if (!scheduleException.getDoctor().getId().equals(doctorId))
-            throw new ForbiddenException("Not authorize to do this");
+            throw new ForbiddenException("Not authorized to do this");
         scheduleExceptionRepository.delete(scheduleException);
     }
 

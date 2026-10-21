@@ -43,7 +43,6 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Override
     @Transactional
     public DoctorAvailabilityResponse addDoctorAvailability(Long doctorId, DoctorAvailabilityRequest request) {
-        // Locks the doctor row so this serializes with booking and with an admin role change.
         var doctor = personalRepository.findByIdForUpdate(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
         if (doctor.getRole() != ERole.DOCTOR || !doctor.isActive())
@@ -114,7 +113,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
         var availability = doctorAvailabilityRepository.findByIdAndActiveIsTrue(availabilityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Availability not found with id: " + availabilityId));
         if (!availability.getDoctor().getId().equals(doctorId))
-            throw new ForbiddenException("Not authorize to do this");
+            throw new ForbiddenException("Not authorized to do this");
         availability.setActive(false);
     }
 

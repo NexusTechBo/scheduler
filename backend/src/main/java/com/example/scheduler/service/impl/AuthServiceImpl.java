@@ -13,7 +13,6 @@ import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.security.JwtUtil;
 import com.example.scheduler.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
             var personal = personalRepository.findByUsername(username)
                     .orElseThrow(() -> new UnauthorizedException("Invalid Credentials"));
             if (!personal.isActive())
-                throw new UnauthorizedException("You user is not active");
+                throw new UnauthorizedException("Your user is not active");
             if (!passwordEncoder.matches(request.password(), personal.getPassword()))
                 throw new UnauthorizedException("Invalid Credentials");
             return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic.getId(), personal.getName()));

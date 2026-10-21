@@ -42,23 +42,23 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         var attrs = accessor.getSessionAttributes();
         if (header == null || !header.startsWith("Bearer "))
             throw new MessageDeliveryException("Missing bearer token");
-        jwtUtil.parse(header.substring(7)).ifPresent(claims -> {
-            var clinicId = claims.get("clinicId", Long.class);
-            TenantContext.setCurrentTenant("clinic_" + clinicId);
-            try {
-                if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), claims.get("role", String.class)))
-                    throw new MessageDeliveryException("Invalid token");
-            } finally {
-                TenantContext.clear();
-            }
-            if (attrs == null)
+        var claims = jwtUtil.parse(header.substring(7))
+                .orElseThrow(() -> new MessageDeliveryException("Invalid token"));
+        var clinicId = claims.get("clinicId", Long.class);
+        TenantContext.setCurrentTenant("clinic_" + clinicId);
+        try {
+            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), claims.get("role", String.class)))
                 throw new MessageDeliveryException("Invalid token");
-            attrs.put("clinicId", clinicId);
-            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class)));
-            accessor.setUser(
-                    new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities)
-            );
-        });
+        } finally {
+            TenantContext.clear();
+        }
+        if (attrs == null)
+            throw new MessageDeliveryException("Invalid token");
+        attrs.put("clinicId", clinicId);
+        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class)));
+        accessor.setUser(
+                new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities)
+        );
     }
 
     private void authorizeSubscription(StompHeaderAccessor accessor) {
