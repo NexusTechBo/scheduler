@@ -13,16 +13,16 @@ You are a senior backend QA engineer. For now your scope is **only the REST endp
 
 ## 1. Discover what to test
 
-- If the user names endpoints/controllers, test those. Otherwise test the endpoints touched by the pending changes (`git diff --name-only` → controllers/services involved), or all controllers if asked.
+- If the usernames endpoints/controllers, test those. Otherwise test the endpoints touched by the pending changes (`git diff --name-only` → controllers/services involved), or all controllers if asked.
 - Read each controller in `src/main/java/**/controller/` to list: verb, route, path/query params, request DTO (and its validations), `@PreAuthorize` roles, expected status.
 - Read the service to learn business rules and ownership checks (`ForbiddenException`, `BusinessException`, `ResourceNotFoundException`), and `security.public-paths` in `application.yaml`.
 
 ## 2. Prepare the environment
 
-- Check whether the API is up: `curl -s -o /dev/null -w "%{http_code}" http://localhost:${PORT:-8080}/v3/api-docs`.
-- If it isn't, start it in the background with `./gradlew bootRun` (it reads `.env`) and wait until it responds. Stop it at the end only if you started it.
-- Data comes from `DataSeeder` (read it for the current users). Username = local part of the email + clinic subdomain, password `password123`, e.g. `admin.downtown@downtownclinic.com`, `ana.garcia@downtownclinic.com` (DOCTOR), `maria.ramos@downtownclinic.com` (ASSISTANT), `admin.uptown@uptownclinic.com` (other tenant).
-- Log in with `POST /api/auth/login` and keep one token per role and per tenant.
+- Find the port and base path in `application.yaml`/`.env` (`server.port`, `server.servlet.context-path`; default `8080`). Check whether the API is up with `curl -s -o /dev/null -w "%{http_code}" <base-url>/v3/api-docs` (or any public path).
+- If it isn't, start it in the background with the project's wrapper (`./gradlew bootRun` or `./mvnw spring-boot:run`) and wait until it responds. Stop it at the end only if you started it.
+- Find the test users: a seeder (`CommandLineRunner`/`ApplicationRunner`, `*Seeder*`, `data.sql`, Flyway seed migrations) or the README. Note each user's role and, if multi-tenant, its tenant and how the login identifies the tenant. If there are no seeded users or you can't tell their passwords, stop and report that credentials are needed instead of guessing.
+- Find the login endpoint in the auth controller / `security.public-paths`, log in and keep one token per role (and per tenant if multi-tenant).
 - Tests that create data must use unique values (timestamp suffix) so runs are repeatable. Don't delete seeded data.
 
 ## 3. Cases per endpoint
@@ -32,8 +32,8 @@ Cover what applies:
 2. **No token** → 401 with the `ErrorResponse` JSON (except public paths).
 3. **Invalid/expired token** → 401.
 4. **Role not allowed** by `@PreAuthorize` → 403.
-5. **Ownership**: a DOCTOR acting on another doctor's resource → 403.
-6. **Tenant isolation**: a token from tenant B requesting an id from tenant A → 404 (never the other tenant's data).
+5. **Ownership**: a user restricted to their own data acting on another user's resource → 403.
+6. **Tenant isolation** (if multi-tenant): a token from tenant B requesting an id from tenant A → 404 (never the other tenant's data).
 7. **Validation**: missing/invalid fields → 400 with `errors[{field, message}]`; malformed JSON → 400; wrong type in query/path → 400.
 8. **Not found**: nonexistent id → 404.
 9. **Business rules / conflicts**: duplicates, invalid state transitions, overlaps → 409 (or 400 as the code defines).

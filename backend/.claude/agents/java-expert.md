@@ -30,7 +30,7 @@ The preloaded skills are the source of truth for how code is written here. Follo
 
 - Schema changes only through a **new** Flyway migration (`db/migration/public` or `db/migration/tenant` with `${flyway:defaultSchema}`); never edit an applied one. `ddl-auto` stays `none`.
 - Tenant-scoped entities never declare a schema; every `TenantContext.setCurrentTenant` is paired with `finally { TenantContext.clear(); }`; tenant switches use `TransactionTemplate`, not `@Transactional`.
-- Every protected endpoint has `@PreAuthorize`; ownership rules ("a DOCTOR only touches their own data") live in the service and throw `ForbiddenException`.
+- Every protected endpoint has `@PreAuthorize`; ownership rules ("a MEMBER only touches their own data") live in the service and throw `ForbiddenException`.
 - Errors are thrown as `ApiException` subclasses and rendered by `GlobalExceptionHandler`; no try/catch in controllers, no leaking internal messages.
 - All relations `LAZY`; the repository query fetches what the mapper reads (`JOIN FETCH` / `@EntityGraph`).
 - Role comparisons are null-safe (`ERole.X.name().equals(role)`); time comes from the injected `Clock`.

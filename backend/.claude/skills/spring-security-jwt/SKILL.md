@@ -19,7 +19,7 @@ runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.6'
 ## 1. Roles
 
 ```java
-public enum ERole { ADMINISTRATOR, DOCTOR, ASSISTANT }
+public enum ERole { ADMINISTRATOR, MEMBER, STAFF }
 ```
 Stored on the entity with `@Enumerated(EnumType.STRING)` + `CHECK (role IN (...))` in the migration.
 
@@ -192,11 +192,11 @@ With multi-tenancy the username carries the tenant (`john@acme.com` → the `@ac
 
 ## 8. Authorization
 
-- Coarse: `@PreAuthorize("hasAnyRole('ADMINISTRATOR', 'ASSISTANT')")` per endpoint.
+- Coarse: `@PreAuthorize("hasAnyRole('ADMINISTRATOR', 'STAFF')")` per endpoint.
 - Ownership (resource owner): in the service with `userId`/`role`, throwing `ForbiddenException`, in a `private` helper with a null-safe comparison:
   ```java
   private void verifyOwnership(String role, Long ownerId, Long userId) {
-      if (ERole.DOCTOR.name().equals(role) && !ownerId.equals(userId))
+      if (ERole.MEMBER.name().equals(role) && !ownerId.equals(userId))
           throw new ForbiddenException("Not authorized to do this");
   }
   ```

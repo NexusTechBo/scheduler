@@ -7,7 +7,7 @@ description: 'Schema-per-tenant multi-tenancy (one PostgreSQL schema per tenant)
 
 Model: a `public` schema with global data (the tenant registry: a `tenants` table with `id`, `name`, unique `subdomain`) + one `tenant_<id>` schema per tenant with identical tables. Hibernate asks for a connection per tenant and the provider runs `SET search_path TO tenant_<id>, public`. Tenant-scoped entities do **not** declare a schema; global ones use `@Table(schema = "public")`.
 
-Pick a prefix (`tenant_`, `org_`, `clinic_`...) and use it the same way everywhere. Below: `tenant_`.
+Pick a prefix (`tenant_`, `org_`, `company_`...) and use it the same way everywhere. Below: `tenant_`.
 
 ## 1. application.yaml
 

@@ -28,7 +28,7 @@ public @interface ValidRole {
         @Override
         public boolean isValid(ERole value, ConstraintValidatorContext context) {
             if (value == null) return true;
-            return value == ERole.ASSISTANT || value == ERole.DOCTOR;   // ADMINISTRATOR cannot be assigned via the API
+            return value == ERole.STAFF || value == ERole.MEMBER;   // ADMINISTRATOR cannot be assigned via the API
         }
     }
 }
@@ -50,88 +50,66 @@ public @interface AllowedValues {
         @Override public boolean isValid(Enum<?> v, ConstraintValidatorContext c) { return v == null || allowed.contains(v.name()); }
     }
 }
-// @AllowedValues({"DOCTOR", "ASSISTANT"}) ERole role
+// @AllowedValues({"MEMBER", "STAFF"}) ERole role
 ```
 
 ## 2. Class validator (rule across fields)
 
+Typed, no reflection: the validator receives the request itself. When the rule is used by several DTOs (e.g. create and update), the annotation declares a small nested `Request` interface with the accessors it needs; records implement it for free.
+
 ```java
 @Documented
-@Constraint(validatedBy = SpecialtyRoleMatch.SpecialtyRoleMatchValidator.class)
+@Constraint(validatedBy = TeamRoleMatch.TeamRoleMatchValidator.class)
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SpecialtyRoleMatch {
-    String message() default "";
-    String first();                       // name of the role field
-    String second();                      // name of the dependent field
+public @interface TeamRoleMatch {
+    String message() default "Invalid team for the given role";   // never empty
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ ElementType.TYPE })
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @interface List { SpecialtyRoleMatch[] value(); }    // allows repeating the annotation
+    // Implemented by the requests annotated with @TeamRoleMatch; record accessors satisfy it
+    interface Request {
+        ERole role();
+        Long teamId();
+    }
 
-    class SpecialtyRoleMatchValidator implements ConstraintValidator<SpecialtyRoleMatch, Object> {
-        private String firstField;
-        private String secondField;
-
+    class TeamRoleMatchValidator implements ConstraintValidator<TeamRoleMatch, Request> {
         @Override
-        public void initialize(SpecialtyRoleMatch a) {
-            this.firstField = a.first();
-            this.secondField = a.second();
-        }
-
-        @Override
-        public boolean isValid(Object value, ConstraintValidatorContext context) {
-            if (value == null) return true;
-            try {
-                var role = (ERole) getFieldValue(value, firstField);
-                var specialtyId = (Long) getFieldValue(value, secondField);
-                if (role == null) return true;
-                if (role == ERole.DOCTOR && specialtyId == null) {
-                    buildViolation(context, "The doctor role should have a specialty", secondField);
-                    return false;
-                }
-                if (role == ERole.ASSISTANT && specialtyId != null) {
-                    buildViolation(context, "Only doctors can have a specialty", secondField);
-                    return false;
-                }
-                return true;
-            } catch (Exception e) {
+        public boolean isValid(Request value, ConstraintValidatorContext context) {
+            if (value == null || value.role() == null) return true;
+            var existsTeam = value.teamId() != null;
+            if (value.role() == ERole.MEMBER && !existsTeam) {
+                buildViolation(context, "The member role should have a team");
                 return false;
             }
+            if (value.role() == ERole.STAFF && existsTeam) {
+                buildViolation(context, "Only members can have a team");
+                return false;
+            }
+            return true;
         }
 
         // Error attached to a specific field (shows up as `field` in the response, not as a global object error)
-        private void buildViolation(ConstraintValidatorContext context, String message, String node) {
+        private void buildViolation(ConstraintValidatorContext context, String errorMessage) {
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(message)
-                    .addPropertyNode(node)
+            context.buildConstraintViolationWithTemplate(errorMessage)
+                    .addPropertyNode("teamId")
                     .addConstraintViolation();
-        }
-
-        // Supports records (accessor name()) and POJOs (getName())
-        private Object getFieldValue(Object object, String fieldName) throws Exception {
-            var clazz = object.getClass();
-            try {
-                return clazz.getMethod(fieldName).invoke(object);
-            } catch (NoSuchMethodException ignored) {}
-            var getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-            return clazz.getMethod(getter).invoke(object);
         }
     }
 }
 ```
 Usage:
 ```java
-@SpecialtyRoleMatch(first = "role", second = "specialtyId")
-public record UserRequest(@NotNull @ValidRole ERole role, Long specialtyId, ...) {}
+@TeamRoleMatch
+public record UserRequest(@NotNull @ValidRole ERole role, Long teamId, ...) implements TeamRoleMatch.Request {}
 ```
 
-For a single DTO it is simpler and reflection-free to implement a typed validator `ConstraintValidator<Annotation, UserRequest>` and read `value.role()` directly. Use the reflective version only when the rule is reused across several DTOs (e.g. create and update).
+Rule used by a single DTO: skip the interface and type the validator against the DTO directly, `ConstraintValidator<Annotation, MyRequest>`, and read `value.field()` directly.
 
-Other typical cases with the same pattern: `@DateRange(start = "from", end = "to")` (start < end), `@FieldsMatch(first = "password", second = "confirmPassword")`, `@ConditionalRequired(when = "fullDay", equals = "false", required = {"startTime", "endTime"})`.
+Don't use reflection with field names as strings (`@X(first = "role", second = "teamId")`): a typo still compiles, and a `catch -> return false` turns it into a silent 400 with an empty message. The interface makes it a compile-time contract.
+
+Other typical cases with the same pattern: `@DateRange` (start before end), `@FieldsMatch` (password/confirmPassword), conditional required fields (a flag that makes other fields mandatory).
 
 ## 3. Messages with placeholders
 
@@ -144,6 +122,6 @@ Or externalize to `ValidationMessages.properties` with `message() default "{vali
 
 ```java
 var validator = Validation.buildDefaultValidatorFactory().getValidator();
-var violations = validator.validate(new UserRequest(ERole.DOCTOR, null, ...));
-assertThat(violations).extracting(v -> v.getPropertyPath().toString()).containsExactly("specialtyId");
+var violations = validator.validate(new UserRequest(ERole.MEMBER, null, ...));
+assertThat(violations).extracting(v -> v.getPropertyPath().toString()).containsExactly("teamId");
 ```

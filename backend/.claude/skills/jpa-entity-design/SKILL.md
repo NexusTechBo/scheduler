@@ -96,25 +96,25 @@ Owning side (the one you modify):
 ```java
 @ManyToMany(fetch = FetchType.LAZY)
 @JoinTable(
-    name = "doctor_patient",
-    joinColumns = @JoinColumn(name = "doctor_id"),
-    inverseJoinColumns = @JoinColumn(name = "patient_id"))
+    name = "user_project",
+    joinColumns = @JoinColumn(name = "user_id"),
+    inverseJoinColumns = @JoinColumn(name = "project_id"))
 @Builder.Default
-private List<Patient> patients = new ArrayList<>();
+private List<Project> projects = new ArrayList<>();
 ```
 Inverse side:
 ```java
-@ManyToMany(mappedBy = "patients", fetch = FetchType.LAZY)
+@ManyToMany(mappedBy = "projects", fetch = FetchType.LAZY)
 @Builder.Default
-private List<User> doctors = new ArrayList<>();
+private List<User> members = new ArrayList<>();
 ```
-Modify from the owner (`doctor.getPatients().add(patient); repository.save(doctor);`), checking `contains` first to avoid duplicates. `contains`/`remove` work because `equals` is by `id`. Use a `Set` if order doesn't matter and the collection is large.
+Modify from the owner (`user.getProjects().add(project); repository.save(user);`), checking `contains` first to avoid duplicates. `contains`/`remove` work because `equals` is by `id`. Use a `Set` if order doesn't matter and the collection is large.
 
 If the relation needs attributes (assignment date, role) → an explicit join entity with two `@ManyToOne`, not `@ManyToMany`.
 
 ### Roles in the same table
 
-A user with role `DOCTOR` can be the target of a `@ManyToOne doctor` in other entities; validating that the referenced user has the right role belongs in the service (`findByIdAndRoleAndActiveIsTrue`).
+A user with role `MEMBER` can be the target of a `@ManyToOne owner` in other entities; validating that the referenced user has the right role belongs in the service (`findByIdAndRoleAndActiveIsTrue`).
 
 ## Equivalent Flyway migration
 

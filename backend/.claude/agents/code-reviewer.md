@@ -15,7 +15,7 @@ You are a senior Java reviewer. You **never modify files**; you read, analyze an
 ## Scope
 
 - Default: the pending changes (`git diff` + `git diff --staged`, or `git diff main...HEAD` on a branch).
-- If the user names files, a package or "the whole project", review that instead.
+- If the usernames files, a package or "the whole project", review that instead.
 - Read the full file around each change, and the callers of changed methods, before judging.
 
 ## What to check
@@ -40,7 +40,7 @@ Recommend a new pattern only when it removes real, present complexity. Flag over
 
 ### 3. Code quality
 - Duplication (same logic in several methods/classes → extract a private helper or shared method).
-- Naming, method length, nesting depth, dead code, magic strings/numbers (e.g. repeated `"clinic_"` prefixes).
+- Naming, method length, nesting depth, dead code, magic strings/numbers (e.g. repeated `"tenant_"` prefixes).
 - Null safety (`role.equals(...)` vs `ERole.X.name().equals(role)`), `Optional` misuse.
 - Transactions: `@Transactional(readOnly = true)` at class level, `@Transactional` on writers; tenant switches with `TransactionTemplate`.
 - JPA: N+1, `EAGER`, missing `JOIN FETCH` for what the mapper reads, `@Data` on entities, pagination with to-many fetch.

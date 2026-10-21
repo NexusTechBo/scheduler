@@ -67,7 +67,7 @@ Page<Booking> findAllByFilters(@Param("ownerId") Long ownerId,
 ```
 - `JOIN FETCH` for mandatory `@ManyToOne`, `LEFT JOIN FETCH` for optional ones.
 - `JOIN FETCH` + `Page` works fine for **to-one**. For **to-many** with pagination do NOT fetch (Hibernate paginates in memory); use two queries or `@EntityGraph` on an unpaginated list.
-- Enum literal in JPQL: `WHERE u.role = ERole.DOCTOR` (Hibernate 6+ accepts the simple name if unique; otherwise use the FQN).
+- Enum literal in JPQL: `WHERE u.role = ERole.MEMBER` (Hibernate 6+ accepts the simple name if unique; otherwise use the FQN).
 - Always explicit `@Param`.
 - The `Pageable` sort comes from the client: invalid properties throw `PropertyReferenceException` / `InvalidDataAccessApiUsageException(SemanticException)` → the `GlobalExceptionHandler` maps them to 400.
 

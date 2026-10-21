@@ -26,7 +26,7 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'ASSISTANT')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'STAFF')")
     @Operation(summary = "GET /api/items/{itemId} — get an item by id")
     public ResponseEntity<ItemResponse> findItemById(@PathVariable Long itemId) {
         return ResponseEntity.ok(itemService.findItemById(itemId));
@@ -47,7 +47,7 @@ public class ItemController {
     }
 
     @PatchMapping("/{itemId}/confirm")
-    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'MEMBER')")
     @Operation(summary = "PATCH /api/items/{itemId}/confirm — confirm a pending item")
     public ResponseEntity<ItemResponse> confirmItem(@PathVariable Long itemId, Authentication auth) {
         return ResponseEntity.ok(itemService.confirmItem(itemId, Long.parseLong(auth.getName()), SecurityUtils.extractRole(auth)));
@@ -106,13 +106,13 @@ public class ItemController {
 - `@PreAuthorize("hasAnyRole('A', 'B')")` on **every** protected endpoint (requires `@EnableMethodSecurity`). No annotation = any authenticated user.
 - Public endpoints are declared in `security.public-paths` (yaml), not in the controller.
 - User id: `Long.parseLong(auth.getName())` (the principal is the JWT `sub`). Role: `SecurityUtils.extractRole(auth)`.
-- Pass `userId` and `role` to the service; the rule "a DOCTOR only operates on their own data" is enforced by the service (`ForbiddenException`). In list endpoints the controller only forces the filter, with **one** private helper instead of duplicating `if/else` per endpoint:
+- Pass `userId` and `role` to the service; the rule "a MEMBER only operates on their own data" is enforced by the service (`ForbiddenException`). In list endpoints the controller only forces the filter, with **one** private helper instead of duplicating `if/else` per endpoint:
   ```java
   return ResponseEntity.ok(itemService.findAllItems(scopedOwnerId(ownerId, auth), status, pageable));
 
-  /** A DOCTOR only sees its own items, so the ownerId filter is forced to the caller. */
+  /** A MEMBER only sees its own items, so the ownerId filter is forced to the caller. */
   private static Long scopedOwnerId(Long ownerId, Authentication auth) {
-      return ERole.DOCTOR.name().equals(SecurityUtils.extractRole(auth)) ? Long.parseLong(auth.getName()) : ownerId;
+      return ERole.MEMBER.name().equals(SecurityUtils.extractRole(auth)) ? Long.parseLong(auth.getName()) : ownerId;
   }
   ```
 - Always compare roles as `ERole.X.name().equals(role)` (null-safe), never `role.equals(...)`.

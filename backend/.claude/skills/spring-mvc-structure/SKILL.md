@@ -47,16 +47,16 @@ resources/
 **Service**
 - Interface in `service/`, implementation in `service/impl/` with `@Service @RequiredArgsConstructor`.
 - `@Transactional(readOnly = true)` at class level; `@Transactional` on every method that writes.
-- All business rules and ownership checks (e.g. "a DOCTOR only sees their own data") live here.
+- All business rules and ownership checks (e.g. "a MEMBER only sees their own data") live here.
 - Private helpers `get<Entity>OrThrowById(id)` → `repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("<Entity> not found with id: " + id))`.
 - Uniqueness: check `existsBy...` before saving and throw `BusinessException` (409). The DB constraint is the final safety net (the handler maps `DataIntegrityViolationException` to 409).
 - Build entities with `Entity.builder()...build()`; map the output with the mapper.
 - For the current time use an injected `Clock` bean (`LocalDateTime.now(clock)`), never a bare `now()`, so tests can pin it.
-- Role checks are null-safe: `ERole.DOCTOR.name().equals(role)`, never `role.equals(...)`. Permission helpers are `private`.
+- Role checks are null-safe: `ERole.MEMBER.name().equals(role)`, never `role.equals(...)`. Permission helpers are `private`.
 
 **DTOs**
 - Always `record`. Jakarta validations on the record (`@NotBlank`, `@Email`, `@Size`, `@Pattern`, custom).
-- Flat responses: flatten relations (`doctorName`, `specialtyName`) instead of nesting entities.
+- Flat responses: flatten relations (`ownerName`, `categoryName`) instead of nesting entities.
 - One package per resource: `dto/user/UserRequest.java`.
 
 **Mapper (MapStruct)**
