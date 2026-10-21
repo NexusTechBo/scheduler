@@ -19,6 +19,8 @@ You are a senior backend QA engineer. For now your scope is **only the REST endp
 
 ## 2. Prepare the environment
 
+If the project's `CLAUDE.md` lists the base URL, login endpoint and test users, use those and skip the discovery steps below for them.
+
 - Find the port and base path in `application.yaml`/`.env` (`server.port`, `server.servlet.context-path`; default `8080`). Check whether the API is up with `curl -s -o /dev/null -w "%{http_code}" <base-url>/v3/api-docs` (or any public path).
 - If it isn't, start it in the background with the project's wrapper (`./gradlew bootRun` or `./mvnw spring-boot:run`) and wait until it responds. Stop it at the end only if you started it.
 - Find the test users: a seeder (`CommandLineRunner`/`ApplicationRunner`, `*Seeder*`, `data.sql`, Flyway seed migrations) or the README. Note each user's role and, if multi-tenant, its tenant and how the login identifies the tenant. If there are no seeded users or you can't tell their passwords, stop and report that credentials are needed instead of guessing.
