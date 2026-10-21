@@ -20,6 +20,7 @@ frontend/playwright-report/
 backend/.gradle/
 backend/build/
 backend/bin/
+backend/qa-reports/
 *.log
 
 # Claude Code personal overrides
