@@ -40,13 +40,13 @@ public class ClinicServiceImpl implements ClinicService {
         if (clinicRepository.existsBySubdomain(subdomain))
             throw new BusinessException("The subdomain " + subdomain + " is already taken");
         var tx = new TransactionTemplate(transactionManager);
-        var clinic = tx.execute(_ -> {
-            return clinicRepository.save(Clinic.builder()
+        var clinic = tx.execute(_ ->
+            clinicRepository.save(Clinic.builder()
                     .name(request.name())
                     .phoneNumber(request.phoneNumber())
                     .subdomain(subdomain)
-                    .build());
-        });
+                    .build())
+        );
         var schemaName = "clinic_" + clinic.getId();
         schemaProvisioningService.createTenantSchema(schemaName);
         try {
