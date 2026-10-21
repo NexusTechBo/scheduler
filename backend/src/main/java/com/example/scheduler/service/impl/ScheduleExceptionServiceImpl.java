@@ -44,12 +44,6 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
         if (request.date().isBefore(LocalDate.now(clock)))
             throw new BadRequestException("The block date cannot be in the past");
-        if (!request.isFullDayBlock()) {
-            if (request.startTime() == null || request.endTime() == null)
-                throw new BadRequestException("A partial block needs start and end time");
-            if (!request.endTime().isAfter(request.startTime()))
-                throw new BadRequestException("The end time must be after the start time");
-        }
         var affected = findAffectedAppointments(doctorId, request);
         if (!affected.isEmpty() && !Boolean.TRUE.equals(request.cancelAppointments()))
             throw new BusinessException((affected.size() == 1 ? "There is " + affected.size() + " active appointment" : "There are " + affected.size() + " active appointments")

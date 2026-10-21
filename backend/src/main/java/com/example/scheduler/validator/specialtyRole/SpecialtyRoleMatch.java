@@ -13,73 +13,39 @@ import java.lang.annotation.*;
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SpecialtyRoleMatch {
-    String message() default "";
-
-    String first();
-    String second();
+    String message() default "Invalid specialty for the given role";
 
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ ElementType.TYPE })
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @interface List {
-        SpecialtyRoleMatch[] value();
+    // Implemented by the requests annotated with @SpecialtyRoleMatch; record accessors satisfy it
+    interface Request {
+        ERole role();
+        Long specialtyId();
     }
 
-    class SpecialtyRoleMatchValidator implements ConstraintValidator<SpecialtyRoleMatch, Object> {
-        private String firstField;
-        private String secondField;
+    class SpecialtyRoleMatchValidator implements ConstraintValidator<SpecialtyRoleMatch, Request> {
 
         @Override
-        public void initialize(SpecialtyRoleMatch constraintAnnotation) {
-            this.firstField = constraintAnnotation.first();
-            this.secondField = constraintAnnotation.second();
-        }
-
-        @Override
-        public boolean isValid(Object value, ConstraintValidatorContext context) {
-            if (value == null) return true;
-            try {
-                var role = (ERole) getFieldValue(value, firstField);
-                var specialtyId = (Long) getFieldValue(value, secondField);
-                if (role == null) return true;
-                var isDoctor = role == ERole.DOCTOR;
-                var isAssistant = role == ERole.ASSISTANT;
-                var existsSpecialty = specialtyId != null;
-                if (isDoctor && !existsSpecialty) {
-                    var errorMessage = "The doctor role should have a specialty";
-                    buildViolation(context, errorMessage, secondField);
-                    return false;
-                }
-                if (isAssistant && existsSpecialty) {
-                    var errorMessage = "Only doctors can have a specialty";
-                    buildViolation(context, errorMessage, secondField);
-                    return false;
-                }
-                return true;
-            } catch (Exception e) {
+        public boolean isValid(Request value, ConstraintValidatorContext context) {
+            if (value == null || value.role() == null) return true;
+            var existsSpecialty = value.specialtyId() != null;
+            if (value.role() == ERole.DOCTOR && !existsSpecialty) {
+                buildViolation(context, "The doctor role should have a specialty");
                 return false;
             }
+            if (value.role() == ERole.ASSISTANT && existsSpecialty) {
+                buildViolation(context, "Only doctors can have a specialty");
+                return false;
+            }
+            return true;
         }
 
-        private void buildViolation(ConstraintValidatorContext context, String errorMessage, String node) {
+        private void buildViolation(ConstraintValidatorContext context, String errorMessage) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(errorMessage)
-                    .addPropertyNode(node)
+                    .addPropertyNode("specialtyId")
                     .addConstraintViolation();
-        }
-
-        private Object getFieldValue(Object object, String fieldName) throws Exception {
-            var clazz = object.getClass();
-            try {
-                var recordMethod = clazz.getMethod(fieldName);
-                return recordMethod.invoke(object);
-            } catch (NoSuchMethodException ignored) {}
-            var getterName = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-            var getterMethod = clazz.getMethod(getterName);
-            return getterMethod.invoke(object);
         }
     }
 }

@@ -1,10 +1,14 @@
 package com.example.scheduler.dto.ScheduleException;
 
+import com.example.scheduler.validator.partialBlockTimes.PartialBlockTimes;
+import com.example.scheduler.validator.timeRange.TimeRange;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+@TimeRange
+@PartialBlockTimes
 public record ScheduleExceptionRequest(
         @NotNull
         LocalDate date,
@@ -14,4 +18,4 @@ public record ScheduleExceptionRequest(
         Boolean isFullDayBlock,
         String reason,
         Boolean cancelAppointments
-) {}
+) implements TimeRange.Request {}

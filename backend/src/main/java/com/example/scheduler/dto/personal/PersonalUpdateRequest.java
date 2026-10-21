@@ -8,10 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-@SpecialtyRoleMatch(
-        first = "role",
-        second = "specialtyId"
-)
+@SpecialtyRoleMatch
 public record PersonalUpdateRequest(
         @NotBlank
         String name,
@@ -25,4 +22,4 @@ public record PersonalUpdateRequest(
         @ValidRole
         ERole role,
         Long specialtyId
-) {}
+) implements SpecialtyRoleMatch.Request {}

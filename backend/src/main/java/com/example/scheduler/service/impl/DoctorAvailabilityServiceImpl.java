@@ -7,7 +7,6 @@ import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityResponse;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
-import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
@@ -47,8 +46,6 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
         if (doctor.getRole() != ERole.DOCTOR || !doctor.isActive())
             throw new ForbiddenException("Only an active doctor can add availabilities");
-        if (request.startTime().isAfter(request.endTime()) || request.startTime().equals(request.endTime()))
-            throw new BadRequestException("The end time must be after the start time");
         var overlaps = doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, request.dayOfWeek()).stream()
                 .anyMatch(a ->
                         request.startTime().isBefore(a.getEndTime()) && request.endTime().isAfter(a.getStartTime())
