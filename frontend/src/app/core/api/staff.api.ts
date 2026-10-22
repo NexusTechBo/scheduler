@@ -3,9 +3,10 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AssignPatientRequest,
+  DoctorFilters,
   Page,
-  PageQuery,
   Patient,
+  ProfileUpdateRequest,
   Staff,
   StaffFilters,
   StaffRegisterRequest,
@@ -17,9 +18,7 @@ import { toHttpParams } from '../http/http-params.util';
 export class StaffApi {
   private readonly http = inject(HttpClient);
 
-  doctors(
-    query: { specialtyId?: number; isActive?: boolean } & PageQuery = {},
-  ): Observable<Page<Staff>> {
+  doctors(query: DoctorFilters = {}): Observable<Page<Staff>> {
     return this.http.get<Page<Staff>>('personal/doctors', { params: toHttpParams(query) });
   }
 
@@ -35,12 +34,16 @@ export class StaffApi {
     return this.http.put<Staff>(`personal/update/${id}`, request);
   }
 
-  updateSelf(request: StaffUpdateRequest): Observable<Staff> {
+  updateSelf(request: ProfileUpdateRequest): Observable<Staff> {
     return this.http.put<Staff>('personal/update', request);
   }
 
   deactivate(id: number): Observable<void> {
     return this.http.delete<void>(`personal/${id}`);
+  }
+
+  activate(id: number): Observable<Staff> {
+    return this.http.patch<Staff>(`personal/${id}/activate`, null);
   }
 
   assignPatient(request: AssignPatientRequest): Observable<void> {

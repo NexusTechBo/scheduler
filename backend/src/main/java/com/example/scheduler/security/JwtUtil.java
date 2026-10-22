@@ -1,5 +1,6 @@
 package com.example.scheduler.security;
 
+import com.example.scheduler.entity.Clinic;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -21,11 +22,13 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generate(Long userId, String role, Long clinicId, String userName) {
+    public String generate(Long userId, String role, Clinic clinic, String userName) {
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("role", role)
-                .claim("clinicId", clinicId)
+                .claim("clinicId", clinic.getId())
+                .claim("clinicName", clinic.getName())
+                .claim("clinicSubdomain", clinic.getSubdomain())
                 .claim("username", userName)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 86_400_000L))
