@@ -53,12 +53,11 @@
         <app-skeleton [rows]="4" />
       </div>
     } @else if (patients.errorMessage()) {
-      <div class="flex flex-col items-start gap-3 p-2">
-        <app-alert class="self-stretch">{{ patients.errorMessage() }}</app-alert>
-        <button type="button" class="btn btn-secondary btn-sm" (click)="patients.reload()">
-          Reintentar
-        </button>
-      </div>
+      <app-load-error
+        class="p-2"
+        [message]="patients.errorMessage()!"
+        (retry)="patients.reload()"
+      />
     } @else if (!patients.patients().length) {
       <app-empty-state
         icon="patients"
@@ -140,7 +139,7 @@
                       class="btn-icon h-10 w-10"
                       title="Doctores asignados"
                       [attr.aria-label]="'Doctores asignados de ' + patient.name"
-                      (click)="manageDoctors(patient)"
+                      (click)="patients.manageDoctors(patient)"
                     >
                       <app-ui-icon name="link" class="h-4 w-4" />
                     </button>
@@ -160,10 +159,22 @@
                       type="button"
                       class="btn-icon h-10 w-10 hover:text-red-600!"
                       title="Desactivar"
+                      [id]="'patient-status-' + patient.id"
                       [attr.aria-label]="'Desactivar a ' + patient.name"
                       (click)="deactivate(patient)"
                     >
                       <app-ui-icon name="block" class="h-4 w-4" />
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn-icon h-10 w-10 hover:text-secondary!"
+                      title="Reactivar"
+                      [id]="'patient-status-' + patient.id"
+                      [attr.aria-label]="'Reactivar a ' + patient.name"
+                      (click)="activate(patient)"
+                    >
+                      <app-ui-icon name="refresh" class="h-4 w-4" />
                     </button>
                   }
                 </div>

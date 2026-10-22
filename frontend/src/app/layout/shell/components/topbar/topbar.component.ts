@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { initials } from '../../../../core/utils/labels.util';
+import { formatToday } from '../../../../core/utils/calendar.util';
+import { firstName, initials } from '../../../../core/utils/labels.util';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 
 @Component({
@@ -23,14 +24,7 @@ export class TopbarComponent {
     const hour = new Date().getHours();
     return hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
   });
-  protected readonly firstName = computed(
-    () =>
-      this.userName()
-        .replace(/^(dr|dra)\.?\s+/i, '')
-        .split(' ')[0] ?? '',
-  );
+  protected readonly givenName = computed(() => firstName(this.userName()));
   protected readonly avatarInitials = computed(() => initials(this.userName()));
-  protected readonly today = ((label: string) => label.charAt(0).toUpperCase() + label.slice(1))(
-    new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }),
-  );
+  protected readonly today = formatToday();
 }

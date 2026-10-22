@@ -6,12 +6,12 @@ import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.com
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { DashboardService } from './services/dashboard.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
-    AlertComponent,
+    LoadErrorComponent,
     SkeletonComponent,
     RouterLink,
     PageHeaderComponent,

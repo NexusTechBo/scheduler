@@ -17,11 +17,15 @@ export class PatientsApi {
   }
 
   update(id: number, request: PatientRequest): Observable<Patient> {
-    return this.http.put<Patient>(`patients/update/${id}`, request);
+    return this.http.put<Patient>(`patients/${id}`, request);
   }
 
   deactivate(id: number): Observable<void> {
     return this.http.delete<void>(`patients/${id}`);
+  }
+
+  activate(id: number): Observable<Patient> {
+    return this.http.patch<Patient>(`patients/${id}/activate`, null);
   }
 
   doctors(patientId: number): Observable<Staff[]> {

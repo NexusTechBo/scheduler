@@ -19,7 +19,8 @@ public interface PersonalService {
     PersonalResponse findPersonalById(Long personalId);
     PersonalResponse updatePersonalByAdmin(Long personalId, PersonalUpdateRequest request);
     PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request);
-    void deactivatePersonalById(Long personalId);
+    void deactivatePersonalById(Long personalId, Long userId);
+    PersonalResponse activatePersonalById(Long personalId);
     void assignPatient(AssignAndRemoveRequest request, Long userId, String role);
     void removePatient(AssignAndRemoveRequest request, Long userId, String role);
     List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, String role);

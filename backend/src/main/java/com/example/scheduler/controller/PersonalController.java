@@ -86,9 +86,16 @@ public class PersonalController {
     @DeleteMapping("/{personalId}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
     @Operation(summary = "DELETE /api/personal/{personalId} — deactivate a personal by id")
-    public ResponseEntity<Void> deactivatePersonalById(@PathVariable Long personalId) {
-        personalService.deactivatePersonalById(personalId);
+    public ResponseEntity<Void> deactivatePersonalById(@PathVariable Long personalId, Authentication auth) {
+        personalService.deactivatePersonalById(personalId, Long.parseLong(auth.getName()));
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{personalId}/activate")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR')")
+    @Operation(summary = "PATCH /api/personal/{personalId}/activate — reactivate a personal by id")
+    public ResponseEntity<PersonalResponse> activatePersonalById(@PathVariable Long personalId) {
+        return ResponseEntity.ok(personalService.activatePersonalById(personalId));
     }
 
     @PostMapping("/patients/assign")

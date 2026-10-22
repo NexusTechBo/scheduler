@@ -6,12 +6,10 @@
       [selectedId]="page.status()"
       (select)="setStatus($event)"
     />
-    @if (canBook) {
-      <a routerLink="/appointments/new" class="btn btn-primary">
-        <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
-        Agendar cita
-      </a>
-    }
+    <a routerLink="/appointments/new" class="btn btn-primary">
+      <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
+      Agendar cita
+    </a>
   </div>
 </app-page-header>
 
@@ -22,30 +20,23 @@
         <app-skeleton [rows]="5" heightClass="h-12" />
       </div>
     } @else if (page.errorMessage()) {
-      <div class="flex flex-col items-start gap-3 p-2">
-        <app-alert class="self-stretch">{{ page.errorMessage() }}</app-alert>
-        <button type="button" class="btn btn-secondary btn-sm" (click)="page.reload()">
-          Reintentar
-        </button>
-      </div>
+      <app-load-error class="p-2" [message]="page.errorMessage()!" (retry)="page.reload()" />
     } @else if (!page.appointments().length) {
       <app-empty-state icon="calendar" title="No hay citas" message="No hay citas con este filtro.">
-        @if (canBook) {
-          <a routerLink="/appointments/new" class="btn btn-secondary btn-sm">Agendar cita</a>
-        }
+        <a routerLink="/appointments/new" class="btn btn-secondary btn-sm">Agendar cita</a>
       </app-empty-state>
     } @else {
       <table class="data-table">
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th class="hidden md:table-cell">Horario</th>
-            <th>Paciente</th>
+            <th class="max-sm:px-2">Fecha</th>
+            <th class="hidden 2xl:table-cell">Horario</th>
+            <th class="max-sm:px-2">Paciente</th>
             @if (showDoctor) {
               <th class="hidden lg:table-cell">Doctor</th>
             }
-            <th class="hidden sm:table-cell">Estado</th>
-            <th class="text-right">Acciones</th>
+            <th class="hidden xl:table-cell">Estado</th>
+            <th class="text-right max-sm:px-2">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -63,21 +54,23 @@
                 >
                   {{ row.dayLabel }}
                 </button>
-                <p class="text-xs text-gray-500 md:hidden">{{ row.timeLabel }}</p>
+                <p class="text-xs text-gray-500 2xl:hidden">{{ row.timeLabel }}</p>
               </td>
-              <td class="hidden whitespace-nowrap md:table-cell">{{ row.timeLabel }}</td>
-              <td class="w-full max-sm:px-2">
+              <td class="hidden whitespace-nowrap 2xl:table-cell">{{ row.timeLabel }}</td>
+              <td class="w-full max-w-0 max-sm:px-2">
                 <p class="font-bold wrap-break-word text-gray-900">{{ row.patientName }}</p>
-                <p class="text-xs break-all text-gray-500">{{ row.patientEmail }}</p>
-                <app-status-badge class="mt-1 inline-block sm:hidden" [status]="row.status" />
+                <p class="truncate text-xs text-gray-500" [title]="row.patientEmail">
+                  {{ row.patientEmail }}
+                </p>
+                <app-status-badge class="mt-1 inline-block xl:hidden" [status]="row.status" />
               </td>
               @if (showDoctor) {
-                <td class="hidden lg:table-cell">
+                <td class="hidden whitespace-nowrap lg:table-cell">
                   <p class="font-semibold text-gray-800">{{ row.doctorName }}</p>
                   <p class="text-xs text-gray-500">{{ row.doctorSpecialty | specialtyLabel }}</p>
                 </td>
               }
-              <td class="hidden sm:table-cell">
+              <td class="hidden xl:table-cell">
                 <app-status-badge [status]="row.status" />
                 @if (row.status === 'CANCELLED' && row.cancellationReason) {
                   <p
@@ -94,37 +87,39 @@
                   @if (canConfirm(row.status)) {
                     <button
                       type="button"
-                      class="btn btn-sm bg-primary/10 text-primary hover:bg-primary/20 max-sm:h-8 max-sm:w-8 max-sm:px-0"
+                      class="btn btn-sm bg-primary/10 text-primary hover:bg-primary/20 max-2xl:h-9 max-2xl:w-9 max-2xl:px-0"
+                      title="Confirmar"
                       [attr.aria-label]="
                         'Confirmar cita de ' +
                         row.patientName +
                         ', ' +
-                        row.dayLabel +
+                        (row.dayLabel | lowercase) +
                         ' ' +
                         row.timeLabel
                       "
                       (click)="confirm(row, $event)"
                     >
-                      <app-ui-icon name="check" class="h-4 w-4 sm:hidden" [strokeWidth]="2.4" />
-                      <span class="max-sm:hidden">Confirmar</span>
+                      <app-ui-icon name="check" class="h-4 w-4 2xl:hidden" [strokeWidth]="2.4" />
+                      <span class="max-2xl:hidden">Confirmar</span>
                     </button>
                   }
                   @if (canCancel(row.status)) {
                     <button
                       type="button"
-                      class="btn btn-sm btn-danger max-sm:h-8 max-sm:w-8 max-sm:px-0"
+                      class="btn btn-sm btn-danger max-2xl:h-9 max-2xl:w-9 max-2xl:px-0"
+                      title="Cancelar cita"
                       [attr.aria-label]="
                         'Cancelar cita de ' +
                         row.patientName +
                         ', ' +
-                        row.dayLabel +
+                        (row.dayLabel | lowercase) +
                         ' ' +
                         row.timeLabel
                       "
                       (click)="cancel(row, $event)"
                     >
-                      <app-ui-icon name="x" class="h-4 w-4 sm:hidden" [strokeWidth]="2.4" />
-                      <span class="max-sm:hidden">Cancelar cita</span>
+                      <app-ui-icon name="x" class="h-4 w-4 2xl:hidden" [strokeWidth]="2.4" />
+                      <span class="max-2xl:hidden">Cancelar cita</span>
                     </button>
                   }
                 </div>

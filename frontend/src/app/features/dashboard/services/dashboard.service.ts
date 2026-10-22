@@ -1,9 +1,10 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin, map, of } from 'rxjs';
+import { forkJoin, map } from 'rxjs';
 import { AppointmentsApi } from '../../../core/api/appointments.api';
 import { StaffApi } from '../../../core/api/staff.api';
 import { AuthService } from '../../../core/auth/auth.service';
+import { resourceError } from '../../../core/http/api-error';
 import { AppointmentSummaryItem, Role } from '../../../core/models/api.models';
 import { HOME_URL, navItemsFor } from '../../../core/navigation/navigation';
 import { addDays, startOfWeek, toIso } from '../../../core/utils/calendar.util';
@@ -28,7 +29,7 @@ export class DashboardService {
 
   readonly quickLinks = navItemsFor(this.role).filter((item) => item.route !== HOME_URL);
 
-  readonly weekResource = rxResource({
+  private readonly weekResource = rxResource({
     loader: () =>
       this.appointmentsApi.board({
         from: toIso(this.weekStart),
@@ -37,14 +38,16 @@ export class DashboardService {
   });
 
   private readonly staffResource = rxResource({
+    request: () => (this.role === 'ADMINISTRATOR' ? true : undefined),
     loader: () =>
-      this.role === 'ADMINISTRATOR'
-        ? forkJoin({
-            doctors: this.countActive('DOCTOR'),
-            assistants: this.countActive('ASSISTANT'),
-          })
-        : of(null),
+      forkJoin({
+        doctors: this.countActive('DOCTOR'),
+        assistants: this.countActive('ASSISTANT'),
+      }),
   });
+
+  readonly isWeekLoading = this.weekResource.isLoading;
+  readonly weekErrorMessage = resourceError(this.weekResource, 'No se pudo cargar la agenda');
 
   readonly todayAppointments = computed<AppointmentSummaryItem[]>(() => {
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
@@ -102,8 +105,12 @@ export class DashboardService {
     return kpis;
   });
 
+  reload(): void {
+    this.weekResource.reload();
+  }
+
   open(appointment: AppointmentSummaryItem): void {
-    this.actions.openDetail(appointment.id).subscribe(() => this.weekResource.reload());
+    this.actions.openDetail(appointment.id).subscribe(() => this.reload());
   }
 
   private countActive(role: Role) {

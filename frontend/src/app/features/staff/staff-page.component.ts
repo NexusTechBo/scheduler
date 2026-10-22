@@ -20,10 +20,12 @@ import {
 import { StaffRoleFilter, StaffService } from './services/staff.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { focusAfterLoad } from '../../shared/ui/focus-after-load';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 
 @Component({
   selector: 'app-staff-page',
   imports: [
+    LoadErrorComponent,
     SkeletonComponent,
     FormsModule,
     PageHeaderComponent,
@@ -59,7 +61,15 @@ export class StaffPageComponent {
   protected deactivate(staff: Staff): void {
     this.staffService
       .deactivate(staff)
-      .subscribe(() => this.focusRow(`#staff-edit-${staff.id}`, 'tbody button'));
+      .subscribe(() =>
+        this.focusRow(`#staff-status-${staff.id}`, `#staff-edit-${staff.id}`, 'tbody button'),
+      );
+  }
+
+  protected activate(staff: Staff): void {
+    this.staffService
+      .activate(staff)
+      .subscribe(() => this.focusRow(`#staff-status-${staff.id}`, 'tbody button'));
   }
 
   protected openForm(staff?: Staff): void {

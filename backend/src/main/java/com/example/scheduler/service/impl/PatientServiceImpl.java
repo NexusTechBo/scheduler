@@ -82,6 +82,14 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    @Transactional
+    public PatientResponse activatePatientById(Long patientId) {
+        var patient = getPatientOrThrowById(patientId);
+        patient.setActive(true);
+        return patientMapper.toResponse(patientRepository.save(patient));
+    }
+
+    @Override
     public List<PersonalResponse> getDoctorsOfPatient(Long patientId) {
         var patient = getPatientDoctorsOrThrowById(patientId);
         return personalMapper.toResponseList(patient.getDoctors());

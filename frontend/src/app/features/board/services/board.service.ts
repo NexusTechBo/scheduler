@@ -3,6 +3,7 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, debounceTime, merge, skip } from 'rxjs';
 import { AppointmentsApi } from '../../../core/api/appointments.api';
 import { BoardSocket } from '../../../core/api/board.socket';
+import { resourceError } from '../../../core/http/api-error';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../../core/models/api.models';
 import { addDays, toIso, toLocalDateTime } from '../../../core/utils/calendar.util';
 import {
@@ -21,10 +22,11 @@ export class BoardService {
   private readonly actions = inject(AppointmentActionsService);
   private readonly notifications = inject(NotificationService);
 
-  readonly range = signal<DateRange>({
+  private readonly _range = signal<DateRange>({
     from: toIso(new Date()),
     to: toIso(addDays(new Date(), 6)),
   });
+  readonly range = this._range.asReadonly();
   readonly showDates = computed(() => this.range().from !== this.range().to);
 
   private readonly resource = rxResource({
@@ -34,7 +36,7 @@ export class BoardService {
 
   readonly isLoading = this.resource.isLoading;
   readonly hasData = computed(() => this.resource.hasValue());
-  readonly hasError = computed(() => !!this.resource.error());
+  readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el tablero');
   readonly columns = computed<BoardColumn[]>(() => {
     const board = this.resource.hasValue() ? this.resource.value() : undefined;
     return APPOINTMENT_STATUSES.map((status) => ({
@@ -55,6 +57,10 @@ export class BoardService {
 
   reload(): void {
     this.resource.reload();
+  }
+
+  setRange(range: DateRange): void {
+    this._range.set(range);
   }
 
   open(appointment: AppointmentSummaryItem): void {

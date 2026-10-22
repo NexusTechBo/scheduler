@@ -1,9 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, catchError, filter, finalize, switchMap, tap } from 'rxjs';
+import { Observable, finalize, tap } from 'rxjs';
 import { CatalogsApi } from '../../../core/api/catalogs.api';
 import { StaffApi } from '../../../core/api/staff.api';
-import { apiErrorMessage, resourceError } from '../../../core/http/api-error';
+import { resourceError } from '../../../core/http/api-error';
 import {
   Role,
   Staff,
@@ -36,11 +36,12 @@ export class StaffService {
     request: () => this.filters(),
     loader: ({ request }) => this.staffApi.list(request),
   });
-  readonly specialtiesResource = rxResource({
+  private readonly specialtiesResource = rxResource({
     loader: () => this.catalogsApi.specialties(),
   });
 
   readonly staff = computed(() => this.staffResource.value()?.content ?? []);
+  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
   readonly pagination = computed(() => this.staffResource.value()?.page ?? null);
   readonly roleFilter = computed<StaffRoleFilter>(() => this.filters().role ?? 'all');
   readonly onlyActive = computed(() => this.filters().isActive === true);
@@ -64,7 +65,7 @@ export class StaffService {
   }
 
   specialtyIdOf(name: string | null | undefined): number | null {
-    return this.specialtiesResource.value()?.find((s) => s.name === name)?.id ?? null;
+    return this.specialties().find((s) => s.name === name)?.id ?? null;
   }
 
   create(request: StaffRegisterRequest): Observable<Staff> {
@@ -77,24 +78,33 @@ export class StaffService {
 
   deactivate(staff: Staff): Observable<unknown> {
     return this.confirm
-      .ask({
-        title: 'Desactivar cuenta',
-        message: `${staff.name} dejará de aparecer para nuevas reservas. Sus citas existentes se mantienen.`,
-        confirmLabel: 'Desactivar',
-        danger: true,
-      })
-      .pipe(
-        filter(Boolean),
-        switchMap(() => this.staffApi.deactivate(staff.id)),
-        tap(() => {
-          this.notifications.success('Cuenta desactivada');
-          this.reload();
-        }),
-        catchError((error) => {
-          this.notifications.error(apiErrorMessage(error));
-          return EMPTY;
-        }),
-      );
+      .confirmThen(
+        {
+          title: 'Desactivar cuenta',
+          message: `${staff.name} dejará de aparecer para nuevas reservas. Sus citas existentes se mantienen.`,
+          confirmLabel: 'Desactivar',
+          danger: true,
+        },
+        () => this.staffApi.deactivate(staff.id),
+        'Cuenta desactivada',
+        'No se pudo desactivar la cuenta',
+      )
+      .pipe(tap(() => this.reload()));
+  }
+
+  activate(staff: Staff): Observable<unknown> {
+    return this.confirm
+      .confirmThen(
+        {
+          title: 'Reactivar cuenta',
+          message: `¿Reactivar a ${staff.name}?`,
+          confirmLabel: 'Reactivar',
+        },
+        () => this.staffApi.activate(staff.id),
+        'Cuenta reactivada',
+        'No se pudo reactivar la cuenta',
+      )
+      .pipe(tap(() => this.reload()));
   }
 
   private afterSave(request: Observable<Staff>, message: string): Observable<Staff> {

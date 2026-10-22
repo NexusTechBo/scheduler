@@ -26,3 +26,13 @@ export const phoneValidator = Validators.pattern(/^[\d\s()+-]{7,20}$/);
 export const PHONE_ERRORS = {
   pattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
 };
+
+export function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('role')?.value === 'DOCTOR' && !control.value
+    ? { required: true }
+    : null;
+}
+
+export function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
+}

@@ -1,7 +1,10 @@
 import { FormControl, FormGroup } from '@angular/forms';
-import { currentPasswordWhenChanging } from '../../features/profile/profile-page.component';
-import { specialtyForDoctor } from '../../features/staff/components/staff-form-dialog/staff-form-dialog.component';
-import { ciValidator, phoneValidator } from './validation-messages.util';
+import {
+  ciValidator,
+  currentPasswordWhenChanging,
+  phoneValidator,
+  specialtyForDoctor,
+} from './validation-messages.util';
 
 describe('form validators', () => {
   const valid = (validator: typeof ciValidator, value: string) =>

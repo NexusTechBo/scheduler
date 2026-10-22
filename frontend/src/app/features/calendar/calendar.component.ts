@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
-import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { CalendarService } from './services/calendar.service';
 import { CalendarDayCellComponent } from './components/calendar-day-cell/calendar-day-cell.component';
@@ -10,7 +10,7 @@ import { DayAgendaPanelComponent } from './components/day-agenda-panel/day-agend
 @Component({
   selector: 'app-calendar',
   imports: [
-    AlertComponent,
+    LoadErrorComponent,
     CalendarDayCellComponent,
     PageHeaderComponent,
     CalendarNavComponent,

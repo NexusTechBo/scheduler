@@ -11,7 +11,7 @@
           <app-ui-icon [name]="kpi.icon" class="h-6 w-6" />
         </span>
         <div>
-          @if (dashboard.weekResource.isLoading()) {
+          @if (dashboard.isWeekLoading()) {
             <app-skeleton heightClass="mb-1 h-7 w-10" />
           } @else {
             <p class="text-[28px] font-extrabold leading-none text-gray-900">
@@ -34,21 +34,12 @@
         <a routerLink="/calendar" class="btn btn-secondary btn-sm">Ver calendario</a>
       </div>
 
-      @if (dashboard.weekResource.isLoading()) {
+      @if (dashboard.isWeekLoading()) {
         <div class="flex flex-col gap-3">
           <app-skeleton [rows]="3" heightClass="h-18.5" />
         </div>
-      } @else if (dashboard.weekResource.error()) {
-        <div class="flex flex-col items-start gap-3">
-          <app-alert class="self-stretch">No se pudo cargar la agenda.</app-alert>
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            (click)="dashboard.weekResource.reload()"
-          >
-            Reintentar
-          </button>
-        </div>
+      } @else if (dashboard.weekErrorMessage()) {
+        <app-load-error [message]="dashboard.weekErrorMessage()!" (retry)="dashboard.reload()" />
       } @else {
         <div class="-m-2 flex flex-1 flex-col gap-3 p-2">
           @for (appointment of dashboard.todayAppointments(); track appointment.id) {

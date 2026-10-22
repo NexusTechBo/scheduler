@@ -83,6 +83,20 @@ export function formatLongDate(iso: string): string {
   );
 }
 
+export function formatWeekdayShort(date: Date): string {
+  return date.toLocaleDateString(LOCALE, { weekday: 'short' }).replace('.', '');
+}
+
+export function formatMonthShort(date: Date): string {
+  return date.toLocaleDateString(LOCALE, { month: 'short' }).replace('.', '');
+}
+
+export function formatToday(): string {
+  return capitalize(
+    new Date().toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' }),
+  );
+}
+
 export function formatShortDate(iso: string): string {
   return parseIso(iso).toLocaleDateString(LOCALE, { month: 'short', day: 'numeric' });
 }

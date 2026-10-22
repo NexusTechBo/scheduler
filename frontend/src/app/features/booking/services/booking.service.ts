@@ -1,14 +1,14 @@
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, finalize, map, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, finalize, map } from 'rxjs';
 import { AgendaApi } from '../../../core/api/agenda.api';
 import { AppointmentsApi } from '../../../core/api/appointments.api';
 import { CatalogsApi } from '../../../core/api/catalogs.api';
 import { PatientsApi } from '../../../core/api/patients.api';
 import { StaffApi } from '../../../core/api/staff.api';
 import { AuthService } from '../../../core/auth/auth.service';
-import { apiErrorMessage } from '../../../core/http/api-error';
+import { apiErrorMessage, resourceError } from '../../../core/http/api-error';
 import { Patient, Staff, TimeSlot } from '../../../core/models/api.models';
 import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../../core/utils/calendar.util';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -31,10 +31,12 @@ export class BookingService {
   readonly isDoctor = this.auth.hasRole('DOCTOR');
   readonly today = toIso(new Date());
 
-  readonly patientSearch = signal('');
-  readonly selectedPatient = signal<Patient | null>(null);
+  private readonly _patientSearch = signal('');
+  private readonly _selectedPatient = signal<Patient | null>(null);
+  readonly patientSearch = this._patientSearch.asReadonly();
+  readonly selectedPatient = this._selectedPatient.asReadonly();
   private readonly debouncedPatientSearch = toSignal(
-    toObservable(this.patientSearch).pipe(
+    toObservable(this._patientSearch).pipe(
       debounceTime(500),
       map((search) => search.trim()),
       distinctUntilChanged(),
@@ -51,40 +53,47 @@ export class BookingService {
   readonly patientsLoading = this.patientsResource.isLoading;
   readonly filteredPatients = computed(() => this.patientsResource.value() ?? []);
 
-  readonly specialtyId = signal<number | null>(null);
-  readonly selectedDoctor = signal<DoctorOption | null>(
+  private readonly _specialtyId = signal<number | null>(null);
+  readonly specialtyId = this._specialtyId.asReadonly();
+  private readonly _selectedDoctor = linkedSignal<DoctorOption | null>(() =>
     this.isDoctor
-      ? { id: this.auth.userId()!, name: this.auth.session()!.username, specialtyName: null }
+      ? { id: this.auth.userId()!, name: this.auth.displayName(), specialtyName: null }
       : null,
   );
-  readonly specialtiesResource = rxResource({
-    loader: () => (this.isDoctor ? of([]) : this.catalogsApi.specialties()),
+  readonly selectedDoctor = this._selectedDoctor.asReadonly();
+  private readonly selectedDoctorId = computed(() => this.selectedDoctor()?.id);
+  private readonly specialtiesResource = rxResource({
+    request: () => (this.isDoctor ? undefined : true),
+    loader: () => this.catalogsApi.specialties(),
   });
-  readonly doctorsResource = rxResource({
-    request: () => ({ specialtyId: this.specialtyId() ?? undefined }),
+  private readonly doctorsResource = rxResource({
+    request: () => (this.isDoctor ? undefined : { specialtyId: this._specialtyId() ?? undefined }),
     loader: ({ request }) =>
-      this.isDoctor
-        ? of([] as Staff[])
-        : this.staffApi
-            .doctors({ specialtyId: request.specialtyId, isActive: true, size: 100 })
-            .pipe(map((page) => page.content)),
+      this.staffApi
+        .doctors({ specialtyId: request!.specialtyId, isActive: true, size: 100 })
+        .pipe(map((page) => page.content)),
   });
+  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
+  readonly doctors = computed(() => this.doctorsResource.value() ?? []);
+  readonly doctorsLoading = this.doctorsResource.isLoading;
 
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
   );
-  readonly selectedDate = linkedSignal(() => {
+  private readonly _selectedDate = linkedSignal(() => {
     const requested = this.dateParam();
     return isIsoDate(requested) && requested >= this.today ? requested : this.today;
   });
-  readonly selectedSlot = linkedSignal<unknown, TimeSlot | null>({
-    source: () => [this.selectedDoctor(), this.selectedDate()],
+  readonly selectedDate = this._selectedDate.asReadonly();
+  private readonly _selectedSlot = linkedSignal<unknown, TimeSlot | null>({
+    source: () => [this.selectedDoctorId(), this.selectedDate()],
     computation: () => null,
   });
-  readonly slotsResource = rxResource({
+  readonly selectedSlot = this._selectedSlot.asReadonly();
+  private readonly slotsResource = rxResource({
     request: () => {
-      const doctor = this.selectedDoctor();
-      return doctor ? { doctorId: doctor.id, date: this.selectedDate() } : undefined;
+      const doctorId = this.selectedDoctorId();
+      return doctorId ? { doctorId, date: this.selectedDate() } : undefined;
     },
     loader: ({ request }) =>
       this.agendaApi.availableSlots(request!.doctorId, request!.date).pipe(
@@ -96,8 +105,15 @@ export class BookingService {
         ),
       ),
   });
+  readonly slots = computed(() => this.slotsResource.value() ?? []);
+  readonly slotsLoading = this.slotsResource.isLoading;
+  readonly slotsErrorMessage = resourceError(
+    this.slotsResource,
+    'No se pudieron cargar los horarios',
+  );
 
-  readonly submitting = signal(false);
+  private readonly _submitting = signal(false);
+  readonly submitting = this._submitting.asReadonly();
   readonly canSubmit = computed(
     () =>
       !!this.selectedDoctor() &&
@@ -106,15 +122,23 @@ export class BookingService {
       !this.submitting(),
   );
 
+  setPatientSearch(search: string): void {
+    this._patientSearch.set(search);
+  }
+
+  selectPatient(patient: Patient | null): void {
+    this._selectedPatient.set(patient);
+  }
+
   selectSpecialty(id: number | null): void {
-    this.specialtyId.set(id);
+    this._specialtyId.set(id);
     if (id === null) return;
-    const name = this.specialtiesResource.value()?.find((s) => s.id === id)?.name;
-    if (this.selectedDoctor()?.specialtyName !== name) this.selectedDoctor.set(null);
+    const name = this.specialties().find((s) => s.id === id)?.name;
+    if (this.selectedDoctor()?.specialtyName !== name) this._selectedDoctor.set(null);
   }
 
   selectDoctor(doctor: Staff): void {
-    this.selectedDoctor.set({
+    this._selectedDoctor.set({
       id: doctor.id,
       name: doctor.name,
       specialtyName: doctor.specialtyName,
@@ -122,7 +146,15 @@ export class BookingService {
   }
 
   selectDate(iso: string): void {
-    if (iso && iso >= this.today) this.selectedDate.set(iso);
+    if (iso && iso >= this.today) this._selectedDate.set(iso);
+  }
+
+  selectSlot(slot: TimeSlot): void {
+    this._selectedSlot.set(slot);
+  }
+
+  reloadSlots(): void {
+    this.slotsResource.reload();
   }
 
   book(): void {
@@ -132,14 +164,14 @@ export class BookingService {
     if (!this.canSubmit() || !doctor || !slot || !patient) return;
 
     const date = this.selectedDate();
-    this.submitting.set(true);
+    this._submitting.set(true);
     this.appointmentsApi
       .book({
         doctorId: doctor.id,
         patientId: patient.id,
         startTime: toLocalDateTime(date, slot.startTime),
       })
-      .pipe(finalize(() => this.submitting.set(false)))
+      .pipe(finalize(() => this._submitting.set(false)))
       .subscribe({
         next: () => {
           this.notifications.success('Cita agendada: queda pendiente de confirmación');
@@ -147,7 +179,7 @@ export class BookingService {
         },
         error: (error) => {
           this.notifications.error(apiErrorMessage(error, 'No se pudo agendar la cita'));
-          this.selectedSlot.set(null);
+          this._selectedSlot.set(null);
           this.slotsResource.reload();
         },
       });

@@ -5,7 +5,6 @@ import {
   Observable,
   catchError,
   concatMap,
-  filter,
   finalize,
   from,
   map,
@@ -118,20 +117,18 @@ export class AvailabilityService {
 
   removeAvailability(block: Availability, dayLabel: string): void {
     this.confirm
-      .ask({
-        title: 'Quitar horario',
-        message: `¿Quitar el bloque del ${dayLabel.toLowerCase()} de ${formatTime(block.startTime)} a ${formatTime(block.endTime)}? Las citas ya agendadas se mantienen.`,
-        confirmLabel: 'Quitar',
-        danger: true,
-      })
-      .pipe(
-        filter(Boolean),
-        switchMap(() => this.api.removeAvailability(block.id)),
+      .confirmThen(
+        {
+          title: 'Quitar horario',
+          message: `¿Quitar el bloque del ${dayLabel.toLowerCase()} de ${formatTime(block.startTime)} a ${formatTime(block.endTime)}? Las citas ya agendadas se mantienen.`,
+          confirmLabel: 'Quitar',
+          danger: true,
+        },
+        () => this.api.removeAvailability(block.id),
+        'Horario quitado',
+        'No se pudo quitar el horario',
       )
-      .subscribe({
-        next: () => this.done('Horario quitado'),
-        error: (error) => this.notifications.error(apiErrorMessage(error)),
-      });
+      .subscribe(() => this.reload());
   }
 
   addException(request: Omit<ScheduleExceptionRequest, 'cancelAppointments'>): Observable<void> {
@@ -149,25 +146,27 @@ export class AvailabilityService {
           ),
         );
       }),
-      map((message) => this.done(message)),
+      tap((message) => {
+        this.notifications.success(message);
+        this.reload();
+      }),
+      map(() => undefined),
     );
   }
 
   removeException(exception: ScheduleException): void {
     this.confirm
-      .ask({
-        title: 'Quitar bloqueo',
-        message: `¿Habilitar nuevamente el ${formatLongDate(exception.date).toLowerCase()}?`,
-        confirmLabel: 'Quitar',
-      })
-      .pipe(
-        filter(Boolean),
-        switchMap(() => this.api.removeException(exception.id)),
+      .confirmThen(
+        {
+          title: 'Quitar bloqueo',
+          message: `¿Habilitar nuevamente el ${formatLongDate(exception.date).toLowerCase()}?`,
+          confirmLabel: 'Quitar',
+        },
+        () => this.api.removeException(exception.id),
+        'Bloqueo quitado',
+        'No se pudo quitar el bloqueo',
       )
-      .subscribe({
-        next: () => this.done('Bloqueo quitado'),
-        error: (error) => this.notifications.error(apiErrorMessage(error)),
-      });
+      .subscribe(() => this.reload());
   }
 
   private confirmCancelAppointments(count: number): Observable<true> {
@@ -185,10 +184,5 @@ export class AvailabilityService {
         danger: true,
       })
       .pipe(switchMap((confirmed) => (confirmed ? [true as const] : EMPTY)));
-  }
-
-  private done(message: string): void {
-    this.notifications.success(message);
-    this.reload();
   }
 }

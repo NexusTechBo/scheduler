@@ -44,6 +44,10 @@ export class StaffApi {
     return this.http.delete<void>(`personal/${id}`);
   }
 
+  activate(id: number): Observable<Staff> {
+    return this.http.patch<Staff>(`personal/${id}/activate`, null);
+  }
+
   assignPatient(request: AssignPatientRequest): Observable<void> {
     return this.http.post<void>('personal/patients/assign', request);
   }

@@ -3,8 +3,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { AuthService } from '../../../core/auth/auth.service';
-import { canBookAppointments } from '../../../core/auth/permissions';
+import { resourceError } from '../../../core/http/api-error';
 import { AppointmentSummaryItem } from '../../../core/models/api.models';
 import {
   buildMonthMatrix,
@@ -17,18 +16,12 @@ import {
 } from '../../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../../shared/appointments/services/appointment-actions.service';
 
-function firstOfMonth(iso: string): Date {
-  const date = parseIso(iso);
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
 @Injectable()
 export class CalendarService {
   private readonly api = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly canBook = canBookAppointments(inject(AuthService).role());
   private readonly today = toIso(new Date());
 
   private readonly dateParam = toSignal(
@@ -38,7 +31,8 @@ export class CalendarService {
     const requested = this.dateParam();
     return isIsoDate(requested) ? requested : this.today;
   });
-  private readonly viewDate = computed(() => firstOfMonth(this.selectedDate()));
+  private readonly monthKey = computed(() => this.selectedDate().slice(0, 7));
+  private readonly viewDate = computed(() => parseIso(`${this.monthKey()}-01`));
 
   readonly monthLabel = computed(() => formatMonthLabel(this.viewDate()));
   readonly weeks = computed(() =>
@@ -46,11 +40,14 @@ export class CalendarService {
   );
 
   private readonly resource = rxResource({
-    request: () => ({ month: this.viewDate().getMonth() + 1, year: this.viewDate().getFullYear() }),
+    request: () => {
+      const [year, month] = this.monthKey().split('-').map(Number);
+      return { month, year };
+    },
     loader: ({ request }) => this.api.calendar(request),
   });
   readonly isLoading = this.resource.isLoading;
-  readonly hasError = computed(() => !!this.resource.error());
+  readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el calendario');
 
   private readonly byDay = computed(() => {
     const result = new Map<string, AppointmentSummaryItem[]>();
@@ -66,11 +63,15 @@ export class CalendarService {
 
   readonly selectedDayLabel = computed(() => formatDayLabel(this.selectedDate()));
   readonly selectedDayAppointments = computed(() => this.appointmentsFor(this.selectedDate()));
-  readonly canCreateOnSelected = computed(() => this.canBook && this.selectedDate() >= this.today);
+  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today);
 
   appointmentsFor(iso: string): AppointmentSummaryItem[] | null {
     if (!this.resource.hasValue()) return null;
     return this.byDay().get(iso) ?? [];
+  }
+
+  reload(): void {
+    this.resource.reload();
   }
 
   select(iso: string): void {

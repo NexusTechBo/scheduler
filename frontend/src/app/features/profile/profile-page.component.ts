@@ -1,31 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { ROLE_LABEL, initials } from '../../core/utils/labels.util';
-import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import {
   PHONE_ERRORS,
+  currentPasswordWhenChanging,
   notBlank,
   phoneValidator,
 } from '../../shared/utils/validation-messages.util';
 import { ProfileService } from './services/profile.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
-
-export function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
-  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
-}
 
 @Component({
   selector: 'app-profile-page',
@@ -35,7 +26,7 @@ export function currentPasswordWhenChanging(control: AbstractControl): Validatio
     ReactiveFormsModule,
     FormFieldComponent,
     PageHeaderComponent,
-    EmptyStateComponent,
+    LoadErrorComponent,
   ],
   providers: [ProfileService],
   templateUrl: './profile-page.component.html',

@@ -28,11 +28,7 @@
               <p class="truncate text-sm text-gray-500">{{ patient.email }}</p>
             </div>
           </div>
-          <button
-            type="button"
-            class="btn btn-ghost btn-sm"
-            (click)="booking.selectedPatient.set(null)"
-          >
+          <button type="button" class="btn btn-ghost btn-sm" (click)="booking.selectPatient(null)">
             Cambiar
           </button>
         </div>
@@ -47,7 +43,7 @@
             placeholder="Buscar por nombre o email"
             aria-label="Buscar paciente"
             [ngModel]="booking.patientSearch()"
-            (ngModelChange)="booking.patientSearch.set($event)"
+            (ngModelChange)="booking.setPatientSearch($event)"
           />
         </div>
         <div class="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
@@ -58,7 +54,7 @@
             <button
               type="button"
               class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white/70"
-              (click)="booking.selectedPatient.set(patient)"
+              (click)="booking.selectPatient(patient)"
             >
               <span
                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-xs font-bold text-secondary"
@@ -112,7 +108,7 @@
           >
             Todas
           </button>
-          @for (specialty of booking.specialtiesResource.value() ?? []; track specialty.id) {
+          @for (specialty of booking.specialties(); track specialty.id) {
             <button
               type="button"
               class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
@@ -130,10 +126,10 @@
         </div>
 
         <div class="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
-          @if (booking.doctorsResource.isLoading()) {
+          @if (booking.doctorsLoading()) {
             <app-skeleton [rows]="3" heightClass="h-17" />
           } @else {
-            @for (doctor of booking.doctorsResource.value() ?? []; track doctor.id) {
+            @for (doctor of booking.doctors(); track doctor.id) {
               <button
                 type="button"
                 class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 px-3.5 py-3 text-left transition-all"
@@ -215,23 +211,15 @@
           title="Elige un doctor"
           message="Te mostraremos sus horarios libres."
         />
-      } @else if (booking.slotsResource.isLoading()) {
+      } @else if (booking.slotsLoading()) {
         <div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
           <app-skeleton [rows]="6" heightClass="h-11" />
         </div>
-      } @else if (booking.slotsResource.error()) {
-        <app-empty-state icon="alert" title="No se pudieron cargar los horarios">
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            (click)="booking.slotsResource.reload()"
-          >
-            Reintentar
-          </button>
-        </app-empty-state>
+      } @else if (booking.slotsErrorMessage()) {
+        <app-load-error [message]="booking.slotsErrorMessage()!" (retry)="booking.reloadSlots()" />
       } @else {
         <div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
-          @for (slot of booking.slotsResource.value() ?? []; track slot.startTime) {
+          @for (slot of booking.slots(); track slot.startTime) {
             <button
               type="button"
               class="cursor-pointer rounded-2xl py-2.5 text-sm font-bold transition-all"
@@ -241,7 +229,7 @@
                   : 'bg-white/60 text-gray-700 hover:bg-white'
               "
               [attr.aria-pressed]="booking.selectedSlot()?.startTime === slot.startTime"
-              (click)="booking.selectedSlot.set(slot)"
+              (click)="booking.selectSlot(slot)"
             >
               {{ slot.startTime }}
             </button>
@@ -281,7 +269,7 @@
         <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Horario</dt>
         <dd class="mt-0.5 font-bold text-gray-900">
           @if (booking.selectedSlot(); as slot) {
-            {{ slot.startTime }} – {{ slot.endTime }}
+            {{ slot | timeRange }}
           } @else {
             —
           }

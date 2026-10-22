@@ -26,12 +26,8 @@
         Sin citas este día
       </div>
     }
-  } @else if (hasError()) {
-    <div
-      class="flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-gray-900/10 py-8 text-sm font-medium text-gray-500"
-    >
-      No se pudieron cargar las citas
-    </div>
+  } @else if (errorMessage()) {
+    <app-load-error [message]="errorMessage()!" (retry)="retry.emit()" />
   } @else {
     <app-skeleton [rows]="3" heightClass="h-18.5" />
   }

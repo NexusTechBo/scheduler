@@ -34,17 +34,18 @@
       }
     </div>
 
-    @if (calendar.hasError()) {
-      <app-alert class="mt-3">No se pudo cargar el calendario.</app-alert>
+    @if (calendar.errorMessage(); as message) {
+      <app-load-error class="mt-3" [message]="message" (retry)="calendar.reload()" />
     }
   </div>
 
   <app-day-agenda-panel
     [dayLabel]="calendar.selectedDayLabel()"
     [appointments]="calendar.selectedDayAppointments()"
-    [hasError]="calendar.hasError()"
+    [errorMessage]="calendar.errorMessage()"
     [canCreate]="calendar.canCreateOnSelected()"
     (newAppointment)="calendar.openNewAppointment()"
     (open)="calendar.open($event)"
+    (retry)="calendar.reload()"
   />
 </div>

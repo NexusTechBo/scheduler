@@ -66,13 +66,14 @@ export class AuthService {
   readonly userId = computed(() => this._session()?.userId ?? null);
 
   private readonly me = rxResource({
+    request: () => this.userId() ?? undefined,
     loader: () => this.authApi.me(),
   });
+  readonly profile = computed(() => (this.me.hasValue() ? this.me.value() : undefined));
+  readonly profileLoading = this.me.isLoading;
+  readonly profileError = this.me.error;
   readonly displayName = computed(
-    () =>
-      (this.me.hasValue() ? this.me.value().name : null) ??
-      this._session()?.username.split('@')[0] ??
-      '',
+    () => this.profile()?.name ?? this._session()?.username.split('@')[0] ?? '',
   );
 
   readonly clinic = computed(() => {
@@ -80,13 +81,12 @@ export class AuthService {
     return session ? { name: session.clinicName, subdomain: session.clinicSubdomain } : null;
   });
 
-  constructor() {
-    writeStorage('scheduler.clinic', null);
-    writeStorage('scheduler.roles', null);
-  }
-
   setProfile(profile: Staff): void {
     this.me.set(profile);
+  }
+
+  reloadProfile(): void {
+    this.me.reload();
   }
 
   token(): string | null {

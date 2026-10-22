@@ -10,11 +10,7 @@
         <app-skeleton [rows]="3" heightClass="h-16" />
       </div>
     } @else if (specialties.errorMessage()) {
-      <app-empty-state icon="alert" [title]="specialties.errorMessage()!">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="specialties.reload()">
-          Reintentar
-        </button>
-      </app-empty-state>
+      <app-load-error [message]="specialties.errorMessage()!" (retry)="specialties.reload()" />
     } @else {
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         @for (specialty of specialties.specialties(); track specialty.id) {

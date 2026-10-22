@@ -12,7 +12,6 @@ import {
   SegmentedTabsComponent,
 } from '../../shared/ui/segmented-tabs/segmented-tabs.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
-import { AssignDoctorDialogComponent } from './components/assign-doctor-dialog/assign-doctor-dialog.component';
 import {
   PatientFormData,
   PatientFormDialogComponent,
@@ -20,12 +19,12 @@ import {
 import { PatientScope, PatientsService } from './services/patients.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { focusAfterLoad } from '../../shared/ui/focus-after-load';
-import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 
 @Component({
   selector: 'app-patients-page',
   imports: [
-    AlertComponent,
+    LoadErrorComponent,
     SkeletonComponent,
     FormsModule,
     PageHeaderComponent,
@@ -66,7 +65,19 @@ export class PatientsPageComponent {
   protected deactivate(patient: Patient): void {
     this.patients
       .deactivate(patient)
-      .subscribe(() => this.focusRow(`#patient-edit-${patient.id}`, 'tbody button'));
+      .subscribe(() =>
+        this.focusRow(
+          `#patient-status-${patient.id}`,
+          `#patient-edit-${patient.id}`,
+          'tbody button',
+        ),
+      );
+  }
+
+  protected activate(patient: Patient): void {
+    this.patients
+      .activate(patient)
+      .subscribe(() => this.focusRow(`#patient-status-${patient.id}`, 'tbody button'));
   }
 
   protected toggleMine(patient: Patient): void {
@@ -81,12 +92,5 @@ export class PatientsPageComponent {
           'tbody button',
         ),
       );
-  }
-
-  protected manageDoctors(patient: Patient): void {
-    this.patients.managedPatient.set(patient);
-    this.dialog
-      .open(AssignDoctorDialogComponent, { ...labelledByFrame(), injector: this.injector })
-      .closed.subscribe(() => this.patients.managedPatient.set(null));
   }
 }

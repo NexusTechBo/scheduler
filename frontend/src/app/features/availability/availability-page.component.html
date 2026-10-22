@@ -20,11 +20,7 @@
     @if (availability.isWeekLoading()) {
       <app-skeleton heightClass="h-40" />
     } @else if (availability.weekError()) {
-      <app-empty-state icon="alert" [title]="availability.weekError()!">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="availability.reload()">
-          Reintentar
-        </button>
-      </app-empty-state>
+      <app-load-error [message]="availability.weekError()!" (retry)="availability.reload()" />
     } @else {
       <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
         @for (day of availability.week(); track day.value) {
@@ -36,9 +32,7 @@
                   class="group flex items-start gap-1.5 rounded-xl bg-primary/10 py-2 pl-3 pr-1.5 text-primary"
                 >
                   <div class="min-w-0 flex-1">
-                    <p class="text-sm font-bold">
-                      {{ formatTime(block.startTime) }} – {{ formatTime(block.endTime) }}
-                    </p>
+                    <p class="text-sm font-bold">{{ block | timeRange }}</p>
                     <p class="text-xs font-semibold opacity-80">
                       Citas de {{ block.slotDurationMinutes }} min
                     </p>
@@ -48,12 +42,7 @@
                     class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white/80 text-gray-500 opacity-60 hover:text-red-600 hover:opacity-100 group-hover:opacity-100"
                     (click)="availability.removeAvailability(block, day.label)"
                     [attr.aria-label]="
-                      'Quitar horario ' +
-                      day.label +
-                      ' ' +
-                      formatTime(block.startTime) +
-                      ' – ' +
-                      formatTime(block.endTime)
+                      'Quitar horario del ' + (day.label | lowercase) + ' ' + (block | timeRange)
                     "
                   >
                     <app-ui-icon name="x" class="h-3.5 w-3.5" [strokeWidth]="2.4" />
@@ -78,11 +67,7 @@
       <h2 class="mb-1 text-xl font-extrabold text-gray-900">Bloqueos próximos</h2>
       <p class="mb-4 text-sm font-medium text-gray-500">Vacaciones, congresos o reuniones</p>
       @if (availability.exceptionsError(); as message) {
-        <app-empty-state icon="alert" [title]="message">
-          <button type="button" class="btn btn-secondary btn-sm" (click)="availability.reload()">
-            Reintentar
-          </button>
-        </app-empty-state>
+        <app-load-error [message]="message" (retry)="availability.reload()" />
       } @else {
         <div class="space-y-2">
           @for (exception of availability.exceptions(); track exception.id) {
@@ -100,7 +85,8 @@
                   {{
                     exception.isFullDayBlock
                       ? 'Todo el día'
-                      : formatTime(exception.startTime!) + ' – ' + formatTime(exception.endTime!)
+                      : ({ startTime: exception.startTime!, endTime: exception.endTime! }
+                        | timeRange)
                   }}
                   @if (exception.reason) {
                     · {{ exception.reason }}
@@ -112,14 +98,13 @@
                 class="btn-icon hover:text-red-600!"
                 (click)="availability.removeException(exception)"
                 [attr.aria-label]="
-                  'Quitar bloqueo ' +
-                  formatLongDate(exception.date) +
+                  'Quitar bloqueo del ' +
+                  (formatLongDate(exception.date) | lowercase) +
                   (exception.isFullDayBlock
                     ? ''
                     : ' ' +
-                      formatTime(exception.startTime!) +
-                      ' – ' +
-                      formatTime(exception.endTime!))
+                      ({ startTime: exception.startTime!, endTime: exception.endTime! }
+                        | timeRange))
                 "
               >
                 <app-ui-icon name="trash" class="h-4 w-4" />

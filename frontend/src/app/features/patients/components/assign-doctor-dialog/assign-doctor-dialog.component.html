@@ -1,18 +1,14 @@
 <app-dialog-frame
   title="Doctores del paciente"
-  [subtitle]="patients.managedPatient()?.name ?? ''"
+  [subtitle]="assignment.patient.name"
   (closed)="ref.close()"
 >
   <p class="field-label">Asignados</p>
   <div class="mb-5 space-y-2">
-    @if (patients.assignedDoctorsResource.isLoading()) {
+    @if (assignment.assignedLoading()) {
       <app-skeleton />
     } @else {
-      @for (
-        doctor of patients.assignedDoctorsResource.value() ?? [];
-        track doctor.id;
-        let i = $index
-      ) {
+      @for (doctor of assignment.assignedDoctors(); track doctor.id; let i = $index) {
         <div class="flex items-center gap-3 rounded-2xl bg-white/60 px-3.5 py-2.5">
           <span
             class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary"
@@ -28,7 +24,7 @@
             #removeButton
             type="button"
             class="btn-icon hover:text-red-600!"
-            [disabled]="patients.assigning()"
+            [disabled]="assignment.assigning()"
             (click)="remove(doctor.id, i)"
             [attr.aria-label]="'Quitar a ' + doctor.name"
           >
@@ -44,7 +40,7 @@
   </div>
 
   <p role="status" class="mb-3 min-h-5 text-sm font-semibold text-secondary">
-    {{ patients.assignmentMessage() }}
+    {{ assignment.message() }}
   </p>
 
   <app-form-field label="Asignar a otro doctor" fieldId="doctor-to-add">
@@ -61,7 +57,7 @@
       <button
         type="button"
         class="btn btn-primary"
-        [disabled]="!doctorToAdd() || patients.assigning()"
+        [disabled]="!doctorToAdd() || assignment.assigning()"
         (click)="add()"
       >
         Asignar

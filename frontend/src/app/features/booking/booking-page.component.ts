@@ -1,15 +1,24 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { addDays, formatLongDate, parseIso, toIso } from '../../core/utils/calendar.util';
+import {
+  addDays,
+  formatLongDate,
+  formatMonthShort,
+  formatWeekdayShort,
+  parseIso,
+  toIso,
+} from '../../core/utils/calendar.util';
 import { initials } from '../../core/utils/labels.util';
+import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
+import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { DatePickerComponent } from '../../shared/ui/forms/date-picker/date-picker.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { BookingService } from './services/booking.service';
-import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 
 const DATE_STRIP_DAYS = 14;
 
@@ -17,12 +26,14 @@ const DATE_STRIP_DAYS = 14;
   selector: 'app-booking-page',
   imports: [
     SpecialtyLabelPipe,
+    TimeRangePipe,
     SkeletonComponent,
     FormsModule,
     DatePickerComponent,
     RouterLink,
     PageHeaderComponent,
     EmptyStateComponent,
+    LoadErrorComponent,
     UiIconComponent,
   ],
   providers: [BookingService],
@@ -49,8 +60,8 @@ export class BookingPageComponent {
 function dayChip(date: Date) {
   return {
     iso: toIso(date),
-    weekday: date.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', ''),
+    weekday: formatWeekdayShort(date),
     day: date.getDate(),
-    month: date.toLocaleDateString('es-ES', { month: 'short' }).replace('.', ''),
+    month: formatMonthShort(date),
   };
 }

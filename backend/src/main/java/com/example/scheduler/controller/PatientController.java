@@ -47,7 +47,7 @@ public class PatientController {
         return ResponseEntity.ok(patientService.findPatientById(patientId));
     }
 
-    @PutMapping("/update/{patientId}")
+    @PutMapping("/{patientId}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')")
     @Operation(summary = "PUT /api/patients/{patientId} — update a patient by id")
     public ResponseEntity<PatientResponse> updatePatientById(@PathVariable Long patientId, @Valid @RequestBody PatientRequest request) {
@@ -60,6 +60,13 @@ public class PatientController {
     public ResponseEntity<Void> deactivatePatientById(@PathVariable Long patientId) {
         patientService.deactivatePatientById(patientId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{patientId}/activate")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')")
+    @Operation(summary = "PATCH /api/patients/{patientId}/activate — reactivate a patient by id")
+    public ResponseEntity<PatientResponse> activatePatientById(@PathVariable Long patientId) {
+        return ResponseEntity.ok(patientService.activatePatientById(patientId));
     }
 
     @GetMapping("/{patientId}/doctors")

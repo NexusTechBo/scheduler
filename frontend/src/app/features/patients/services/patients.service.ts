@@ -1,4 +1,5 @@
-import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Dialog } from '@angular/cdk/dialog';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
@@ -6,7 +7,6 @@ import {
   catchError,
   debounceTime,
   distinctUntilChanged,
-  filter,
   finalize,
   map,
   of,
@@ -17,9 +17,14 @@ import { PatientsApi } from '../../../core/api/patients.api';
 import { StaffApi } from '../../../core/api/staff.api';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiErrorMessage, resourceError } from '../../../core/http/api-error';
-import { Patient, PatientRequest, Staff } from '../../../core/models/api.models';
+import { Patient, PatientRequest } from '../../../core/models/api.models';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { ConfirmService } from '../../../shared/ui/confirm-dialog/services/confirm.service';
+import { labelledByFrame } from '../../../shared/ui/dialog-frame/dialog-frame.component';
+import {
+  AssignDoctorData,
+  AssignDoctorDialogComponent,
+} from '../components/assign-doctor-dialog/assign-doctor-dialog.component';
 
 const PATIENTS_PAGE_SIZE = 12;
 
@@ -30,6 +35,7 @@ export class PatientsService {
   private readonly patientsApi = inject(PatientsApi);
   private readonly staffApi = inject(StaffApi);
   private readonly confirm = inject(ConfirmService);
+  private readonly dialog = inject(Dialog);
   private readonly notifications = inject(NotificationService);
   private readonly userId = inject(AuthService).userId()!;
 
@@ -114,23 +120,6 @@ export class PatientsService {
     'No se pudieron cargar los pacientes',
   );
 
-  readonly managedPatient = signal<Patient | null>(null);
-  readonly assignedDoctorsResource = rxResource({
-    request: () => this.managedPatient()?.id,
-    loader: ({ request }) => this.patientsApi.doctors(request),
-  });
-  private readonly activeDoctorsResource = rxResource({
-    request: () => (this.managedPatient() ? true : undefined),
-    loader: () =>
-      this.staffApi.doctors({ isActive: true, size: 200 }).pipe(map((page) => page.content)),
-  });
-  readonly assignableDoctors = computed<Staff[]>(() => {
-    const assigned = new Set((this.assignedDoctorsResource.value() ?? []).map((d) => d.id));
-    return (this.activeDoctorsResource.value() ?? []).filter((doctor) => !assigned.has(doctor.id));
-  });
-  readonly assigning = signal(false);
-  readonly assignmentMessage = linkedSignal({ source: this.managedPatient, computation: () => '' });
-
   reload(): void {
     this.allResource.reload();
     this.mineResource.reload();
@@ -183,24 +172,40 @@ export class PatientsService {
 
   deactivate(patient: Patient): Observable<unknown> {
     return this.confirm
-      .ask({
-        title: 'Desactivar paciente',
-        message: `${patient.name} ya no podrá agendar nuevas citas.`,
-        confirmLabel: 'Desactivar',
-        danger: true,
-      })
-      .pipe(
-        filter(Boolean),
-        switchMap(() => this.patientsApi.deactivate(patient.id)),
-        tap(() => {
-          this.notifications.success('Paciente desactivado');
-          this.reload();
-        }),
-        catchError((error) => {
-          this.notifications.error(apiErrorMessage(error));
-          return EMPTY;
-        }),
-      );
+      .confirmThen(
+        {
+          title: 'Desactivar paciente',
+          message: `${patient.name} ya no podrá agendar nuevas citas.`,
+          confirmLabel: 'Desactivar',
+          danger: true,
+        },
+        () => this.patientsApi.deactivate(patient.id),
+        'Paciente desactivado',
+        'No se pudo desactivar el paciente',
+      )
+      .pipe(tap(() => this.reload()));
+  }
+
+  activate(patient: Patient): Observable<unknown> {
+    return this.confirm
+      .confirmThen(
+        {
+          title: 'Reactivar paciente',
+          message: `¿Reactivar a ${patient.name}?`,
+          confirmLabel: 'Reactivar',
+        },
+        () => this.patientsApi.activate(patient.id),
+        'Paciente reactivado',
+        'No se pudo reactivar el paciente',
+      )
+      .pipe(tap(() => this.reload()));
+  }
+
+  manageDoctors(patient: Patient): void {
+    this.dialog.open<void, AssignDoctorData>(AssignDoctorDialogComponent, {
+      ...labelledByFrame(),
+      data: { patient },
+    });
   }
 
   toggleMine(patient: Patient): Observable<unknown> {
@@ -220,35 +225,5 @@ export class PatientsService {
         return EMPTY;
       }),
     );
-  }
-
-  assignDoctor(doctorId: number): void {
-    this.changeAssignment(doctorId, true);
-  }
-
-  unassignDoctor(doctorId: number): void {
-    this.changeAssignment(doctorId, false);
-  }
-
-  private changeAssignment(doctorId: number, assign: boolean): void {
-    const patient = this.managedPatient();
-    if (!patient || this.assigning()) return;
-    const request = { patientId: patient.id, doctorId };
-    const doctorName = [
-      ...(this.assignedDoctorsResource.value() ?? []),
-      ...(this.activeDoctorsResource.value() ?? []),
-    ].find((doctor) => doctor.id === doctorId)?.name;
-    this.assigning.set(true);
-    (assign ? this.staffApi.assignPatient(request) : this.staffApi.removePatient(request))
-      .pipe(finalize(() => this.assigning.set(false)))
-      .subscribe({
-        next: () => {
-          this.assignmentMessage.set(
-            `${doctorName ?? 'Doctor'} ${assign ? 'asignado' : 'quitado'} correctamente`,
-          );
-          this.assignedDoctorsResource.reload();
-        },
-        error: (error) => this.notifications.error(apiErrorMessage(error)),
-      });
   }
 }

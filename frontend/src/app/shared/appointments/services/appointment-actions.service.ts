@@ -79,5 +79,5 @@ export class AppointmentActionsService {
 }
 
 function dayTime(startTime: string): string {
-  return `${formatDayLabel(datePart(startTime))} ${formatTime(startTime)}`;
+  return `${formatDayLabel(datePart(startTime)).toLowerCase()} ${formatTime(startTime)}`;
 }

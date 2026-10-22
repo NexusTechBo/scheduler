@@ -1,20 +1,20 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { LowerCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import {
-  canBookAppointments,
-  canCancelAppointment,
-  canConfirmAppointment,
-} from '../../core/auth/permissions';
-import { AppointmentStatus } from '../../core/models/api.models';
+import { canCancelAppointment, canConfirmAppointment } from '../../core/auth/permissions';
 import { APPOINTMENT_STATUSES, STATUS_PLURAL_LABEL } from '../../core/utils/labels.util';
+import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { focusAfterLoad } from '../../shared/ui/focus-after-load';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { PaginationComponent } from '../../shared/ui/pagination/pagination.component';
 import {
   SegmentedTabItem,
   SegmentedTabsComponent,
 } from '../../shared/ui/segmented-tabs/segmented-tabs.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import {
@@ -22,15 +22,12 @@ import {
   AppointmentStatusFilter,
   AppointmentsPageService,
 } from './services/appointments-page.service';
-import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { AlertComponent } from '../../shared/ui/alert/alert.component';
-import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
-import { focusAfterLoad } from '../../shared/ui/focus-after-load';
 
 @Component({
   selector: 'app-appointments-page',
   imports: [
-    AlertComponent,
+    LowerCasePipe,
+    LoadErrorComponent,
     SpecialtyLabelPipe,
     SkeletonComponent,
     RouterLink,
@@ -47,26 +44,18 @@ import { focusAfterLoad } from '../../shared/ui/focus-after-load';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppointmentsPageComponent {
-  private readonly role = inject(AuthService).role;
+  private readonly isDoctor = inject(AuthService).hasRole('DOCTOR');
   protected readonly page = inject(AppointmentsPageService);
   private readonly focusRow = focusAfterLoad(this.page.isLoading);
 
-  protected readonly canBook = canBookAppointments(this.role());
-  protected readonly showDoctor = this.role() !== 'DOCTOR';
-  protected readonly subtitle =
-    this.role() === 'DOCTOR' ? 'Tus citas' : 'Todas las citas de la clínica';
+  protected readonly canConfirm = canConfirmAppointment;
+  protected readonly canCancel = canCancelAppointment;
+  protected readonly showDoctor = !this.isDoctor;
+  protected readonly subtitle = this.isDoctor ? 'Tus citas' : 'Todas las citas de la clínica';
   protected readonly tabs: SegmentedTabItem[] = [
     { id: 'ALL', label: 'Todas' },
     ...APPOINTMENT_STATUSES.map((status) => ({ id: status, label: STATUS_PLURAL_LABEL[status] })),
   ];
-
-  protected canConfirm(status: AppointmentStatus): boolean {
-    return canConfirmAppointment(this.role(), status);
-  }
-
-  protected canCancel(status: AppointmentStatus): boolean {
-    return canCancelAppointment(this.role(), status);
-  }
 
   protected setStatus(id: string): void {
     this.page.setStatus(id as AppointmentStatusFilter);

@@ -1,16 +1,18 @@
 import { ElementRef, afterRenderEffect, inject, signal } from '@angular/core';
 
-export function focusAfterLoad(busy: () => boolean): (...selectors: string[]) => void {
+export type FocusTarget = string | (() => HTMLElement | null | undefined);
+
+export function focusAfterLoad(busy: () => boolean): (...targets: FocusTarget[]) => void {
   const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  const pending = signal<string[] | null>(null);
+  const pending = signal<FocusTarget[] | null>(null);
   afterRenderEffect(() => {
-    const selectors = pending();
-    if (!selectors || busy()) return;
-    const target = [...selectors, 'h1']
-      .map((selector) => host.querySelector<HTMLElement>(selector))
+    const targets = pending();
+    if (!targets || busy()) return;
+    const target = [...targets, 'h1']
+      .map((t) => (typeof t === 'string' ? host.querySelector<HTMLElement>(t) : t()))
       .find(Boolean);
     target?.focus();
     pending.set(null);
   });
-  return (...selectors) => pending.set(selectors);
+  return (...targets) => pending.set(targets);
 }

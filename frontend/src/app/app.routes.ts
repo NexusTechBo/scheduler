@@ -12,14 +12,12 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         title: 'Inicio',
-        canActivate: [roleGuard(...ROLES.staff)],
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
         path: 'board',
         title: 'Tablero',
-        canActivate: [roleGuard(...ROLES.staff)],
         loadComponent: () =>
           import('./features/board/board.component').then((m) => m.BoardComponent),
       },
@@ -40,14 +38,12 @@ export const routes: Routes = [
       {
         path: 'appointments/new',
         title: 'Agendar cita',
-        canActivate: [roleGuard(...ROLES.staff)],
         loadComponent: () =>
           import('./features/booking/booking-page.component').then((m) => m.BookingPageComponent),
       },
       {
         path: 'patients',
         title: 'Pacientes',
-        canActivate: [roleGuard(...ROLES.staff)],
         loadComponent: () =>
           import('./features/patients/patients-page.component').then(
             (m) => m.PatientsPageComponent,

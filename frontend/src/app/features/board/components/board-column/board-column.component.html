@@ -12,7 +12,7 @@
   cdkDropList
   [id]="column().id"
   [cdkDropListData]="column().appointments"
-  [cdkDropListDisabled]="readonly() || loading()"
+  [cdkDropListDisabled]="loading()"
   (cdkDropListDropped)="dropped.emit($event)"
   class="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pb-4 pt-2"
 >
@@ -25,7 +25,6 @@
         [cdkDragData]="appointment"
         [appointment]="appointment"
         [showDate]="showDates()"
-        [draggable]="!readonly()"
         (click)="open.emit(appointment)"
       />
     } @empty {

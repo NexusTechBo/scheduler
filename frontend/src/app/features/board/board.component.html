@@ -1,10 +1,9 @@
-<app-page-header
-  title="Tablero"
-  [subtitle]="
-    readonly ? 'Vista de solo lectura' : 'Arrastra una cita para confirmarla o cancelarla'
-  "
->
-  <app-date-range-picker titleAccessory [formControl]="rangeControl" />
+<app-page-header title="Tablero" subtitle="Arrastra una cita para confirmarla o cancelarla">
+  <app-date-range-picker
+    titleAccessory
+    [ngModel]="board.range()"
+    (ngModelChange)="board.setRange($event)"
+  />
   <button
     type="button"
     class="btn btn-secondary"
@@ -16,11 +15,9 @@
   </button>
 </app-page-header>
 
-@if (board.hasError()) {
-  <app-alert class="mb-4">No se pudo cargar el tablero. Intenta actualizar.</app-alert>
-}
-
-@if (!board.hasError()) {
+@if (board.errorMessage(); as message) {
+  <app-load-error class="mb-4" [message]="message" (retry)="board.reload()" />
+} @else {
   <div
     cdkDropListGroup
     class="flex min-h-0 flex-1 snap-x gap-5 overflow-x-auto pb-4"
@@ -30,7 +27,6 @@
       <app-board-column
         [column]="column"
         [showDates]="board.showDates()"
-        [readonly]="readonly"
         [loading]="!board.hasData()"
         (dropped)="drop($event)"
         (open)="board.open($event)"
