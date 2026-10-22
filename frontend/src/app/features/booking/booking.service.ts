@@ -2,16 +2,16 @@ import { Injectable, computed, inject, linkedSignal, signal } from '@angular/cor
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, finalize, map } from 'rxjs';
-import { AgendaApi } from '../../../core/api/agenda.api';
-import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { CatalogsApi } from '../../../core/api/catalogs.api';
-import { PatientsApi } from '../../../core/api/patients.api';
-import { StaffApi } from '../../../core/api/staff.api';
-import { AuthService } from '../../../core/auth/auth.service';
-import { apiErrorMessage, resourceError } from '../../../core/http/api-error';
-import { Patient, Staff, TimeSlot } from '../../../core/models/api.models';
-import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../../core/utils/calendar.util';
-import { NotificationService } from '../../../shared/services/notification.service';
+import { AgendaApi } from '../../core/api/agenda.api';
+import { AppointmentsApi } from '../../core/api/appointments.api';
+import { CatalogsApi } from '../../core/api/catalogs.api';
+import { PatientsApi } from '../../core/api/patients.api';
+import { StaffApi } from '../../core/api/staff.api';
+import { AuthService } from '../../core/auth/auth.service';
+import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
+import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import { NotificationService } from '../../shared/services/notification.service';
 
 const PATIENT_RESULTS = 20;
 
@@ -52,6 +52,10 @@ export class BookingService {
   });
   readonly patientsLoading = this.patientsResource.isLoading;
   readonly filteredPatients = computed(() => this.patientsResource.value() ?? []);
+  readonly patientsErrorMessage = resourceError(
+    this.patientsResource,
+    'No se pudieron cargar los pacientes',
+  );
 
   private readonly _specialtyId = signal<number | null>(null);
   readonly specialtyId = this._specialtyId.asReadonly();
@@ -76,6 +80,14 @@ export class BookingService {
   readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
   readonly doctors = computed(() => this.doctorsResource.value() ?? []);
   readonly doctorsLoading = this.doctorsResource.isLoading;
+  readonly specialtiesErrorMessage = resourceError(
+    this.specialtiesResource,
+    'No se pudieron cargar las especialidades',
+  );
+  readonly doctorsErrorMessage = resourceError(
+    this.doctorsResource,
+    'No se pudieron cargar los doctores',
+  );
 
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
@@ -151,6 +163,18 @@ export class BookingService {
 
   selectSlot(slot: TimeSlot): void {
     this._selectedSlot.set(slot);
+  }
+
+  reloadPatients(): void {
+    this.patientsResource.reload();
+  }
+
+  reloadSpecialties(): void {
+    this.specialtiesResource.reload();
+  }
+
+  reloadDoctors(): void {
+    this.doctorsResource.reload();
   }
 
   reloadSlots(): void {

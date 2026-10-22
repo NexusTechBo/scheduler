@@ -2,9 +2,9 @@ import { Injectable, computed, inject } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
-import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { resourceError } from '../../../core/http/api-error';
-import { AppointmentSummaryItem } from '../../../core/models/api.models';
+import { AppointmentsApi } from '../../core/api/appointments.api';
+import { resourceError } from '../../core/http/api-error';
+import { AppointmentSummaryItem } from '../../core/models/api.models';
 import {
   buildMonthMatrix,
   calendarKeyToIso,
@@ -13,8 +13,8 @@ import {
   isIsoDate,
   parseIso,
   toIso,
-} from '../../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../../shared/appointments/services/appointment-actions.service';
+} from '../../core/utils/calendar.util';
+import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
 
 @Injectable()
 export class CalendarService {

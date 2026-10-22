@@ -29,14 +29,14 @@ scheduler/
 ## Frontend — `frontend/`
 
 - **Stack:** Angular 19 (standalone components, signals, `rxResource`), Angular CDK (dialogs, overlays), RxJS, Tailwind CSS 4, `@stomp/rx-stomp`, `jwt-decode`, Karma/Jasmine, Prettier (`printWidth: 100`, single quotes).
-- **Structure:** `src/app/core` (api clients, auth, http, models, navigation, utils) · `features/<feature>` (page + `services/` + `components/`) · `layout/shell` · `shared` (ui, forms, pipes, services, utils, shared appointment dialogs).
+- **Structure:** `src/app/core` · `features/<feature>` (page + `<feature>.service.ts` + `<feature>.model.ts` + `components/`) · `layout/shell` · `shared`.
 - **API access:** relative URLs (`'patients'`) prefixed by `apiUrlInterceptor` with `environment.apiUrl` (`/api/`); `authInterceptor` adds the bearer token and logs out on 401. Types mirroring backend DTOs live in `core/models/api.models.ts`.
 - **Auth & roles:** `AuthService` keeps the session (decoded JWT) in a signal + `localStorage`; routes use `authGuard`, `guestGuard`, `roleGuard(...ROLES.x)`; menu items per role in `core/navigation/navigation.ts`.
 - **UI language:** Spanish (texts, `LOCALE_ID = 'es'`). Code, identifiers and comments in English.
 - **Dev proxy:** `proxy.conf.js` forwards `/api` and `/ws` to `BACKEND_URL` (default `http://localhost:8080`).
 - **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npx ng test --watch=false`.
 
-## Generated artifacts (git-ignored)
+## Generated artifacts (repository root, git-ignored)
 
 - `qa-reports/` — API QA reports from `java-tester`.
 - `playwright-mcp/` — screenshots and UI reports from `ui-tester`.

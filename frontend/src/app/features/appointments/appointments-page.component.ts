@@ -6,7 +6,7 @@ import { canCancelAppointment, canConfirmAppointment } from '../../core/auth/per
 import { APPOINTMENT_STATUSES, STATUS_PLURAL_LABEL } from '../../core/utils/labels.util';
 import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
-import { focusAfterLoad } from '../../shared/ui/focus-after-load';
+import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { PaginationComponent } from '../../shared/ui/pagination/pagination.component';
@@ -20,8 +20,8 @@ import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import {
   AppointmentRow,
   AppointmentStatusFilter,
-  AppointmentsPageService,
-} from './services/appointments-page.service';
+  AppointmentsService,
+} from './appointments.service';
 
 @Component({
   selector: 'app-appointments-page',
@@ -38,15 +38,15 @@ import {
     EmptyStateComponent,
     UiIconComponent,
   ],
-  providers: [AppointmentsPageService],
+  providers: [AppointmentsService],
   templateUrl: './appointments-page.component.html',
   host: { class: 'flex min-h-0 flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppointmentsPageComponent {
   private readonly isDoctor = inject(AuthService).hasRole('DOCTOR');
-  protected readonly page = inject(AppointmentsPageService);
-  private readonly focusRow = focusAfterLoad(this.page.isLoading);
+  protected readonly appointments = inject(AppointmentsService);
+  private readonly focusRow = focusAfterLoad(this.appointments.isLoading);
 
   protected readonly canConfirm = canConfirmAppointment;
   protected readonly canCancel = canCancelAppointment;
@@ -58,21 +58,21 @@ export class AppointmentsPageComponent {
   ];
 
   protected setStatus(id: string): void {
-    this.page.setStatus(id as AppointmentStatusFilter);
+    this.appointments.setStatus(id as AppointmentStatusFilter);
   }
 
   protected open(row: AppointmentRow, event: MouseEvent): void {
-    if (event.detail <= 1) this.page.open(row);
+    if (event.detail <= 1) this.appointments.open(row);
   }
 
   protected confirm(row: AppointmentRow, event: Event): void {
     event.stopPropagation();
-    this.page.confirm(row).subscribe(() => this.refocus(row));
+    this.appointments.confirm(row).subscribe(() => this.refocus(row));
   }
 
   protected cancel(row: AppointmentRow, event: Event): void {
     event.stopPropagation();
-    this.page.cancel(row).subscribe(() => this.refocus(row));
+    this.appointments.cancel(row).subscribe(() => this.refocus(row));
   }
 
   private refocus(row: AppointmentRow): void {

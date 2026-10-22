@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { POPOVER_POSITIONS } from '../../overlay-positions';
+import { POPOVER_POSITIONS } from '../../../utils/overlay-positions.util';
 import { UiIconComponent, UiIconName } from '../../ui-icon/ui-icon.component';
 
 export interface SelectOption<T> {

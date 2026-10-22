@@ -1,5 +1,4 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Dialog } from '@angular/cdk/dialog';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
@@ -13,18 +12,13 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { PatientsApi } from '../../../core/api/patients.api';
-import { StaffApi } from '../../../core/api/staff.api';
-import { AuthService } from '../../../core/auth/auth.service';
-import { apiErrorMessage, resourceError } from '../../../core/http/api-error';
-import { Patient, PatientRequest } from '../../../core/models/api.models';
-import { NotificationService } from '../../../shared/services/notification.service';
-import { ConfirmService } from '../../../shared/ui/confirm-dialog/services/confirm.service';
-import { labelledByFrame } from '../../../shared/ui/dialog-frame/dialog-frame.component';
-import {
-  AssignDoctorData,
-  AssignDoctorDialogComponent,
-} from '../components/assign-doctor-dialog/assign-doctor-dialog.component';
+import { PatientsApi } from '../../core/api/patients.api';
+import { StaffApi } from '../../core/api/staff.api';
+import { AuthService } from '../../core/auth/auth.service';
+import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import { Patient, PatientRequest } from '../../core/models/api.models';
+import { NotificationService } from '../../shared/services/notification.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
 
 const PATIENTS_PAGE_SIZE = 12;
 
@@ -35,7 +29,6 @@ export class PatientsService {
   private readonly patientsApi = inject(PatientsApi);
   private readonly staffApi = inject(StaffApi);
   private readonly confirm = inject(ConfirmService);
-  private readonly dialog = inject(Dialog);
   private readonly notifications = inject(NotificationService);
   private readonly userId = inject(AuthService).userId()!;
 
@@ -199,13 +192,6 @@ export class PatientsService {
         'No se pudo reactivar el paciente',
       )
       .pipe(tap(() => this.reload()));
-  }
-
-  manageDoctors(patient: Patient): void {
-    this.dialog.open<void, AssignDoctorData>(AssignDoctorDialogComponent, {
-      ...labelledByFrame(),
-      data: { patient },
-    });
   }
 
   toggleMine(patient: Patient): Observable<unknown> {

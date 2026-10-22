@@ -1,4 +1,4 @@
-import { AppointmentStatus, AppointmentSummaryItem } from '../../../core/models/api.models';
+import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
 
 export interface BoardColumn {
   id: AppointmentStatus;

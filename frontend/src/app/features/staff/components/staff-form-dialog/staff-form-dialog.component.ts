@@ -13,19 +13,20 @@ import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/selec
 import {
   CI_ERRORS,
   PHONE_ERRORS,
+  USERNAME_ERRORS,
   ciValidator,
   notBlank,
   phoneValidator,
   specialtyForDoctor,
+  usernameValidator,
 } from '../../../../shared/utils/validation-messages.util';
-import { StaffService } from '../../services/staff.service';
+import { StaffService } from '../../staff.service';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 export interface StaffFormData {
   staff?: Staff;
 }
 
-const USERNAME_PATTERN = /^[a-z0-9._-]{3,50}$/;
 const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
 
 @Component({
@@ -49,9 +50,7 @@ export class StaffFormDialogComponent {
   protected readonly clinicSuffix = computed(() => this.clinic()?.subdomain ?? '');
   protected readonly canChangeRole = this.staff?.role !== 'ADMINISTRATOR';
   protected readonly roles = EDITABLE_ROLES.map((role) => ({ id: role, label: ROLE_LABEL[role] }));
-  protected readonly usernameErrors = {
-    pattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
-  };
+  protected readonly usernameErrors = USERNAME_ERRORS;
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly saving = signal(false);
@@ -63,7 +62,7 @@ export class StaffFormDialogComponent {
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],
     ci: ['', this.staff ? [] : [notBlank, ciValidator]],
-    username: ['', this.staff ? [] : [Validators.required, Validators.pattern(USERNAME_PATTERN)]],
+    username: ['', this.staff ? [] : [Validators.required, usernameValidator]],
     password: [
       '',
       this.staff ? [Validators.minLength(8)] : [Validators.required, Validators.minLength(8)],

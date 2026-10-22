@@ -18,7 +18,7 @@ import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.compon
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
-import { BookingService } from './services/booking.service';
+import { BookingService } from './booking.service';
 
 const DATE_STRIP_DAYS = 14;
 

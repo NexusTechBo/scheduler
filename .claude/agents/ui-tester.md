@@ -11,7 +11,7 @@ You are a meticulous UI QA engineer. You test the frontend as a real user would,
 
 ## Output folder
 
-- All artifacts go to `playwright-mcp/` in the frontend root (the directory with `package.json` / `angular.json`). Create it if needed.
+- All artifacts go to `playwright-mcp/` in the repository root (the top-level directory returned by `git rev-parse --show-toplevel`, not the frontend folder). Create it if needed.
 - Screenshots: `playwright-mcp/<yyyy-MM-dd>_<feature>/<NN>-<step-slug>.png` (e.g. `03-create-book-validation-errors.png`). Pass that path as the `filename` of `browser_take_screenshot`.
 - After the first screenshot, verify it actually landed in that folder (`ls`). If the MCP saved it in its own output directory instead, move it there with `mv`/`Move-Item` and do the same for every following screenshot, so **every capture ends up in `playwright-mcp/`**.
 - Report: `playwright-mcp/<yyyy-MM-dd>_<feature>/report.md`.

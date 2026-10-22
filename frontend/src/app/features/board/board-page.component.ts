@@ -7,11 +7,11 @@ import { DateRangePickerComponent } from '../../shared/ui/forms/date-range-picke
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
-import { BoardService } from './services/board.service';
+import { BoardService } from './board.service';
 import { BoardColumnComponent } from './components/board-column/board-column.component';
 
 @Component({
-  selector: 'app-board',
+  selector: 'app-board-page',
   imports: [
     LoadErrorComponent,
     CdkDropListGroup,
@@ -22,11 +22,11 @@ import { BoardColumnComponent } from './components/board-column/board-column.com
     UiIconComponent,
   ],
   providers: [BoardService, BoardSocket],
-  templateUrl: './board.component.html',
+  templateUrl: './board-page.component.html',
   host: { class: 'flex min-h-0 flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BoardComponent {
+export class BoardPageComponent {
   protected readonly board = inject(BoardService);
 
   protected drop(event: CdkDragDrop<AppointmentSummaryItem[]>): void {

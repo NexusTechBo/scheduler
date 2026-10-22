@@ -27,6 +27,11 @@ export const PHONE_ERRORS = {
   pattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
 };
 
+export const usernameValidator = Validators.pattern(/^[a-z0-9._-]{3,50}$/);
+export const USERNAME_ERRORS = {
+  pattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
+};
+
 export function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {
   return control.parent?.get('role')?.value === 'DOCTOR' && !control.value
     ? { required: true }

@@ -1,12 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
-import { ClinicsApi } from '../../../core/api/clinics.api';
-import { AuthService } from '../../../core/auth/auth.service';
-import { apiErrorMessage } from '../../../core/http/api-error';
-import { ClinicRequest } from '../../../core/models/api.models';
-import { HOME_URL } from '../../../core/navigation/navigation';
-import { NotificationService } from '../../../shared/services/notification.service';
+import { ClinicsApi } from '../../core/api/clinics.api';
+import { AuthService } from '../../core/auth/auth.service';
+import { apiErrorMessage } from '../../core/http/api-error';
+import { ClinicRequest } from '../../core/models/api.models';
+import { HOME_URL } from '../../core/navigation/navigation';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
 export class RegisterService {
@@ -15,16 +15,17 @@ export class RegisterService {
   private readonly router = inject(Router);
   private readonly notifications = inject(NotificationService);
 
-  readonly submitting = signal(false);
+  private readonly _submitting = signal(false);
+  readonly submitting = this._submitting.asReadonly();
 
   register(request: ClinicRequest): void {
     if (this.submitting()) return;
-    this.submitting.set(true);
+    this._submitting.set(true);
     this.clinicsApi
       .create(request)
       .pipe(
         switchMap((clinic) => this.auth.login(clinic.adminUsername, request.adminPassword)),
-        finalize(() => this.submitting.set(false)),
+        finalize(() => this._submitting.set(false)),
       )
       .subscribe({
         next: () => {

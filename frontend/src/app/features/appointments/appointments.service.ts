@@ -1,15 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, tap } from 'rxjs';
-import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { resourceError } from '../../../core/http/api-error';
+import { AppointmentsApi } from '../../core/api/appointments.api';
+import { resourceError } from '../../core/http/api-error';
 import {
   AppointmentFilters,
   AppointmentResponse,
   AppointmentStatus,
-} from '../../../core/models/api.models';
-import { datePart, formatDayLabel, formatTimeRange } from '../../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../../shared/appointments/services/appointment-actions.service';
+} from '../../core/models/api.models';
+import { datePart, formatDayLabel, formatTimeRange } from '../../core/utils/calendar.util';
+import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
 
 const PAGE_SIZE = 12;
 
@@ -21,7 +21,7 @@ export interface AppointmentRow extends AppointmentResponse {
 }
 
 @Injectable()
-export class AppointmentsPageService {
+export class AppointmentsService {
   private readonly api = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
 

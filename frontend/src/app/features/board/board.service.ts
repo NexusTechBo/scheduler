@@ -1,20 +1,20 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, debounceTime, merge, skip } from 'rxjs';
-import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { BoardSocket } from '../../../core/api/board.socket';
-import { resourceError } from '../../../core/http/api-error';
-import { AppointmentStatus, AppointmentSummaryItem } from '../../../core/models/api.models';
-import { addDays, toIso, toLocalDateTime } from '../../../core/utils/calendar.util';
+import { AppointmentsApi } from '../../core/api/appointments.api';
+import { BoardSocket } from '../../core/api/board.socket';
+import { resourceError } from '../../core/http/api-error';
+import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
+import { addDays, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
 import {
   APPOINTMENT_STATUSES,
   STATUS_PLURAL_LABEL,
   STATUS_STYLE,
-} from '../../../core/utils/labels.util';
-import { AppointmentActionsService } from '../../../shared/appointments/services/appointment-actions.service';
-import { NotificationService } from '../../../shared/services/notification.service';
-import { DateRange } from '../../../shared/ui/forms/date-range-picker/date-range-picker.component';
-import { BoardColumn } from '../models/board.model';
+} from '../../core/utils/labels.util';
+import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
+import { NotificationService } from '../../shared/services/notification.service';
+import { DateRange } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
+import { BoardColumn } from './board.model';
 
 @Injectable()
 export class BoardService {

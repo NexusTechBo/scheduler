@@ -1,12 +1,12 @@
 ---
 name: angular-project-structure
-description: Folder structure and layering for an Angular (standalone, signals) SPA that consumes a REST API - core/features/shared/layout layout, API clients, feature state services with signals and rxResource, page vs dialog vs presentational components, HTTP interceptors, auth guards, error handling, models, naming conventions and routing. Use when creating a new feature/page end to end, adding an API client, component, dialog or service, scaffolding a new Angular project, or deciding where a file belongs.
+description: Feature-first folder structure and layering for an Angular SPA (standalone components, signals) that consumes a REST API - core/features/layout/shared layout, file placement rules, naming, API clients, feature services with signals and rxResource, pages, dialogs, presentational components, interceptors, guards, error handling and routing. Use when creating a new feature or page end to end, adding an API client, service, component, dialog or model, scaffolding a new Angular project, or deciding where a file belongs.
 ---
 
-# Angular Project Structure (standalone + signals)
+# Angular Project Structure
 
-A feature-first structure for Angular SPAs backed by a REST API (pairs with `java-mvc-project-structure` on the backend).
-Built on standalone components, signals, `rxResource`, functional interceptors/guards, Angular CDK and Tailwind CSS.
+Feature-first structure for Angular SPAs backed by a REST API (the frontend counterpart of `java-mvc-project-structure`).
+Stack: standalone components, signals, `rxResource`, functional interceptors and guards, Angular CDK, Tailwind CSS.
 Examples use a fictional **library** domain (`Book`, `Author`, `Member`, `Loan`).
 
 ## Folder layout
@@ -15,96 +15,117 @@ Examples use a fictional **library** domain (`Book`, `Author`, `Member`, `Loan`)
 src/
 ├── main.ts
 ├── index.html
-├── styles.css                 # Tailwind + global utility classes (btn, field-input, chip, data-table…)
+├── styles.css                          # Tailwind + global classes (btn, field-input, chip, data-table…)
 ├── environments/
-│   ├── environment.ts         # { apiUrl: '/api/' }
+│   ├── environment.ts                  # { apiUrl: '/api/' }
 │   └── environment.development.ts
 └── app/
-    ├── app.component.ts       # <router-outlet> + global overlays (notifications)
-    ├── app.config.ts          # providers: router, HttpClient + interceptors, locale, CDK defaults
-    ├── app.routes.ts          # all routes, lazy loadComponent
-    ├── core/                  # singletons, no UI — used everywhere
-    │   ├── api/               # one class per backend resource: books.api.ts, loans.api.ts, board.socket.ts
-    │   ├── auth/              # auth.service.ts, auth.guards.ts, permissions.ts
-    │   ├── http/              # api.interceptors.ts, api-error.ts, http-params.util.ts
-    │   ├── models/            # api.models.ts — TS types mirroring backend DTOs
-    │   ├── navigation/        # navigation.ts — HOME_URL, ROLES, nav items per role
-    │   └── utils/             # pure functions: dates, labels, formatting
-    ├── features/              # one folder per screen / use case
+    ├── app.component.ts|html           # <router-outlet> + global overlays
+    ├── app.config.ts                   # providers
+    ├── app.routes.ts                   # all routes, lazy
+    ├── core/                           # app-wide singletons, no UI
+    │   ├── api/                        # books.api.ts, loans.api.ts, loans.socket.ts
+    │   ├── auth/                       # auth.service.ts, auth.guards.ts, permissions.ts
+    │   ├── http/                       # api.interceptors.ts, api-error.ts, http-params.util.ts
+    │   ├── models/                     # api.models.ts (backend DTO types)
+    │   ├── navigation/                 # navigation.ts (HOME_URL, ROLES, nav items)
+    │   └── utils/                      # domain helpers: dates.util.ts, labels.util.ts
+    ├── features/                       # one folder per screen
     │   └── books/
-    │       ├── books-page.component.ts|html      # routed page (container)
-    │       ├── services/books.service.ts          # feature state + actions
-    │       ├── components/                        # pieces used only by this feature
-    │       │   └── book-form-dialog/
-    │       │       ├── book-form-dialog.component.ts|html
-    │       │       └── services/…                 # only if the dialog has its own state
-    │       └── models/books.model.ts             # view models used only here (optional)
+    │       ├── books-page.component.ts|html
+    │       ├── books.service.ts
+    │       ├── books.model.ts          # optional
+    │       └── components/             # used only by this feature
+    │           ├── book-card/
+    │           │   └── book-card.component.ts|html
+    │           └── book-form-dialog/
+    │               ├── book-form-dialog.component.ts|html
+    │               └── book-form.service.ts   # optional
     ├── layout/
-    │   └── shell/             # authenticated frame: sidebar, topbar, <router-outlet>
+    │   └── shell/                      # authenticated frame
     │       ├── shell.component.ts|html
-    │       └── components/sidebar-nav/, topbar/
-    └── shared/                # reusable, feature-agnostic
-        ├── ui/                # presentational components: page-header, pagination, empty-state, skeleton,
-        │   │                  # load-error, status-badge, dialog-frame, confirm-dialog, ui-icon…
-        │   └── forms/         # form controls: form-field, select, date-picker, time-picker…
-        ├── services/          # notification.service.ts
-        ├── pipes/             # pure pipes
-        ├── utils/             # validation-messages.util.ts (validators + error messages)
-        └── <domain>/          # cross-feature domain pieces, e.g. shared/loans/ (detail dialog, actions service)
+    │       └── components/
+    │           ├── sidebar-nav/
+    │           └── topbar/
+    └── shared/                         # reused by 2+ features
+        ├── <domain>/                   # e.g. loans/
+        │   ├── loan-actions.service.ts
+        │   └── components/
+        │       └── loan-detail-dialog/
+        ├── ui/                         # presentational: page-header, pagination, empty-state, skeleton…
+        │   ├── <name>/<name>.component.ts|html
+        │   ├── <name>/<name>.directive.ts
+        │   └── forms/                  # form controls: form-field, select, date-picker…
+        ├── services/                   # app-wide: notification.service.ts, confirm.service.ts
+        ├── pipes/
+        └── utils/                      # UI helpers: validation-messages.util.ts
 ```
 
-### Where does it go?
+## Placement rules
 
-| It is…                                            | Put it in                                                            |
-|---------------------------------------------------|----------------------------------------------------------------------|
-| A call to a backend endpoint                      | `core/api/<resource>.api.ts`                                         |
-| A type that mirrors a backend DTO                 | `core/models/api.models.ts`                                          |
-| App-wide state (session, current user)            | `core/auth/` or another `core/<area>/` service, `providedIn: 'root'` |
-| A routed screen                                   | `features/<feature>/<feature>-page.component.ts`                     |
-| State + actions of one screen                     | `features/<feature>/services/<feature>.service.ts`                   |
-| A dialog/subcomponent used by one feature         | `features/<feature>/components/<name>/`                              |
-| A component used by 2+ features with domain logic | `shared/<domain>/components/`                                        |
-| A dumb, domain-agnostic UI piece                  | `shared/ui/<name>/`                                                  |
-| A pure helper                                     | `core/utils/` (domain) or `shared/utils/` (UI/forms)                 |
+1. **Services and models sit next to what owns them.** A `*.service.ts` or `*.model.ts` goes at the level of the feature folder or the component folder that uses it. There are no `services/` or `models/` subfolders. The only exceptions are `shared/services/` (app-wide services) and `core/models/` (backend DTO types).
+2. **One folder per component** (`components/<name>/`), containing its `.ts`, `.html` and, if any, its own service.
+3. **Feature first, promote later.** Code starts inside its feature. It moves to `shared/` only when a second feature needs it, and never gets imported directly from another feature.
+4. **No loose files in `shared/ui`.** Every component or directive gets its own folder. Non-visual helpers go to `shared/utils/*.util.ts`.
 
-Promote code to `shared/` only when a second feature actually needs it.
+| It is…                                       | Put it in                                                |
+|----------------------------------------------|----------------------------------------------------------|
+| A call to a backend endpoint                 | `core/api/<resource>.api.ts`                             |
+| A type that mirrors a backend DTO            | `core/models/api.models.ts`                              |
+| App-wide state (session, user)               | `core/auth/` or `core/<area>/`, `providedIn: 'root'`     |
+| A routed screen                              | `features/<feature>/<feature>-page.component.ts`         |
+| State + actions of a screen                  | `features/<feature>/<feature>.service.ts`                |
+| A view model of one feature                  | `features/<feature>/<feature>.model.ts`                  |
+| A dialog/subcomponent of one feature         | `features/<feature>/components/<name>/`                  |
+| State of one dialog                          | `features/<feature>/components/<name>/<name>.service.ts` |
+| Domain component/service used by 2+ features | `shared/<domain>/`                                       |
+| Domain-agnostic visual component             | `shared/ui/<name>/`                                      |
+| Form control                                 | `shared/ui/forms/<name>/`                                |
+| App-wide UI service (toasts, confirm)        | `shared/services/`                                       |
+| Pure helper                                  | `core/utils/` (domain) · `shared/utils/` (UI, forms)     |
 
-## Data flow
+## Layers
 
 ```
-Template ─(events)→ Page component ─→ Feature service ─→ core/api/*Api ─→ HttpClient
-   ▲                                        │                               │ interceptors:
-   └──────── signals (computed) ◄───────────┘ rxResource / signals          │ base URL, Bearer token, 401 → logout
+Template ─events─▶ Page ─▶ Feature service ─▶ core/api ─▶ HttpClient ─▶ interceptors ─▶ API
+    ▲                            │
+    └──────── signals ◀──────────┘ (rxResource, computed)
 ```
 
-| Layer                        | Does                                                                                                                                      | Never does                                        |
-|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------|
-| `core/api`                   | Typed HTTP calls, returns `Observable<T>`                                                                                                 | State, notifications, error messages, `subscribe` |
-| Feature service              | Holds state in signals, loads with `rxResource`, filters/pagination, orchestrates API calls, confirm dialogs, success/error notifications | Touch the DOM                                     |
-| Page component               | Wires template to the service, opens dialogs, focus management                                                                            | HTTP calls, business rules                        |
-| Presentational (`shared/ui`) | `input()` / `output()` only, renders                                                                                                      | Inject feature services or APIs                   |
-| Interceptors / guards        | Cross-cutting HTTP and navigation rules                                                                                                   | Feature logic                                     |
+| Layer                             | Does                                                                                                    | Never does                      |
+|-----------------------------------|---------------------------------------------------------------------------------------------------------|---------------------------------|
+| `core/api`                        | Typed HTTP calls returning `Observable<T>`                                                              | Hold state, notify, subscribe   |
+| Feature service                   | State in signals, loading with `rxResource`, filters, pagination, actions, confirmations, notifications | Open dialogs, touch the DOM     |
+| Page                              | Binds the template to the service, opens dialogs, manages focus                                         | Call APIs, business rules       |
+| Dialog                            | Form, submit through the feature service, show server errors                                            | Call APIs directly              |
+| `shared/ui`                       | `input()` / `output()` / `model()`, rendering                                                           | Inject feature services or APIs |
+| `shared/<domain>` actions service | Reusable domain flows across features (may open its own domain dialogs)                                 | Feature-specific state          |
+| Interceptors / guards             | Cross-cutting HTTP and navigation rules                                                                 | Feature logic                   |
 
-## Naming conventions
+## Naming
 
-| Thing            | File                                             | Class / symbol                                       |
-|------------------|--------------------------------------------------|------------------------------------------------------|
-| API client       | `books.api.ts`                                   | `BooksApi`                                           |
-| WebSocket client | `board.socket.ts`                                | `BoardSocket`                                        |
-| Feature service  | `services/books.service.ts`                      | `BooksService`                                       |
-| Routed page      | `books-page.component.ts`                        | `BooksPageComponent`, selector `app-books-page`      |
-| Dialog           | `book-form-dialog.component.ts`                  | `BookFormDialogComponent` + `BookFormData` interface |
-| UI component     | `shared/ui/empty-state/empty-state.component.ts` | `EmptyStateComponent`                                |
-| Guard            | `auth.guards.ts`                                 | `authGuard`, `guestGuard`, `roleGuard(...)`          |
-| Interceptor      | `api.interceptors.ts`                            | `apiUrlInterceptor`, `authInterceptor`               |
-| Utils            | `labels.util.ts`                                 | plain exported functions/consts                      |
-| Constants        | —                                                | `UPPER_SNAKE_CASE` (`BOOKS_PAGE_SIZE`)               |
+| Thing            | File                             | Symbol                                     |
+|------------------|----------------------------------|--------------------------------------------|
+| API client       | `books.api.ts`                   | `BooksApi`                                 |
+| WebSocket client | `loans.socket.ts`                | `LoansSocket`                              |
+| Page             | `books-page.component.ts`        | `BooksPageComponent`, `app-books-page`     |
+| Feature service  | `books.service.ts`               | `BooksService`                             |
+| View model       | `books.model.ts`                 | `BookRow`, `BookColumn`…                   |
+| Dialog           | `book-form-dialog.component.ts`  | `BookFormDialogComponent` + `BookFormData` |
+| Dialog service   | `book-form.service.ts`           | `BookFormService`                          |
+| Component        | `book-card.component.ts`         | `BookCardComponent`, `app-book-card`       |
+| Directive        | `keyboard-activate.directive.ts` | `KeyboardActivateDirective`                |
+| Pipe             | `due-date.pipe.ts`               | `DueDatePipe`, `dueDate`                   |
+| Utils            | `dates.util.ts`                  | exported functions / consts                |
+| Guards           | `auth.guards.ts`                 | `authGuard`, `guestGuard`, `roleGuard()`   |
+| Interceptors     | `api.interceptors.ts`            | `apiUrlInterceptor`, `authInterceptor`     |
+| Constants        | —                                | `UPPER_SNAKE_CASE`                         |
 
-Files in kebab-case; one component/service per file; templates in separate `.html` files.
+Files are kebab-case, there is one class per file, and templates live in their own `.html` file. Standalone entry pages outside the shell (e.g. `login.component.ts`) may drop the `-page` suffix.
 
 ## Models — `core/models/api.models.ts`
 
-Mirror the backend DTOs exactly; use string-literal unions for enums.
+Mirror the backend DTOs exactly. Enums are string-literal unions.
 
 ```ts
 export type Role = 'ADMIN' | 'LIBRARIAN' | 'READER';
@@ -147,7 +168,9 @@ export interface BookFilters extends PageQuery {
 }
 ```
 
-## API client — `core/api`
+Request, query and filter types also live here. Never declare them inline in API clients. Derive related shapes (`Omit<…>`, `extends`) instead of duplicating them.
+
+## API client — `core/api/books.api.ts`
 
 ```ts
 @Injectable({ providedIn: 'root' })
@@ -176,27 +199,15 @@ export class BooksApi {
 }
 ```
 
-- Relative URLs (`'books'`); `apiUrlInterceptor` prefixes `environment.apiUrl`.
-- Method names are verbs on the resource (`list`, `get`, `create`, `update`, `deactivate`), not HTTP verbs.
-- `toHttpParams` drops `null`/`undefined`/`''` so optional filters are simply omitted:
+- Use relative URLs. `apiUrlInterceptor` adds `environment.apiUrl`.
+- `toHttpParams` (in `core/http/http-params.util.ts`) skips `null`, `undefined` and `''`, so optional filters are left out of the query string.
+
+## Feature service — `features/books/books.service.ts`
+
+`@Injectable()` without `providedIn`, provided by the page (`providers: [BooksService]`). State lives and dies with the screen.
 
 ```ts
-export function toHttpParams(query: object = {}): HttpParams {
-  let params = new HttpParams();
-  for (const [key, value] of Object.entries(query)) {
-    if (value === null || value === undefined || value === '') continue;
-    params = params.set(key, String(value));
-  }
-  return params;
-}
-```
-
-## Feature service — state with signals
-
-Provided **at the page component** (`providers: [BooksService]`), so state lives and dies with the screen and dialogs opened with the page injector share it.
-
-```ts
-const BOOKS_PAGE_SIZE = 12;
+const PAGE_SIZE = 12;
 
 @Injectable()
 export class BooksService {
@@ -205,28 +216,22 @@ export class BooksService {
   private readonly notifications = inject(NotificationService);
 
   private readonly _search = signal('');
-  private readonly _showInactive = signal(false);
-  private readonly page = signal(0);
+  private readonly _page = signal(0);
   readonly search = this._search.asReadonly();
-  readonly showInactive = this._showInactive.asReadonly();
 
   private readonly debouncedSearch = toSignal(
     toObservable(this._search).pipe(
       debounceTime(500),
-      map((search) => search.trim()),
+      map((s) => s.trim()),
       distinctUntilChanged(),
-      tap(() => this.page.set(0)),
+      tap(() => this._page.set(0)),
     ),
     { initialValue: '' },
   );
 
   private readonly resource = rxResource({
-    request: () => ({
-      search: this.debouncedSearch(),
-      isActive: this.showInactive() ? undefined : true,
-      page: this.page(),
-    }),
-    loader: ({ request }) => this.booksApi.list({ ...request, size: BOOKS_PAGE_SIZE, sort: 'id' }),
+    request: () => ({ search: this.debouncedSearch(), page: this._page() }),
+    loader: ({ request }) => this.booksApi.list({ ...request, size: PAGE_SIZE, sort: 'id' }),
   });
 
   readonly books = computed(() => this.resource.value()?.content ?? []);
@@ -242,13 +247,8 @@ export class BooksService {
     this._search.set(search);
   }
 
-  setShowInactive(value: boolean): void {
-    this._showInactive.set(value);
-    this.page.set(0);
-  }
-
   setPage(page: number): void {
-    this.page.set(page);
+    this._page.set(page);
   }
 
   save(book: Book | undefined, request: BookRequest): Observable<Book> {
@@ -262,7 +262,7 @@ export class BooksService {
   deactivate(book: Book): Observable<unknown> {
     return this.confirm
       .confirmThen(
-        { title: 'Deactivate book', message: `${book.title} will no longer be lendable.`, confirmLabel: 'Deactivate', danger: true },
+        { title: 'Deactivate book', message: `${book.title} can no longer be lent.`, confirmLabel: 'Deactivate', danger: true },
         () => this.booksApi.deactivate(book.id),
         'Book deactivated',
         'Could not deactivate the book',
@@ -272,16 +272,14 @@ export class BooksService {
 }
 ```
 
-Rules:
-- Private writable signals (`_search`) + public `asReadonly()`; mutate only through methods (`setSearch`).
-- Derived state with `computed`, never duplicated in another signal.
-- Server data via `rxResource` (`request` → reloads automatically when its signals change; return `undefined` to skip loading).
-  Angular 19 uses `request`/`loader`; Angular 20+ renames them to `params`/`stream`.
-- Expose `isLoading`, `errorMessage`, data and pagination for the template's loading/error/empty/content states.
-- Actions return `Observable` so the caller can react (close a dialog, move focus); confirmation and notifications live here.
-- Errors shown to the user always go through `apiErrorMessage(error, fallback)`.
+- Writable signals are private (`_x`) and exposed with `asReadonly()`. Change them only through methods.
+- Derived state uses `computed`. Never copy it into another signal.
+- Load server data with `rxResource`. A `request` that returns `undefined` skips loading. In Angular 20+, `request`/`loader` are renamed to `params`/`stream`.
+- Expose `isLoading`, `errorMessage`, the data and the pagination.
+- Actions return an `Observable` so the caller can react (close the dialog, move focus).
+- Show user-facing errors through `apiErrorMessage(error, fallback)`.
 
-## Page component (container)
+## Page — `features/books/books-page.component.ts`
 
 ```ts
 @Component({
@@ -301,43 +299,35 @@ export class BooksPageComponent {
     this.dialog.open<void, BookFormData>(BookFormDialogComponent, {
       ...labelledByFrame(),
       data: { book },
-      injector: this.injector, // dialog sees the page-scoped BooksService
+      injector: this.injector, // the dialog shares the page's BooksService
     });
   }
 }
 ```
 
-Template — always cover the four states:
+The template always covers loading, error, empty and content:
 
 ```html
-<app-page-header title="Books" subtitle="Library catalog">
+<app-page-header title="Books">
   <button type="button" class="btn btn-primary" (click)="openForm()">New book</button>
 </app-page-header>
 
 @if (books.isLoading() && !books.books().length) {
   <app-skeleton [rows]="4" />
-} @else if (books.errorMessage()) {
-  <app-load-error [message]="books.errorMessage()!" (retry)="books.reload()" />
+} @else if (books.errorMessage(); as error) {
+  <app-load-error [message]="error" (retry)="books.reload()" />
 } @else if (!books.books().length) {
-  <app-empty-state icon="book" title="No books" message="Add the first book to the catalog." />
+  <app-empty-state icon="book" title="No books" />
 } @else {
-  <table class="data-table">
-    @for (book of books.books(); track book.id) { … }
-  </table>
+  @for (book of books.books(); track book.id) { … }
 }
 
 @if (books.pagination(); as info) {
-  <app-pagination [page]="info.number" [totalPages]="info.totalPages" [totalElements]="info.totalElements"
-                  (pageChange)="books.setPage($event)" />
+  <app-pagination [page]="info.number" [totalPages]="info.totalPages" (pageChange)="books.setPage($event)" />
 }
 ```
 
-- `ChangeDetectionStrategy.OnPush` on every component.
-- `inject()` instead of constructor parameters; `protected` for members used only by the template.
-- Built-in control flow (`@if`, `@for` with `track`, `@switch`), no `*ngIf`/`*ngFor`.
-- Layout classes on the host via `host: { class: … }`, not a wrapper `<div>`.
-
-## Dialog component (form)
+## Dialog — `features/books/components/book-form-dialog/`
 
 ```ts
 export interface BookFormData {
@@ -377,18 +367,18 @@ export class BookFormDialogComponent {
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
         next: () => this.ref.close(),
-        error: (error) => this.error.set(apiErrorMessage(error, 'Could not save the book')),
+        error: (e) => this.error.set(apiErrorMessage(e, 'Could not save the book')),
       });
   }
 }
 ```
 
-- Typed, non-nullable reactive forms; same dialog for create and edit (`book` undefined = create).
-- Guard double submit with a `saving` signal; show server errors inside the dialog, not as toasts.
-- Validators and their messages live in `shared/utils/validation-messages.util.ts`; `app-form-field` renders the message and wires `aria-invalid` / `aria-describedby`.
-- If a dialog has substantial state of its own, give it `components/<dialog>/services/<dialog>.service.ts` provided in the dialog.
+- The same dialog handles create and edit (`book` undefined means create).
+- A `saving` signal blocks double submits. Server errors are shown inside the dialog.
+- Validators and their messages come from `shared/utils/validation-messages.util.ts`. `app-form-field` shows the message and wires the ARIA attributes.
+- A dialog with substantial state of its own gets `book-form.service.ts` next to it, provided in the dialog. That service types `DIALOG_DATA` with `import type { BookFormData }`.
 
-## Presentational component (`shared/ui`)
+## Presentational component — `shared/ui/empty-state/`
 
 ```ts
 @Component({
@@ -399,18 +389,15 @@ export class BookFormDialogComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmptyStateComponent {
-  title = input.required<string>();
-  message = input<string>();
-  icon = input<UiIconName>('calendar');
+  readonly title = input.required<string>();
+  readonly message = input<string>();
+  readonly icon = input<UiIconName>('inbox');
 }
 ```
 
-Signal `input()` / `output()` / `model()` only; no injected domain services.
-
-## HTTP: interceptors and errors
+## HTTP — `core/http/`
 
 ```ts
-// core/http/api.interceptors.ts
 export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
   if (/^(https?:)?\/\//.test(req.url) || req.url.startsWith('/')) return next(req);
   return next(req.clone({ url: environment.apiUrl + req.url }));
@@ -430,7 +417,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 ```
 
 ```ts
-// core/http/api-error.ts — turns the backend ErrorResponse into a user message
 export function apiErrorMessage(error: unknown, fallback = 'Unexpected error'): string {
   if (!(error instanceof HttpErrorResponse)) return fallback;
   if (error.status === 0) return 'Could not reach the server';
@@ -444,10 +430,10 @@ export function resourceError(resource: { error(): unknown }, fallback: string):
 }
 ```
 
-## Auth, guards, navigation
+## Auth and navigation — `core/auth/`, `core/navigation/`
 
-- `AuthService` (`providedIn: 'root'`): session in a signal decoded from the JWT (`jwt-decode`), persisted in `localStorage` (wrapped in try/catch), `token()` drops expired sessions, `hasRole(...roles)`, `login()`, `logout()`.
-- Functional guards:
+- `AuthService` (`providedIn: 'root'`) keeps the session decoded from the JWT in a signal and persists it in `localStorage` inside try/catch. `token()` discards an expired session. It also exposes `hasRole(...roles)`, `login()` and `logout()`.
+- Guards are functional:
 
 ```ts
 export const authGuard: CanActivateFn = () =>
@@ -461,8 +447,8 @@ export function roleGuard(...roles: Role[]): CanActivateFn {
 }
 ```
 
-- `core/navigation/navigation.ts` holds `HOME_URL`, role groups (`ROLES.admin`, `ROLES.staff`) and the nav items with the roles allowed to see them — the sidebar and the routes read from the same source.
-- UI permission rules (e.g. `canReturnLoan(status)`) are pure functions in `core/auth/permissions.ts`. They hide buttons; the backend still enforces.
+- `navigation.ts` defines `HOME_URL`, the role groups (`ROLES.admin`…) and the nav items with their roles. Routes and the sidebar read the same source.
+- `permissions.ts` holds pure UI rules (`canReturnLoan(status)`). The backend enforces them too.
 
 ## Routing — `app.routes.ts`
 
@@ -497,9 +483,9 @@ export const routes: Routes = [
 ];
 ```
 
-Every feature is lazy (`loadComponent`); authenticated pages are children of the shell; every route has a `title`.
+Every route is lazy and has a `title`. Authenticated pages are children of the shell.
 
-## App config
+## App config — `app.config.ts`
 
 ```ts
 export const appConfig: ApplicationConfig = {
@@ -513,26 +499,27 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-Dev server: `proxy.conf.js` forwards `/api` and `/ws` (with `ws: true`) to the backend, so the app always uses relative URLs and no CORS is needed locally.
+In development, `proxy.conf.js` forwards `/api` and `/ws` (`ws: true`) to the backend, so URLs stay relative and you don't need CORS locally.
 
 ## Real-time (optional)
 
-A WebSocket client lives in `core/api/<name>.socket.ts` (e.g. `RxStomp`), is `@Injectable()` without `providedIn` and is provided by the page that needs it. It sends the JWT in `connectHeaders`, runs outside the Angular zone, deactivates on `DestroyRef`. The feature service listens to its events and simply calls `resource.reload()` (debounced) — events only signal "something changed", data still comes from REST (see `java-websocket-stomp`).
+`core/api/<name>.socket.ts` is `@Injectable()` without `providedIn` and is provided by the page that uses it. It sends the JWT in `connectHeaders`, runs outside the zone and deactivates in `DestroyRef`. The feature service listens to its events and calls `resource.reload()` (debounced); the data always comes from REST.
 
 ## Conventions
 
-- Strict TypeScript; no `any`. Prettier: `printWidth: 100`, `singleQuote: true`.
-- `readonly` on injected dependencies and signals.
-- Accessibility basics: `type="button"`, `aria-label` on icon buttons, labelled dialogs (`labelledByFrame()`), focus restored after actions.
-- Styling with Tailwind utilities; repeated patterns become global classes in `styles.css` (`btn`, `btn-primary`, `field-input`, `data-table`, `chip`).
-- Unit tests next to the file (`*.spec.ts`), prioritizing pure utils and services.
+- Use `ChangeDetectionStrategy.OnPush`, `inject()` and `readonly` dependencies everywhere. Use `protected` for members only the template uses.
+- Use built-in control flow (`@if`, `@for` with `track`). Put host classes in `host: { class }`.
+- Strict TypeScript, no `any`. Prettier settings: `printWidth: 100`, `singleQuote: true`.
+- Accessibility: `type="button"`, `aria-label` on icon buttons, labelled dialogs, focus restored after actions.
+- Style with Tailwind. Repeated patterns become global classes in `styles.css`.
+- Put tests `*.spec.ts` next to the file they test.
 
 ## New feature checklist
 
-1. Types in `core/models/api.models.ts` matching the backend DTOs
+1. DTO types in `core/models/api.models.ts`
 2. `core/api/<resource>.api.ts`
-3. `features/<feature>/services/<feature>.service.ts` (signals + `rxResource` + actions)
-4. `features/<feature>/<feature>-page.component.ts|html` with loading / error / empty / content states
-5. Dialogs in `features/<feature>/components/`
-6. Route in `app.routes.ts` (lazy, `title`, guards) and nav item in `core/navigation/navigation.ts`
-7. Reuse `shared/ui` pieces; promote new ones only when a second feature needs them
+3. `features/<feature>/<feature>.service.ts`
+4. `features/<feature>/<feature>-page.component.ts|html` with all 4 states
+5. Dialogs and subcomponents in `features/<feature>/components/<name>/`
+6. Lazy route with `title` and guards, plus a nav item in `core/navigation/navigation.ts`
+7. Reuse `shared/`; promote code there only when a second feature needs it

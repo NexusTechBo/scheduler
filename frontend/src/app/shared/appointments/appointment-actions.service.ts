@@ -1,22 +1,22 @@
 import { Injectable, inject } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
-import { labelledByFrame } from '../../ui/dialog-frame/dialog-frame.component';
+import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
 import { EMPTY, Observable, catchError, filter, map, switchMap, tap } from 'rxjs';
-import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { apiErrorMessage } from '../../../core/http/api-error';
-import { AppointmentResponse } from '../../../core/models/api.models';
-import { datePart, formatDayLabel, formatTime } from '../../../core/utils/calendar.util';
-import { NotificationService } from '../../services/notification.service';
-import { ConfirmService } from '../../ui/confirm-dialog/services/confirm.service';
+import { AppointmentsApi } from '../../core/api/appointments.api';
+import { apiErrorMessage } from '../../core/http/api-error';
+import { AppointmentResponse } from '../../core/models/api.models';
+import { datePart, formatDayLabel, formatTime } from '../../core/utils/calendar.util';
+import { NotificationService } from '../services/notification.service';
+import { ConfirmService } from '../services/confirm.service';
 import {
   AppointmentDetailData,
   AppointmentDetailDialogComponent,
-} from '../components/appointment-detail-dialog/appointment-detail-dialog.component';
+} from './components/appointment-detail-dialog/appointment-detail-dialog.component';
 import {
   CancelAppointmentData,
   CancelAppointmentDialogComponent,
   CancelAppointmentResult,
-} from '../components/cancel-appointment-dialog/cancel-appointment-dialog.component';
+} from './components/cancel-appointment-dialog/cancel-appointment-dialog.component';
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentActionsService {
@@ -46,7 +46,7 @@ export class AppointmentActionsService {
       })
       .closed.pipe(
         filter((result): result is CancelAppointmentResult => !!result),
-        switchMap(({ reason }) => this.run(this.api.cancel(id, reason), 'Cita cancelada')),
+        switchMap(({ reason }) => this.run(this.api.cancel(id, { reason }), 'Cita cancelada')),
       );
   }
 

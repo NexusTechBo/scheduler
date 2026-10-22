@@ -16,9 +16,13 @@ import {
   PatientFormData,
   PatientFormDialogComponent,
 } from './components/patient-form-dialog/patient-form-dialog.component';
-import { PatientScope, PatientsService } from './services/patients.service';
+import {
+  AssignDoctorData,
+  AssignDoctorDialogComponent,
+} from './components/assign-doctor-dialog/assign-doctor-dialog.component';
+import { PatientScope, PatientsService } from './patients.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { focusAfterLoad } from '../../shared/ui/focus-after-load';
+import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 
 @Component({
@@ -59,6 +63,13 @@ export class PatientsPageComponent {
       ...labelledByFrame(),
       data: { patient },
       injector: this.injector,
+    });
+  }
+
+  protected manageDoctors(patient: Patient): void {
+    this.dialog.open<void, AssignDoctorData>(AssignDoctorDialogComponent, {
+      ...labelledByFrame(),
+      data: { patient },
     });
   }
 

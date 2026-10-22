@@ -1,10 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { AuthService } from '../../../core/auth/auth.service';
-import { apiErrorMessage } from '../../../core/http/api-error';
-import { HOME_URL } from '../../../core/navigation/navigation';
-import { NotificationService } from '../../../shared/services/notification.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { apiErrorMessage } from '../../core/http/api-error';
+import { HOME_URL } from '../../core/navigation/navigation';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
 export class LoginService {

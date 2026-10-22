@@ -1,18 +1,18 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, finalize, tap } from 'rxjs';
-import { CatalogsApi } from '../../../core/api/catalogs.api';
-import { StaffApi } from '../../../core/api/staff.api';
-import { resourceError } from '../../../core/http/api-error';
+import { CatalogsApi } from '../../core/api/catalogs.api';
+import { StaffApi } from '../../core/api/staff.api';
+import { resourceError } from '../../core/http/api-error';
 import {
   Role,
   Staff,
   StaffFilters,
   StaffRegisterRequest,
   StaffUpdateRequest,
-} from '../../../core/models/api.models';
-import { NotificationService } from '../../../shared/services/notification.service';
-import { ConfirmService } from '../../../shared/ui/confirm-dialog/services/confirm.service';
+} from '../../core/models/api.models';
+import { NotificationService } from '../../shared/services/notification.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
 
 const PAGE_SIZE = 12;
 

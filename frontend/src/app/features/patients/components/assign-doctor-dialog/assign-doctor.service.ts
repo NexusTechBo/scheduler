@@ -2,11 +2,11 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { finalize, map } from 'rxjs';
-import { PatientsApi } from '../../../../../core/api/patients.api';
-import { StaffApi } from '../../../../../core/api/staff.api';
-import { apiErrorMessage } from '../../../../../core/http/api-error';
-import { Patient } from '../../../../../core/models/api.models';
-import { NotificationService } from '../../../../../shared/services/notification.service';
+import { PatientsApi } from '../../../../core/api/patients.api';
+import { StaffApi } from '../../../../core/api/staff.api';
+import { apiErrorMessage, resourceError } from '../../../../core/http/api-error';
+import { NotificationService } from '../../../../shared/services/notification.service';
+import type { AssignDoctorData } from './assign-doctor-dialog.component';
 
 @Injectable()
 export class AssignDoctorService {
@@ -14,7 +14,7 @@ export class AssignDoctorService {
   private readonly staffApi = inject(StaffApi);
   private readonly notifications = inject(NotificationService);
 
-  readonly patient = inject<{ patient: Patient }>(DIALOG_DATA).patient;
+  readonly patient = inject<AssignDoctorData>(DIALOG_DATA).patient;
 
   private readonly assignedResource = rxResource({
     loader: () => this.patientsApi.doctors(this.patient.id),
@@ -30,10 +30,26 @@ export class AssignDoctorService {
   readonly message = this._message.asReadonly();
   readonly assignedDoctors = computed(() => this.assignedResource.value() ?? []);
   readonly assignedLoading = this.assignedResource.isLoading;
+  readonly assignedErrorMessage = resourceError(
+    this.assignedResource,
+    'No se pudieron cargar los doctores asignados',
+  );
+  readonly doctorsErrorMessage = resourceError(
+    this.activeDoctorsResource,
+    'No se pudieron cargar los doctores disponibles',
+  );
   readonly assignableDoctors = computed(() => {
     const assigned = new Set(this.assignedDoctors().map((doctor) => doctor.id));
     return (this.activeDoctorsResource.value() ?? []).filter((doctor) => !assigned.has(doctor.id));
   });
+
+  reloadAssigned(): void {
+    this.assignedResource.reload();
+  }
+
+  reloadDoctors(): void {
+    this.activeDoctorsResource.reload();
+  }
 
   assign(doctorId: number): void {
     this.changeAssignment(doctorId, true);

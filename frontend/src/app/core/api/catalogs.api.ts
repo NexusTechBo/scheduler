@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { Specialty } from '../models/api.models';
+import { Specialty, SpecialtyRequest } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogsApi {
@@ -13,7 +13,7 @@ export class CatalogsApi {
       .pipe(map((list) => list.sort((a, b) => a.name.localeCompare(b.name))));
   }
 
-  createSpecialty(name: string): Observable<Specialty> {
-    return this.http.post<Specialty>('specialties', { name });
+  createSpecialty(request: SpecialtyRequest): Observable<Specialty> {
+    return this.http.post<Specialty>('specialties', request);
   }
 }

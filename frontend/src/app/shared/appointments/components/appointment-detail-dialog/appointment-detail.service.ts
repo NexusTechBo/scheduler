@@ -2,18 +2,19 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, finalize, tap } from 'rxjs';
-import { AppointmentsApi } from '../../../../../core/api/appointments.api';
-import { canCancelAppointment, canConfirmAppointment } from '../../../../../core/auth/permissions';
-import { resourceError } from '../../../../../core/http/api-error';
-import { AppointmentResponse } from '../../../../../core/models/api.models';
-import { datePart, formatLongDate } from '../../../../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../../services/appointment-actions.service';
+import { AppointmentsApi } from '../../../../core/api/appointments.api';
+import { canCancelAppointment, canConfirmAppointment } from '../../../../core/auth/permissions';
+import { resourceError } from '../../../../core/http/api-error';
+import { AppointmentResponse } from '../../../../core/models/api.models';
+import { datePart, formatLongDate } from '../../../../core/utils/calendar.util';
+import { AppointmentActionsService } from '../../appointment-actions.service';
+import type { AppointmentDetailData } from './appointment-detail-dialog.component';
 
 @Injectable()
 export class AppointmentDetailService {
   private readonly api = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
-  private readonly id = inject<{ id: number }>(DIALOG_DATA).id;
+  private readonly id = inject<AppointmentDetailData>(DIALOG_DATA).id;
 
   private readonly resource = rxResource({ loader: () => this.api.get(this.id) });
   private readonly _busy = signal(false);

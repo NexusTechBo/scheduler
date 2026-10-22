@@ -49,6 +49,11 @@
         <div class="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
           @if (booking.patientsLoading()) {
             <app-skeleton heightClass="h-12" />
+          } @else if (booking.patientsErrorMessage()) {
+            <app-load-error
+              [message]="booking.patientsErrorMessage()!"
+              (retry)="booking.reloadPatients()"
+            />
           }
           @for (patient of booking.filteredPatients(); track patient.id) {
             <button
@@ -68,7 +73,7 @@
               </span>
             </button>
           } @empty {
-            @if (!booking.patientsLoading()) {
+            @if (!booking.patientsLoading() && !booking.patientsErrorMessage()) {
               <p class="px-3 py-4 text-sm text-gray-500">
                 {{
                   booking.patientSearch().trim()
@@ -94,6 +99,9 @@
           Especialidad y doctor
         </h2>
 
+        @if (booking.specialtiesErrorMessage(); as error) {
+          <app-load-error class="mb-4" [message]="error" (retry)="booking.reloadSpecialties()" />
+        }
         <div class="mb-4 flex flex-wrap gap-2">
           <button
             type="button"
@@ -128,6 +136,12 @@
         <div class="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
           @if (booking.doctorsLoading()) {
             <app-skeleton [rows]="3" heightClass="h-17" />
+          } @else if (booking.doctorsErrorMessage()) {
+            <app-load-error
+              class="col-span-full"
+              [message]="booking.doctorsErrorMessage()!"
+              (retry)="booking.reloadDoctors()"
+            />
           } @else {
             @for (doctor of booking.doctors(); track doctor.id) {
               <button

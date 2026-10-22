@@ -1,15 +1,15 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { forkJoin, map } from 'rxjs';
-import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { StaffApi } from '../../../core/api/staff.api';
-import { AuthService } from '../../../core/auth/auth.service';
-import { resourceError } from '../../../core/http/api-error';
-import { AppointmentSummaryItem, Role } from '../../../core/models/api.models';
-import { HOME_URL, navItemsFor } from '../../../core/navigation/navigation';
-import { addDays, startOfWeek, toIso } from '../../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../../shared/appointments/services/appointment-actions.service';
-import { UiIconName } from '../../../shared/ui/ui-icon/ui-icon.component';
+import { AppointmentsApi } from '../../core/api/appointments.api';
+import { StaffApi } from '../../core/api/staff.api';
+import { AuthService } from '../../core/auth/auth.service';
+import { resourceError } from '../../core/http/api-error';
+import { AppointmentSummaryItem, Role } from '../../core/models/api.models';
+import { HOME_URL, navItemsFor } from '../../core/navigation/navigation';
+import { addDays, startOfWeek, toIso } from '../../core/utils/calendar.util';
+import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
+import { UiIconName } from '../../shared/ui/ui-icon/ui-icon.component';
 
 interface Kpi {
   label: string;

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { AppointmentSummaryItem } from '../../../../core/models/api.models';
 import { formatDayLabel } from '../../../../core/utils/calendar.util';
 import { TimeRangePipe } from '../../../../shared/pipes/time-range.pipe';
-import { KeyboardActivateDirective } from '../../../../shared/ui/keyboard-activate.directive';
+import { KeyboardActivateDirective } from '../../../../shared/ui/keyboard-activate/keyboard-activate.directive';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 
 @Component({

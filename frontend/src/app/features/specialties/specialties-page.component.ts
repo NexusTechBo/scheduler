@@ -5,7 +5,7 @@ import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.compon
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
-import { SpecialtiesService } from './services/specialties.service';
+import { SpecialtiesService } from './specialties.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 
 @Component({

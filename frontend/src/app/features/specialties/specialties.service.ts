@@ -1,10 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, catchError, defer, finalize, tap } from 'rxjs';
-import { CatalogsApi } from '../../../core/api/catalogs.api';
-import { apiErrorMessage, resourceError } from '../../../core/http/api-error';
-import { Specialty } from '../../../core/models/api.models';
-import { NotificationService } from '../../../shared/services/notification.service';
+import { CatalogsApi } from '../../core/api/catalogs.api';
+import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import { Specialty } from '../../core/models/api.models';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
 export class SpecialtiesService {
@@ -18,7 +18,8 @@ export class SpecialtiesService {
   readonly specialties = computed(() => this.resource.value() ?? []);
   readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(this.resource, 'No se pudieron cargar las especialidades');
-  readonly saving = signal(false);
+  private readonly _saving = signal(false);
+  readonly saving = this._saving.asReadonly();
 
   reload(): void {
     this.resource.reload();
@@ -26,8 +27,8 @@ export class SpecialtiesService {
 
   create(name: string): Observable<Specialty> {
     return defer(() => {
-      this.saving.set(true);
-      return this.api.createSpecialty(name);
+      this._saving.set(true);
+      return this.api.createSpecialty({ name });
     }).pipe(
       tap(() => {
         this.notifications.success(`Especialidad "${name}" creada`);
@@ -37,7 +38,7 @@ export class SpecialtiesService {
         this.notifications.error(apiErrorMessage(error, 'No se pudo crear la especialidad'));
         return EMPTY;
       }),
-      finalize(() => this.saving.set(false)),
+      finalize(() => this._saving.set(false)),
     );
   }
 }

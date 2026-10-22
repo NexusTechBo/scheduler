@@ -3,11 +3,11 @@
   subtitle="Define cuándo atiendes; los pacientes solo verán horarios libres dentro de estos bloques"
 >
   <div class="flex flex-wrap gap-2.5">
-    <button type="button" class="btn btn-secondary" (click)="addException()">
+    <button id="add-exception" type="button" class="btn btn-secondary" (click)="addException()">
       <app-ui-icon name="block" class="h-4 w-4" />
       Bloquear fecha
     </button>
-    <button type="button" class="btn btn-primary" (click)="addAvailability()">
+    <button id="add-availability" type="button" class="btn btn-primary" (click)="addAvailability()">
       <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
       Agregar horario
     </button>
@@ -38,9 +38,10 @@
                     </p>
                   </div>
                   <button
+                    [id]="'availability-remove-' + block.id"
                     type="button"
                     class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white/80 text-gray-500 opacity-60 hover:text-red-600 hover:opacity-100 group-hover:opacity-100"
-                    (click)="availability.removeAvailability(block, day.label)"
+                    (click)="removeAvailability(block, day)"
                     [attr.aria-label]="
                       'Quitar horario del ' + (day.label | lowercase) + ' ' + (block | timeRange)
                     "
@@ -94,9 +95,10 @@
                 </p>
               </div>
               <button
+                [id]="'exception-remove-' + exception.id"
                 type="button"
                 class="btn-icon hover:text-red-600!"
-                (click)="availability.removeException(exception)"
+                (click)="removeException(exception)"
                 [attr.aria-label]="
                   'Quitar bloqueo del ' +
                   (formatLongDate(exception.date) | lowercase) +
@@ -138,6 +140,11 @@
       </div>
       @if (availability.isPreviewLoading()) {
         <app-skeleton heightClass="h-24" />
+      } @else if (availability.previewError()) {
+        <app-load-error
+          [message]="availability.previewError()!"
+          (retry)="availability.reloadPreview()"
+        />
       } @else {
         <div class="flex flex-wrap gap-2">
           @for (slot of availability.previewSlots(); track slot) {

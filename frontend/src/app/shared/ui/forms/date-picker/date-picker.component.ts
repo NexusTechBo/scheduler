@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { formatShortDate, parseIso, toIso } from '../../../../core/utils/calendar.util';
-import { POPOVER_POSITIONS } from '../../overlay-positions';
+import { POPOVER_POSITIONS } from '../../../utils/overlay-positions.util';
 import { UiIconComponent } from '../../ui-icon/ui-icon.component';
 import { MonthGridComponent } from '../month-grid/month-grid.component';
 

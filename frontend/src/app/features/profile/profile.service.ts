@@ -1,10 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
-import { StaffApi } from '../../../core/api/staff.api';
-import { AuthService } from '../../../core/auth/auth.service';
-import { resourceError } from '../../../core/http/api-error';
-import { ProfileUpdateRequest, Staff } from '../../../core/models/api.models';
-import { NotificationService } from '../../../shared/services/notification.service';
+import { StaffApi } from '../../core/api/staff.api';
+import { AuthService } from '../../core/auth/auth.service';
+import { resourceError } from '../../core/http/api-error';
+import { ProfileUpdateRequest, Staff } from '../../core/models/api.models';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
 export class ProfileService {

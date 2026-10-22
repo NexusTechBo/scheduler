@@ -14,24 +14,24 @@ import {
   throwError,
   toArray,
 } from 'rxjs';
-import { AgendaApi } from '../../../core/api/agenda.api';
-import { AuthService } from '../../../core/auth/auth.service';
+import { AgendaApi } from '../../core/api/agenda.api';
+import { AuthService } from '../../core/auth/auth.service';
 import {
   activeAppointmentsConflict,
   apiErrorMessage,
   resourceError,
-} from '../../../core/http/api-error';
+} from '../../core/http/api-error';
 import {
   Availability,
   AvailabilityRequest,
   DayOfWeek,
   ScheduleException,
   ScheduleExceptionRequest,
-} from '../../../core/models/api.models';
-import { formatLongDate, formatTime, toIso } from '../../../core/utils/calendar.util';
-import { DAYS_OF_WEEK } from '../../../core/utils/labels.util';
-import { NotificationService } from '../../../shared/services/notification.service';
-import { ConfirmService } from '../../../shared/ui/confirm-dialog/services/confirm.service';
+} from '../../core/models/api.models';
+import { formatLongDate, formatTime, toIso } from '../../core/utils/calendar.util';
+import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
+import { NotificationService } from '../../shared/services/notification.service';
+import { ConfirmService } from '../../shared/services/confirm.service';
 
 type AvailabilityBlock = Omit<AvailabilityRequest, 'dayOfWeek'>;
 
@@ -48,7 +48,8 @@ export class AvailabilityService {
   private readonly doctorId = inject(AuthService).userId()!;
 
   readonly today = toIso(new Date());
-  readonly previewDate = signal(this.today);
+  private readonly _previewDate = signal(this.today);
+  readonly previewDate = this._previewDate.asReadonly();
 
   private readonly availabilityResource = rxResource({ loader: () => this.api.availabilities() });
   private readonly exceptionsResource = rxResource({
@@ -82,6 +83,10 @@ export class AvailabilityService {
     this.exceptionsResource,
     'No se pudieron cargar los bloqueos',
   );
+  readonly previewError = resourceError(
+    this.previewResource,
+    'No se pudieron cargar los horarios libres',
+  );
 
   reload(): void {
     this.availabilityResource.reload();
@@ -89,8 +94,12 @@ export class AvailabilityService {
     this.previewResource.reload();
   }
 
+  reloadPreview(): void {
+    this.previewResource.reload();
+  }
+
   setPreviewDate(iso: string): void {
-    if (iso) this.previewDate.set(iso);
+    if (iso) this._previewDate.set(iso);
   }
 
   addAvailability(days: DayOfWeek[], block: AvailabilityBlock): Observable<AddAvailabilityResult> {
@@ -115,8 +124,8 @@ export class AvailabilityService {
     );
   }
 
-  removeAvailability(block: Availability, dayLabel: string): void {
-    this.confirm
+  removeAvailability(block: Availability, dayLabel: string): Observable<void> {
+    return this.confirm
       .confirmThen(
         {
           title: 'Quitar horario',
@@ -128,7 +137,7 @@ export class AvailabilityService {
         'Horario quitado',
         'No se pudo quitar el horario',
       )
-      .subscribe(() => this.reload());
+      .pipe(tap(() => this.reload()));
   }
 
   addException(request: Omit<ScheduleExceptionRequest, 'cancelAppointments'>): Observable<void> {
@@ -154,8 +163,8 @@ export class AvailabilityService {
     );
   }
 
-  removeException(exception: ScheduleException): void {
-    this.confirm
+  removeException(exception: ScheduleException): Observable<void> {
+    return this.confirm
       .confirmThen(
         {
           title: 'Quitar bloqueo',
@@ -166,7 +175,7 @@ export class AvailabilityService {
         'Bloqueo quitado',
         'No se pudo quitar el bloqueo',
       )
-      .subscribe(() => this.reload());
+      .pipe(tap(() => this.reload()));
   }
 
   private confirmCancelAppointments(count: number): Observable<true> {

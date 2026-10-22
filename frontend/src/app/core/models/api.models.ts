@@ -80,6 +80,10 @@ export interface AppointmentRequest {
   startTime: string;
 }
 
+export interface CancelAppointmentRequest {
+  reason: string;
+}
+
 export interface AppointmentResponse {
   id: number;
   startTime: string;
@@ -115,6 +119,20 @@ export interface AppointmentFilters extends PageQuery {
   doctorId?: number;
   patientId?: number;
   status?: AppointmentStatus;
+}
+
+export interface AppointmentBoardQuery {
+  from: string;
+  to: string;
+  doctorId?: number;
+  patientId?: number;
+}
+
+export interface AppointmentCalendarQuery {
+  month: number;
+  year: number;
+  doctorId?: number;
+  patientId?: number;
 }
 
 export interface Patient {
@@ -170,6 +188,11 @@ export interface PatientFilters extends PageQuery {
   isActive?: boolean;
 }
 
+export interface DoctorFilters extends PageQuery {
+  specialtyId?: number;
+  isActive?: boolean;
+}
+
 export interface StaffFilters extends PageQuery {
   specialtyId?: number;
   isActive?: boolean;
@@ -183,6 +206,10 @@ export interface AssignPatientRequest {
 
 export interface Specialty {
   id: number;
+  name: string;
+}
+
+export interface SpecialtyRequest {
   name: string;
 }
 

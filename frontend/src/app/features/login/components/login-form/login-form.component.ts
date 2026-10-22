@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
-import { LoginService } from '../../services/login.service';
+import { LoginService } from '../../login.service';
 
 @Component({
   selector: 'app-login-form',

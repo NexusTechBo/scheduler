@@ -17,9 +17,9 @@ import {
   StaffFormData,
   StaffFormDialogComponent,
 } from './components/staff-form-dialog/staff-form-dialog.component';
-import { StaffRoleFilter, StaffService } from './services/staff.service';
+import { StaffRoleFilter, StaffService } from './staff.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { focusAfterLoad } from '../../shared/ui/focus-after-load';
+import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 
 @Component({

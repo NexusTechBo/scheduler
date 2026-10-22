@@ -56,7 +56,7 @@ For each FAIL, point to the probable cause in code (`path:line`) and suggest the
 
 ## 5. Write the report
 
-Create the folder if needed and write `qa-reports/<yyyy-MM-dd>_<feature-or-controller>.md` in the backend module root (the directory with `build.gradle` / `pom.xml`). If the file exists, append `_2`, `_3`…
+Create the folder if needed and write `qa-reports/<yyyy-MM-dd>_<feature-or-controller>.md` in the repository root (the top-level directory returned by `git rev-parse --show-toplevel`, not the backend folder). If the file exists, append `_2`, `_3`…
 
 ```markdown
 # QA Report — <feature / controller>

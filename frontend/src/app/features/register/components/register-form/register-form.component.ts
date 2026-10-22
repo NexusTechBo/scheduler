@@ -7,11 +7,13 @@ import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-
 import {
   CI_ERRORS,
   PHONE_ERRORS,
+  USERNAME_ERRORS,
   ciValidator,
   notBlank,
   phoneValidator,
+  usernameValidator,
 } from '../../../../shared/utils/validation-messages.util';
-import { RegisterService } from '../../services/register.service';
+import { RegisterService } from '../../register.service';
 
 @Component({
   selector: 'app-register-form',
@@ -29,7 +31,7 @@ export class RegisterFormComponent {
     phoneNumber: ['', [notBlank, phoneValidator]],
     adminName: ['', notBlank],
     adminCi: ['', [notBlank, ciValidator]],
-    adminUsername: ['', [Validators.required, Validators.pattern(/^[a-z0-9._-]{3,50}$/)]],
+    adminUsername: ['', [Validators.required, usernameValidator]],
     adminEmail: ['', [Validators.required, Validators.email]],
     adminPassword: ['', [Validators.required, Validators.minLength(8)]],
   });
@@ -45,9 +47,7 @@ export class RegisterFormComponent {
   protected readonly subdomainErrors = {
     pattern: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
   };
-  protected readonly usernameErrors = {
-    pattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
-  };
+  protected readonly usernameErrors = USERNAME_ERRORS;
 
   protected submit(): void {
     if (this.form.invalid) {

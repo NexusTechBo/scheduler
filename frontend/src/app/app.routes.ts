@@ -13,19 +13,23 @@ export const routes: Routes = [
         path: 'dashboard',
         title: 'Inicio',
         loadComponent: () =>
-          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+          import('./features/dashboard/dashboard-page.component').then(
+            (m) => m.DashboardPageComponent,
+          ),
       },
       {
         path: 'board',
         title: 'Tablero',
         loadComponent: () =>
-          import('./features/board/board.component').then((m) => m.BoardComponent),
+          import('./features/board/board-page.component').then((m) => m.BoardPageComponent),
       },
       {
         path: 'calendar',
         title: 'Calendario',
         loadComponent: () =>
-          import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),
+          import('./features/calendar/calendar-page.component').then(
+            (m) => m.CalendarPageComponent,
+          ),
       },
       {
         path: 'appointments',

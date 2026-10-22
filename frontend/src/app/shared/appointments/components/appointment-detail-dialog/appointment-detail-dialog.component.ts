@@ -16,7 +16,7 @@ import { LoadErrorComponent } from '../../../ui/load-error/load-error.component'
 import { SkeletonComponent } from '../../../ui/skeleton/skeleton.component';
 import { StatusBadgeComponent } from '../../../ui/status-badge/status-badge.component';
 import { UiIconComponent } from '../../../ui/ui-icon/ui-icon.component';
-import { AppointmentDetailService } from './services/appointment-detail.service';
+import { AppointmentDetailService } from './appointment-detail.service';
 
 export interface AppointmentDetailData {
   id: number;

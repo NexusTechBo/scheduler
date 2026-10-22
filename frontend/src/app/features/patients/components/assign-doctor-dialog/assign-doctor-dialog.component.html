@@ -7,6 +7,11 @@
   <div class="mb-5 space-y-2">
     @if (assignment.assignedLoading()) {
       <app-skeleton />
+    } @else if (assignment.assignedErrorMessage()) {
+      <app-load-error
+        [message]="assignment.assignedErrorMessage()!"
+        (retry)="assignment.reloadAssigned()"
+      />
     } @else {
       @for (doctor of assignment.assignedDoctors(); track doctor.id; let i = $index) {
         <div class="flex items-center gap-3 rounded-2xl bg-white/60 px-3.5 py-2.5">
@@ -43,25 +48,29 @@
     {{ assignment.message() }}
   </p>
 
-  <app-form-field label="Asignar a otro doctor" fieldId="doctor-to-add">
-    <div class="flex gap-2">
-      <app-select
-        class="min-w-0 flex-1"
-        id="doctor-to-add"
-        icon="stethoscope"
-        placeholder="Selecciona un doctor"
-        [options]="doctorOptions()"
-        [ngModel]="doctorToAdd()"
-        (ngModelChange)="doctorToAdd.set($event)"
-      />
-      <button
-        type="button"
-        class="btn btn-primary"
-        [disabled]="!doctorToAdd() || assignment.assigning()"
-        (click)="add()"
-      >
-        Asignar
-      </button>
-    </div>
-  </app-form-field>
+  @if (assignment.doctorsErrorMessage(); as error) {
+    <app-load-error [message]="error" (retry)="assignment.reloadDoctors()" />
+  } @else {
+    <app-form-field label="Asignar a otro doctor" fieldId="doctor-to-add">
+      <div class="flex gap-2">
+        <app-select
+          class="min-w-0 flex-1"
+          id="doctor-to-add"
+          icon="stethoscope"
+          placeholder="Selecciona un doctor"
+          [options]="doctorOptions()"
+          [ngModel]="doctorToAdd()"
+          (ngModelChange)="doctorToAdd.set($event)"
+        />
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="!doctorToAdd() || assignment.assigning()"
+          (click)="add()"
+        >
+          Asignar
+        </button>
+      </div>
+    </app-form-field>
+  }
 </app-dialog-frame>

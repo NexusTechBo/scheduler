@@ -14,7 +14,7 @@ import {
   notBlank,
   phoneValidator,
 } from '../../shared/utils/validation-messages.util';
-import { ProfileService } from './services/profile.service';
+import { ProfileService } from './profile.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 

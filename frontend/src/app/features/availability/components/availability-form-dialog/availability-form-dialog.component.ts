@@ -16,7 +16,7 @@ import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
-import { AvailabilityService } from '../../services/availability.service';
+import { AvailabilityService } from '../../availability.service';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 function endAfterStart(control: AbstractControl): ValidationErrors | null {
