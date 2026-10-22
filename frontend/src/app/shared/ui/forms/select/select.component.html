@@ -65,7 +65,7 @@
             : i === selectedIndex()
               ? 'cursor-pointer font-bold text-primary'
               : 'cursor-pointer font-medium text-gray-700'
-        }} {{ i === activeIndex() && !option.disabled ? 'bg-gray-900/[0.06]' : '' }}"
+        }} {{ i === activeIndex() && !option.disabled ? 'bg-gray-900/6' : '' }}"
       >
         <span class="flex-1 truncate">{{ option.label }}</span>
         @if (i === selectedIndex()) {

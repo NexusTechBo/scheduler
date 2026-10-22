@@ -34,7 +34,6 @@
         (keydown)="onKeydown($event, day.iso)"
         [attr.data-iso]="day.iso"
         [attr.tabindex]="day.iso === focusIso() ? 0 : -1"
-        [attr.cdkFocusInitial]="day.iso === focusIso() ? '' : null"
         (mouseenter)="hover.emit(day.iso)"
         [disabled]="state.disabled"
         [attr.aria-label]="formatLongDate(day.iso)"
