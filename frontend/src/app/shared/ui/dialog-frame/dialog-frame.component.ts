@@ -1,64 +1,25 @@
-import { CdkDialogContainer, DialogRef } from '@angular/cdk/dialog';
-import { Component, inject, input, output } from '@angular/core';
+import { DialogConfig, DialogRef } from '@angular/cdk/dialog';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
 let nextId = 0;
 
+export function labelledByFrame(): Pick<DialogConfig, 'id' | 'ariaLabelledBy'> {
+  const id = `app-dialog-${nextId++}`;
+  return { id, ariaLabelledBy: `${id}-title` };
+}
+
 @Component({
   selector: 'app-dialog-frame',
   imports: [UiIconComponent],
-  template: `
-    <div
-      class="glass-modal relative flex max-h-[90vh] flex-col rounded-3xl p-6"
-      [class]="widthClass()"
-    >
-      <div class="mb-5 flex shrink-0 items-start justify-between gap-3 pr-10">
-        <div>
-          <h2
-            [id]="titleId"
-            tabindex="-1"
-            class="text-xl font-extrabold text-gray-900 outline-none"
-          >
-            {{ title() }}
-          </h2>
-          @if (subtitle()) {
-            <p class="text-sm font-medium text-gray-500">{{ subtitle() }}</p>
-          }
-        </div>
-      </div>
-
-      <div class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
-        <ng-content />
-      </div>
-
-      <div class="mt-6 shrink-0 flex-wrap justify-end gap-2.5 empty:hidden">
-        <ng-content select="[dialogFooter]" />
-      </div>
-
-      <button
-        type="button"
-        class="btn-icon absolute right-5 top-5"
-        (click)="closed.emit()"
-        aria-label="Cerrar"
-      >
-        <app-ui-icon name="x" class="h-4.5 w-4.5" />
-      </button>
-    </div>
-  `,
+  templateUrl: './dialog-frame.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogFrameComponent {
-  title = input.required<string>();
-  subtitle = input<string>();
-  widthClass = input('w-[28rem] max-w-[calc(100vw-2rem)]');
+  readonly title = input.required<string>();
+  readonly subtitle = input<string>();
 
-  closed = output<void>();
+  readonly closed = output<void>();
 
-  protected readonly titleId = `dialog-title-${nextId++}`;
-
-  constructor() {
-    const container = inject(DialogRef, { optional: true })?.containerInstance;
-    if (container instanceof CdkDialogContainer) {
-      container._addAriaLabelledBy(this.titleId);
-    }
-  }
+  protected readonly titleId = `${inject(DialogRef).id}-title`;
 }

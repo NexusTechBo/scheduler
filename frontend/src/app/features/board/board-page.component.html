@@ -1,0 +1,36 @@
+<app-page-header title="Tablero" subtitle="Arrastra una cita para confirmarla o cancelarla">
+  <app-date-range-picker
+    titleAccessory
+    [ngModel]="board.range()"
+    (ngModelChange)="board.setRange($event)"
+  />
+  <button
+    type="button"
+    class="btn btn-secondary"
+    (click)="board.reload()"
+    [disabled]="board.isLoading()"
+  >
+    <app-ui-icon name="refresh" class="h-4 w-4" [class.animate-spin]="board.isLoading()" />
+    Actualizar
+  </button>
+</app-page-header>
+
+@if (board.errorMessage(); as message) {
+  <app-load-error class="mb-4" [message]="message" (retry)="board.reload()" />
+} @else {
+  <div
+    cdkDropListGroup
+    class="flex min-h-0 flex-1 snap-x gap-5 overflow-x-auto pb-4"
+    [class.opacity-60]="board.isLoading()"
+  >
+    @for (column of board.columns(); track column.id) {
+      <app-board-column
+        [column]="column"
+        [showDates]="board.showDates()"
+        [loading]="!board.hasData()"
+        (dropped)="drop($event)"
+        (open)="board.open($event)"
+      />
+    }
+  </div>
+}

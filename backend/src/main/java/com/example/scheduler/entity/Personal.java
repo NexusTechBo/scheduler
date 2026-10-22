@@ -50,6 +50,9 @@ public class Personal {
     @Builder.Default
     private boolean active = true;
 
+    @Version
+    private Long version;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "doctor_patient",

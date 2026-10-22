@@ -47,7 +47,7 @@ public class DoctorAvailabilityController {
     }
 
     @GetMapping("/doctor/{doctorId}/availables")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'ASSISTANT')")
+    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')")
     @Operation(summary = "GET /api/doctorAvailability/doctor/{doctorId}/availables?date={date} — free slots (startTime/endTime) of a doctor on a date")
     public ResponseEntity<DoctorAvailabilitySlotsResponse> getDoctorAvailabilitySlots(@PathVariable Long doctorId, @RequestParam LocalDate date){
         return ResponseEntity.ok(doctorAvailabilityService.getDoctorAvailableSlots(doctorId, date));

@@ -1,9 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-import { Specialty } from '../models/api.models';
-
-const PLACEHOLDER_SPECIALTY = 'None';
+import { Specialty, SpecialtyRequest } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogsApi {
@@ -12,16 +10,10 @@ export class CatalogsApi {
   specialties(): Observable<Specialty[]> {
     return this.http
       .get<Specialty[]>('specialties')
-      .pipe(
-        map((list) =>
-          list
-            .filter((specialty) => specialty.name !== PLACEHOLDER_SPECIALTY)
-            .sort((a, b) => a.name.localeCompare(b.name)),
-        ),
-      );
+      .pipe(map((list) => list.sort((a, b) => a.name.localeCompare(b.name))));
   }
 
-  createSpecialty(name: string): Observable<Specialty> {
-    return this.http.post<Specialty>('specialties', { name });
+  createSpecialty(request: SpecialtyRequest): Observable<Specialty> {
+    return this.http.post<Specialty>('specialties', request);
   }
 }

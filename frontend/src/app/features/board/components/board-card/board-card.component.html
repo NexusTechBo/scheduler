@@ -1,0 +1,22 @@
+<div class="glass-card cursor-grab rounded-2xl p-4.5">
+  <p class="mb-2 text-[16.5px] font-bold leading-tight text-gray-900">
+    {{ appointment().clientName }}
+  </p>
+
+  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] font-medium text-gray-500">
+    @if (showDate()) {
+      <span class="inline-flex items-center gap-1.5">
+        <app-ui-icon name="calendar" class="h-3.75 w-3.75" />
+        {{ dayLabel() }}
+      </span>
+    }
+    <span class="inline-flex items-center gap-1.5">
+      <app-ui-icon name="clock" class="h-3.75 w-3.75" />
+      {{ appointment() | timeRange }}
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <app-ui-icon name="stethoscope" class="h-3.75 w-3.75" />
+      {{ appointment().doctorName }}
+    </span>
+  </div>
+</div>

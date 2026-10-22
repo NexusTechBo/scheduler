@@ -1,38 +1,12 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-pagination',
   imports: [UiIconComponent],
-  template: `
-    @if (totalPages() > 1) {
-      <span class="text-sm font-medium text-gray-500">
-        Página <b class="text-gray-800">{{ page() + 1 }}</b> de {{ totalPages() }} ·
-        {{ totalElements() }} registros
-      </span>
-      <div class="flex items-center gap-1.5">
-        <button
-          type="button"
-          class="btn-icon"
-          [disabled]="page() === 0"
-          (click)="pageChange.emit(page() - 1)"
-          aria-label="Página anterior"
-        >
-          <app-ui-icon name="chevronLeft" class="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          class="btn-icon"
-          [disabled]="page() >= totalPages() - 1"
-          (click)="pageChange.emit(page() + 1)"
-          aria-label="Página siguiente"
-        >
-          <app-ui-icon name="chevronRight" class="h-4 w-4" />
-        </button>
-      </div>
-    }
-  `,
+  templateUrl: './pagination.component.html',
   host: { class: 'flex items-center justify-between gap-4 empty:hidden' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PaginationComponent {
   page = input.required<number>();

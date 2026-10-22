@@ -3,10 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   AppointmentBoard,
+  AppointmentBoardQuery,
   AppointmentCalendar,
+  AppointmentCalendarQuery,
   AppointmentFilters,
   AppointmentRequest,
   AppointmentResponse,
+  CancelAppointmentRequest,
   Page,
 } from '../models/api.models';
 import { toHttpParams } from '../http/http-params.util';
@@ -33,25 +36,15 @@ export class AppointmentsApi {
     return this.http.patch<AppointmentResponse>(`appointments/${id}/confirm`, null);
   }
 
-  cancel(id: number, reason: string): Observable<AppointmentResponse> {
-    return this.http.patch<AppointmentResponse>(`appointments/${id}/cancel`, { reason });
+  cancel(id: number, request: CancelAppointmentRequest): Observable<AppointmentResponse> {
+    return this.http.patch<AppointmentResponse>(`appointments/${id}/cancel`, request);
   }
 
-  board(query: {
-    from: string;
-    to: string;
-    doctorId?: number;
-    patientId?: number;
-  }): Observable<AppointmentBoard> {
+  board(query: AppointmentBoardQuery): Observable<AppointmentBoard> {
     return this.http.get<AppointmentBoard>('appointments/board', { params: toHttpParams(query) });
   }
 
-  calendar(query: {
-    month: number;
-    year: number;
-    doctorId?: number;
-    patientId?: number;
-  }): Observable<AppointmentCalendar> {
+  calendar(query: AppointmentCalendarQuery): Observable<AppointmentCalendar> {
     return this.http.get<AppointmentCalendar>('appointments/calendar', {
       params: toHttpParams(query),
     });

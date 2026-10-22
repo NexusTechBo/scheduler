@@ -1,0 +1,9 @@
+@if (label()) {
+  <label class="field-label" [for]="fieldId()">{{ label() }}</label>
+}
+<ng-content />
+@if (error(); as message) {
+  <p class="field-error" [id]="errorId()">{{ message }}</p>
+} @else if (hint()) {
+  <p class="mt-1.5 text-xs text-gray-500" [id]="hintId()">{{ hint() }}</p>
+}

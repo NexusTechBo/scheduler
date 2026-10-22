@@ -4,13 +4,20 @@ export const ROLE_LABEL: Record<Role, string> = {
   ADMINISTRATOR: 'Administrador',
   DOCTOR: 'Doctor',
   ASSISTANT: 'Asistente',
-  PATIENT: 'Paciente',
 };
+
+export const APPOINTMENT_STATUSES: AppointmentStatus[] = ['PENDING', 'CONFIRMED', 'CANCELLED'];
 
 export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   PENDING: 'Pendiente',
   CONFIRMED: 'Confirmada',
   CANCELLED: 'Cancelada',
+};
+
+export const STATUS_PLURAL_LABEL: Record<AppointmentStatus, string> = {
+  PENDING: 'Pendientes',
+  CONFIRMED: 'Confirmadas',
+  CANCELLED: 'Canceladas',
 };
 
 export const STATUS_STYLE: Record<AppointmentStatus, { dot: string; badge: string }> = {
@@ -29,11 +36,19 @@ export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] 
   { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
 ];
 
-export function initials(name: string | null | undefined): string {
-  if (!name) return '?';
-  const words = name
+function nameWords(name: string): string[] {
+  return name
     .replace(/^(dr|dra)\.?\s+/i, '')
     .trim()
     .split(/\s+/);
+}
+
+export function firstName(name: string): string {
+  return nameWords(name)[0] ?? '';
+}
+
+export function initials(name: string | null | undefined): string {
+  if (!name) return '?';
+  const words = nameWords(name);
   return ((words[0]?.[0] ?? '') + (words[1]?.[0] ?? '')).toUpperCase() || '?';
 }

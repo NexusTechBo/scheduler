@@ -1,11 +1,4 @@
-export type Role = 'ADMINISTRATOR' | 'DOCTOR' | 'ASSISTANT' | 'PATIENT';
-
-export const ROLE_ID: Record<Role, number> = {
-  ADMINISTRATOR: 1,
-  DOCTOR: 2,
-  ASSISTANT: 3,
-  PATIENT: 4,
-};
+export type Role = 'ADMINISTRATOR' | 'DOCTOR' | 'ASSISTANT';
 
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
@@ -31,14 +24,12 @@ export interface PageQuery {
 export interface ApiError {
   status: number;
   message: string;
-  timestamp: string;
   errors?: { field: string; message: string }[] | null;
 }
 
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
-  clinicId: number;
 }
 
 export interface LoginResponse {
@@ -49,31 +40,26 @@ export interface TokenPayload {
   sub: string;
   role: Role;
   clinicId: number;
+  clinicName: string;
+  clinicSubdomain: string;
   username: string;
-  iat: number;
   exp: number;
 }
 
-export interface ProfileResponse {
-  id: number;
-  ci: string;
+export interface ProfileUpdateRequest {
   name: string;
   email: string;
-  phoneNumber: string | null;
-  role: Role;
-  specialtyName: string | null;
-}
-
-export interface Clinic {
-  id: number;
-  name: string;
-  phoneNumber: string;
+  phoneNumber?: string | null;
+  currentPassword?: string | null;
+  newPassword?: string | null;
 }
 
 export interface ClinicRequest {
   name: string;
+  subdomain: string;
   phoneNumber: string;
   adminName: string;
+  adminUsername: string;
   adminEmail: string;
   adminPassword: string;
   adminCi: string;
@@ -83,7 +69,8 @@ export interface ClinicCreatedResponse {
   id: number;
   name: string;
   phoneNumber: string;
-  adminPersonalId: number;
+  subdomain: string;
+  adminUsername: string;
   adminEmail: string;
 }
 
@@ -91,6 +78,10 @@ export interface AppointmentRequest {
   doctorId: number;
   patientId: number;
   startTime: string;
+}
+
+export interface CancelAppointmentRequest {
+  reason: string;
 }
 
 export interface AppointmentResponse {
@@ -106,7 +97,6 @@ export interface AppointmentResponse {
   patientEmail: string;
   status: AppointmentStatus;
   cancellationReason: string | null;
-  createdAt: string;
 }
 
 export interface AppointmentSummaryItem {
@@ -114,7 +104,6 @@ export interface AppointmentSummaryItem {
   clientName: string;
   doctorName: string;
   appointmentDate: string;
-  appointmentTime: string;
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
@@ -132,23 +121,31 @@ export interface AppointmentFilters extends PageQuery {
   status?: AppointmentStatus;
 }
 
+export interface AppointmentBoardQuery {
+  from: string;
+  to: string;
+  doctorId?: number;
+  patientId?: number;
+}
+
+export interface AppointmentCalendarQuery {
+  month: number;
+  year: number;
+  doctorId?: number;
+  patientId?: number;
+}
+
 export interface Patient {
   id: number;
+  ci: string;
   name: string;
   email: string;
   phoneNumber: string | null;
   active: boolean;
 }
 
-export interface PatientRegisterRequest {
-  name: string;
-  email: string;
+export interface PatientRequest {
   ci: string;
-  password: string;
-  phoneNumber?: string;
-}
-
-export interface PatientUpdateRequest {
   name: string;
   email: string;
   phoneNumber?: string | null;
@@ -156,32 +153,50 @@ export interface PatientUpdateRequest {
 
 export interface Staff {
   id: number;
+  username: string;
+  ci: string;
   name: string;
   email: string;
+  phoneNumber: string | null;
   active: boolean;
-  roleName: Role;
+  role: Role;
   specialtyName: string | null;
 }
 
 export interface StaffRegisterRequest {
   name: string;
   email: string;
+  phoneNumber?: string | null;
   ci: string;
+  username: string;
   password: string;
-  roleId: number;
+  role: Role;
   specialtyId: number | null;
 }
 
 export interface StaffUpdateRequest {
   name: string;
   email: string;
-  specialtyId?: number | null;
+  phoneNumber?: string | null;
+  password?: string | null;
+  role: Role;
+  specialtyId: number | null;
+}
+
+export interface PatientFilters extends PageQuery {
+  search?: string;
+  isActive?: boolean;
+}
+
+export interface DoctorFilters extends PageQuery {
+  specialtyId?: number;
+  isActive?: boolean;
 }
 
 export interface StaffFilters extends PageQuery {
   specialtyId?: number;
   isActive?: boolean;
-  roleId?: number;
+  role?: Role;
 }
 
 export interface AssignPatientRequest {
@@ -191,6 +206,10 @@ export interface AssignPatientRequest {
 
 export interface Specialty {
   id: number;
+  name: string;
+}
+
+export interface SpecialtyRequest {
   name: string;
 }
 

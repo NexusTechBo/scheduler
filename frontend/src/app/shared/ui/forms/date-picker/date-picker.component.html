@@ -1,0 +1,64 @@
+<button
+  type="button"
+  cdkOverlayOrigin
+  #trigger="cdkOverlayOrigin"
+  [attr.id]="id()"
+  [disabled]="disabled()"
+  [attr.aria-expanded]="isOpen()"
+  [attr.aria-label]="ariaLabel() ? ariaLabel() + ': ' + label() : null"
+  aria-haspopup="dialog"
+  class="field-input group flex cursor-pointer items-center gap-2 whitespace-nowrap text-left font-semibold"
+  (click)="isOpen() ? close() : open()"
+>
+  <app-ui-icon
+    name="calendar"
+    class="h-4 w-4 text-gray-500 group-hover:text-gray-700"
+    [strokeWidth]="2"
+  />
+  <span class="flex-1" [class.text-gray-400]="!value()">{{ label() }}</span>
+  <app-ui-icon
+    name="chevronDown"
+    class="h-3.5 w-3.5 text-gray-500 transition-transform"
+    [class.rotate-180]="isOpen()"
+    [strokeWidth]="2.2"
+  />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="trigger"
+  [cdkConnectedOverlayOpen]="isOpen()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayViewportMargin]="16"
+  [cdkConnectedOverlayPush]="true"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  (backdropClick)="close()"
+  (detach)="close()"
+>
+  <div
+    class="glass-modal w-[min(19rem,calc(100vw-2rem))] rounded-3xl p-4"
+    role="dialog"
+    aria-label="Seleccionar fecha"
+    cdkTrapFocus
+    [cdkTrapFocusAutoCapture]="true"
+  >
+    <app-month-grid
+      [(month)]="viewDate"
+      [start]="value()"
+      [end]="value()"
+      [min]="min()"
+      (pick)="pick($event)"
+    />
+    <div class="mt-3.5 border-t border-white/60 pt-3.5">
+      <button
+        type="button"
+        (click)="pick(today)"
+        [disabled]="outOfBounds(today)"
+        class="glass-panel rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-white/70 disabled:opacity-50"
+      >
+        Hoy
+      </button>
+    </div>
+  </div>
+</ng-template>
