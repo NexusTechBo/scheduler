@@ -1,18 +1,20 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
 import { Observable, map, tap } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
-import { Clinic, Role, TokenPayload } from '../models/api.models';
+import { Role, Staff, TokenPayload } from '../models/api.models';
 
 const TOKEN_KEY = 'scheduler.token';
-const CLINIC_KEY = 'scheduler.clinic';
 
-export interface Session {
+interface Session {
   token: string;
   userId: number;
   role: Role;
   clinicId: number;
+  clinicName: string;
+  clinicSubdomain: string;
   username: string;
   expiresAt: number;
 }
@@ -41,6 +43,8 @@ function decodeSession(token: string | null): Session | null {
       userId: Number(payload.sub),
       role: payload.role,
       clinicId: Number(payload.clinicId),
+      clinicName: payload.clinicName,
+      clinicSubdomain: payload.clinicSubdomain,
       username: payload.username,
       expiresAt: payload.exp * 1000,
     };
@@ -56,13 +60,34 @@ export class AuthService {
   private readonly router = inject(Router);
 
   private readonly _session = signal<Session | null>(decodeSession(readStorage(TOKEN_KEY)));
-  private readonly _clinic = signal<Clinic | null>(this.readClinic());
 
   readonly session = this._session.asReadonly();
-  readonly clinic = this._clinic.asReadonly();
-  readonly isAuthenticated = computed(() => this._session() !== null);
   readonly role = computed(() => this._session()?.role ?? null);
   readonly userId = computed(() => this._session()?.userId ?? null);
+
+  private readonly me = rxResource({
+    loader: () => this.authApi.me(),
+  });
+  readonly displayName = computed(
+    () =>
+      (this.me.hasValue() ? this.me.value().name : null) ??
+      this._session()?.username.split('@')[0] ??
+      '',
+  );
+
+  readonly clinic = computed(() => {
+    const session = this._session();
+    return session ? { name: session.clinicName, subdomain: session.clinicSubdomain } : null;
+  });
+
+  constructor() {
+    writeStorage('scheduler.clinic', null);
+    writeStorage('scheduler.roles', null);
+  }
+
+  setProfile(profile: Staff): void {
+    this.me.set(profile);
+  }
 
   token(): string | null {
     const session = this._session();
@@ -78,13 +103,8 @@ export class AuthService {
     return role !== null && roles.includes(role);
   }
 
-  selectClinic(clinic: Clinic): void {
-    this._clinic.set(clinic);
-    writeStorage(CLINIC_KEY, JSON.stringify(clinic));
-  }
-
-  login(email: string, password: string, clinicId: number): Observable<Session> {
-    return this.authApi.login({ email, password, clinicId }).pipe(
+  login(username: string, password: string): Observable<Session> {
+    return this.authApi.login({ username, password }).pipe(
       map(({ token }) => {
         const session = decodeSession(token);
         if (!session) throw new Error('Token inválido');
@@ -102,22 +122,8 @@ export class AuthService {
     this.router.navigate(['/login']).finally();
   }
 
-  homeUrl(): string {
-    return this.role() === 'PATIENT' ? '/appointments' : '/dashboard';
-  }
-
   private clearSession(): void {
     writeStorage(TOKEN_KEY, null);
     this._session.set(null);
-  }
-
-  private readClinic(): Clinic | null {
-    const raw = readStorage(CLINIC_KEY);
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw) as Clinic;
-    } catch {
-      return null;
-    }
   }
 }

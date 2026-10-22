@@ -17,21 +17,17 @@
 <div class="min-h-0 flex-1 space-y-5 overflow-y-auto pb-2">
   <section class="glass-panel rounded-3xl p-6">
     <h2 class="mb-4 text-xl font-extrabold text-gray-900">Horario semanal</h2>
-    @if (resource.isWeekLoading()) {
-      <div class="h-40 animate-pulse rounded-2xl bg-white/50"></div>
-    } @else if (resource.isWeekError()) {
-      <app-empty-state icon="alert" [title]="resource.weekErrorMessage()">
-        <button
-          type="button"
-          class="btn btn-secondary btn-sm"
-          (click)="resource.reloadAvailability()"
-        >
+    @if (availability.isWeekLoading()) {
+      <app-skeleton heightClass="h-40" />
+    } @else if (availability.weekError()) {
+      <app-empty-state icon="alert" [title]="availability.weekError()!">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="availability.reload()">
           Reintentar
         </button>
       </app-empty-state>
     } @else {
       <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
-        @for (day of resource.week(); track day.value) {
+        @for (day of availability.week(); track day.value) {
           <div class="flex min-h-36 flex-col rounded-2xl bg-white/40 p-3">
             <p class="mb-2.5 text-sm font-extrabold text-gray-800">{{ day.label }}</p>
             <div class="flex flex-1 flex-col gap-2">
@@ -50,7 +46,7 @@
                   <button
                     type="button"
                     class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-white/80 text-gray-500 opacity-60 hover:text-red-600 hover:opacity-100 group-hover:opacity-100"
-                    (click)="removeAvailability(block, day.label)"
+                    (click)="availability.removeAvailability(block, day.label)"
                     [attr.aria-label]="
                       'Quitar horario ' +
                       day.label +
@@ -81,19 +77,15 @@
     <section class="glass-panel rounded-3xl p-6">
       <h2 class="mb-1 text-xl font-extrabold text-gray-900">Bloqueos próximos</h2>
       <p class="mb-4 text-sm font-medium text-gray-500">Vacaciones, congresos o reuniones</p>
-      @if (resource.isExceptionsError()) {
-        <app-empty-state icon="alert" [title]="resource.exceptionsErrorMessage()">
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            (click)="resource.reloadExceptions()"
-          >
+      @if (availability.exceptionsError(); as message) {
+        <app-empty-state icon="alert" [title]="message">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="availability.reload()">
             Reintentar
           </button>
         </app-empty-state>
       } @else {
         <div class="space-y-2">
-          @for (exception of resource.exceptions(); track exception.id) {
+          @for (exception of availability.exceptions(); track exception.id) {
             <div class="flex items-center gap-3 rounded-2xl bg-white/50 px-4 py-3">
               <span
                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-tertiary/10 text-tertiary"
@@ -118,7 +110,7 @@
               <button
                 type="button"
                 class="btn-icon hover:text-red-600!"
-                (click)="removeException(exception)"
+                (click)="availability.removeException(exception)"
                 [attr.aria-label]="
                   'Quitar bloqueo ' +
                   formatLongDate(exception.date) +
@@ -134,7 +126,7 @@
               </button>
             </div>
           } @empty {
-            @if (!resource.isExceptionsLoading()) {
+            @if (!availability.isExceptionsLoading()) {
               <app-empty-state
                 icon="calendar"
                 title="Sin bloqueos"
@@ -152,19 +144,18 @@
           <h2 class="mb-1 text-xl font-extrabold text-gray-900">Vista previa</h2>
           <p class="text-sm font-medium text-gray-500">Horarios libres que verán los pacientes</p>
         </div>
-        <app-date-range-picker
-          mode="single"
+        <app-date-picker
           ariaLabel="Fecha de vista previa"
-          [min]="resource.today"
-          [ngModel]="resource.previewDate()"
-          (ngModelChange)="resource.setPreviewDate($event)"
+          [min]="availability.today"
+          [ngModel]="availability.previewDate()"
+          (ngModelChange)="availability.setPreviewDate($event)"
         />
       </div>
-      @if (resource.isPreviewLoading()) {
-        <div class="h-24 animate-pulse rounded-2xl bg-white/50"></div>
+      @if (availability.isPreviewLoading()) {
+        <app-skeleton heightClass="h-24" />
       } @else {
         <div class="flex flex-wrap gap-2">
-          @for (slot of resource.previewSlots(); track slot) {
+          @for (slot of availability.previewSlots(); track slot) {
             <span class="rounded-xl bg-white/70 px-3 py-1.5 text-sm font-bold text-gray-700">{{
               slot
             }}</span>

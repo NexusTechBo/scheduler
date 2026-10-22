@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 export interface SegmentedTabItem {
   id: string;
@@ -10,8 +10,9 @@ export interface SegmentedTabItem {
   imports: [],
   templateUrl: './segmented-tabs.component.html',
   host: {
-    class: 'glass-panel flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5',
+    class: 'glass-panel flex max-w-full flex-wrap items-center gap-1 rounded-2xl p-1.5',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SegmentedTabsComponent {
   items = input.required<SegmentedTabItem[]>();

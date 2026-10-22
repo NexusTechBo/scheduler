@@ -1,102 +1,51 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
+import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormsModule } from '@angular/forms';
-import { DateRangePickerComponent } from '../../shared/ui/date-range-picker/date-range-picker.component';
-import { filter, switchMap } from 'rxjs';
-import { AgendaApi } from '../../core/api/agenda.api';
-import { apiErrorMessage } from '../../core/http/api-error';
-import { Availability, ScheduleException } from '../../core/models/api.models';
 import { formatLongDate, formatTime } from '../../core/utils/calendar.util';
-import { NotificationService } from '../../shared/services/notification.service';
-import { ConfirmService } from '../../shared/ui/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { DatePickerComponent } from '../../shared/ui/forms/date-picker/date-picker.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
-import { AvailabilityFormDialogComponent } from './availability-form-dialog.component';
-import { ExceptionFormDialogComponent } from './exception-form-dialog.component';
-import { AvailabilityResourceService } from './services/availability-resource.service';
+import { AvailabilityFormDialogComponent } from './components/availability-form-dialog/availability-form-dialog.component';
+import { AvailabilityService } from './services/availability.service';
+import { ExceptionFormDialogComponent } from './components/exception-form-dialog/exception-form-dialog.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-availability-page',
   imports: [
+    SkeletonComponent,
     FormsModule,
-    DateRangePickerComponent,
+    DatePickerComponent,
     PageHeaderComponent,
     EmptyStateComponent,
     UiIconComponent,
   ],
-  providers: [AvailabilityResourceService],
+  providers: [AvailabilityService],
   templateUrl: './availability-page.component.html',
   host: { class: 'flex min-h-0 flex-1 flex-col' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AvailabilityPageComponent {
-  private readonly api = inject(AgendaApi);
   private readonly dialog = inject(Dialog);
-  private readonly confirm = inject(ConfirmService);
-  private readonly notifications = inject(NotificationService);
+  private readonly injector = inject(Injector);
+  protected readonly availability = inject(AvailabilityService);
 
-  protected readonly resource = inject(AvailabilityResourceService);
   protected readonly formatTime = formatTime;
   protected readonly formatLongDate = formatLongDate;
 
   protected addAvailability(): void {
-    this.dialog
-      .open<boolean>(AvailabilityFormDialogComponent, { backdropClass: 'glass-backdrop' })
-      .closed.pipe(filter(Boolean))
-      .subscribe(() => {
-        this.notifications.success('Horario agregado');
-        this.resource.reloadAvailability();
-      });
-  }
-
-  protected removeAvailability(block: Availability, dayLabel: string): void {
-    this.confirm
-      .ask({
-        title: 'Quitar horario',
-        message: `¿Quitar el bloque del ${dayLabel.toLowerCase()} de ${formatTime(block.startTime)} a ${formatTime(block.endTime)}? Las citas ya agendadas se mantienen.`,
-        confirmLabel: 'Quitar',
-        danger: true,
-      })
-      .pipe(
-        filter(Boolean),
-        switchMap(() => this.api.removeAvailability(block.id)),
-      )
-      .subscribe({
-        next: () => {
-          this.notifications.success('Horario quitado');
-          this.resource.reloadAvailability();
-        },
-        error: (error) => this.notifications.error(apiErrorMessage(error)),
-      });
+    this.dialog.open(AvailabilityFormDialogComponent, {
+      ...labelledByFrame(),
+      injector: this.injector,
+    });
   }
 
   protected addException(): void {
-    this.dialog
-      .open<string>(ExceptionFormDialogComponent, { backdropClass: 'glass-backdrop' })
-      .closed.pipe(filter(Boolean))
-      .subscribe((message) => {
-        this.notifications.success(message);
-        this.resource.reloadAvailability();
-      });
-  }
-
-  protected removeException(exception: ScheduleException): void {
-    this.confirm
-      .ask({
-        title: 'Quitar bloqueo',
-        message: `¿Habilitar nuevamente el ${formatLongDate(exception.date).toLowerCase()}?`,
-        confirmLabel: 'Quitar',
-      })
-      .pipe(
-        filter(Boolean),
-        switchMap(() => this.api.removeException(exception.id)),
-      )
-      .subscribe({
-        next: () => {
-          this.notifications.success('Bloqueo quitado');
-          this.resource.reloadAvailability();
-        },
-        error: (error) => this.notifications.error(apiErrorMessage(error)),
-      });
+    this.dialog.open(ExceptionFormDialogComponent, {
+      ...labelledByFrame(),
+      injector: this.injector,
+    });
   }
 }

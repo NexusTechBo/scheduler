@@ -1,0 +1,64 @@
+<button
+  type="button"
+  cdkOverlayOrigin
+  #trigger="cdkOverlayOrigin"
+  [disabled]="disabled()"
+  [attr.aria-expanded]="isOpen()"
+  [attr.aria-label]="'Rango de fechas: ' + label()"
+  aria-haspopup="dialog"
+  class="group inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gray-900/5 py-1 pl-2.5 pr-2 text-[15px] font-bold text-gray-600 transition-colors hover:bg-gray-900/8 hover:text-gray-900"
+  (click)="isOpen() ? close() : open()"
+>
+  <app-ui-icon
+    name="calendar"
+    class="h-4 w-4 text-gray-500 group-hover:text-gray-700"
+    [strokeWidth]="2"
+  />
+  <span>{{ label() }}</span>
+  <app-ui-icon
+    name="chevronDown"
+    class="h-3.5 w-3.5 text-gray-500 transition-transform"
+    [class.rotate-180]="isOpen()"
+    [strokeWidth]="2.2"
+  />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="trigger"
+  [cdkConnectedOverlayOpen]="isOpen()"
+  [cdkConnectedOverlayPositions]="positions"
+  [cdkConnectedOverlayViewportMargin]="16"
+  [cdkConnectedOverlayPush]="true"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  (backdropClick)="close()"
+  (detach)="close()"
+>
+  <div
+    class="glass-modal w-[min(19rem,calc(100vw-2rem))] rounded-3xl p-4"
+    role="dialog"
+    aria-label="Seleccionar rango de fechas"
+    cdkTrapFocus
+    [cdkTrapFocusAutoCapture]="true"
+  >
+    <app-month-grid
+      [(month)]="viewDate"
+      [start]="draftStart()"
+      [end]="draftEnd() ?? hovered()"
+      (pick)="pick($event)"
+      (hover)="hovered.set($event)"
+    />
+    <div class="mt-3.5 flex flex-wrap gap-1.5 border-t border-white/60 pt-3.5">
+      @for (preset of presets; track preset.label) {
+        <button
+          type="button"
+          (click)="commit(preset.range())"
+          class="glass-panel rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-white/70"
+        >
+          {{ preset.label }}
+        </button>
+      }
+    </div>
+  </div>
+</ng-template>

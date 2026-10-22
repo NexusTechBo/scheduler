@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, homeRedirect, roleGuard } from './core/auth/auth.guards';
-import { ROLES } from './core/navigation/navigation';
+import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
+import { HOME_URL, ROLES } from './core/navigation/navigation';
 
 export const routes: Routes = [
   {
@@ -8,7 +8,7 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: homeRedirect },
+      { path: '', pathMatch: 'full', redirectTo: HOME_URL },
       {
         path: 'dashboard',
         title: 'Inicio',
@@ -40,16 +40,14 @@ export const routes: Routes = [
       {
         path: 'appointments/new',
         title: 'Agendar cita',
-        canActivate: [roleGuard(...ROLES.booking)],
+        canActivate: [roleGuard(...ROLES.staff)],
         loadComponent: () =>
-          import('./features/appointments/booking/booking-page.component').then(
-            (m) => m.BookingPageComponent,
-          ),
+          import('./features/booking/booking-page.component').then((m) => m.BookingPageComponent),
       },
       {
         path: 'patients',
         title: 'Pacientes',
-        canActivate: [roleGuard(...ROLES.clinical)],
+        canActivate: [roleGuard(...ROLES.staff)],
         loadComponent: () =>
           import('./features/patients/patients-page.component').then(
             (m) => m.PatientsPageComponent,
@@ -81,30 +79,12 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'assistant',
-        title: 'Asistente IA',
-        canActivate: [roleGuard(...ROLES.patient)],
-        loadComponent: () =>
-          import('./features/assistant/assistant-page.component').then(
-            (m) => m.AssistantPageComponent,
-          ),
-      },
-      {
         path: 'profile',
         title: 'Mi perfil',
         loadComponent: () =>
           import('./features/profile/profile-page.component').then((m) => m.ProfilePageComponent),
       },
     ],
-  },
-  {
-    path: 'clinic-options',
-    title: 'Selecciona tu clínica',
-    canActivate: [guestGuard],
-    loadComponent: () =>
-      import('./features/clinic-options/clinic-options.component').then(
-        (m) => m.ClinicOptionsComponent,
-      ),
   },
   {
     path: 'login',

@@ -4,13 +4,20 @@ export const ROLE_LABEL: Record<Role, string> = {
   ADMINISTRATOR: 'Administrador',
   DOCTOR: 'Doctor',
   ASSISTANT: 'Asistente',
-  PATIENT: 'Paciente',
 };
+
+export const APPOINTMENT_STATUSES: AppointmentStatus[] = ['PENDING', 'CONFIRMED', 'CANCELLED'];
 
 export const STATUS_LABEL: Record<AppointmentStatus, string> = {
   PENDING: 'Pendiente',
   CONFIRMED: 'Confirmada',
   CANCELLED: 'Cancelada',
+};
+
+export const STATUS_PLURAL_LABEL: Record<AppointmentStatus, string> = {
+  PENDING: 'Pendientes',
+  CONFIRMED: 'Confirmadas',
+  CANCELLED: 'Canceladas',
 };
 
 export const STATUS_STYLE: Record<AppointmentStatus, { dot: string; badge: string }> = {

@@ -1,16 +1,16 @@
 <app-page-header
   title="Pacientes"
   [subtitle]="
-    isDoctor && resource.scope() === 'mine'
+    patients.isDoctor && patients.scope() === 'mine'
       ? 'Pacientes que tienes asignados'
       : 'Pacientes registrados en la clínica'
   "
 >
   <div class="flex flex-wrap items-center gap-3">
-    @if (isDoctor) {
+    @if (patients.isDoctor) {
       <app-segmented-tabs
         [items]="tabs"
-        [selectedId]="resource.scope()"
+        [selectedId]="patients.scope()"
         (select)="setScope($event)"
       />
     }
@@ -30,44 +30,43 @@
       />
       <input
         class="field-input pl-10"
-        placeholder="Buscar por nombre, email o teléfono"
+        placeholder="Buscar por nombre, CI, email o teléfono"
         aria-label="Buscar pacientes"
-        [ngModel]="resource.search()"
-        (ngModelChange)="resource.setSearch($event)"
+        [ngModel]="patients.search()"
+        (ngModelChange)="patients.setSearch($event)"
       />
     </div>
     <label class="flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-600">
       <input
         type="checkbox"
         class="h-4 w-4 accent-primary"
-        [ngModel]="resource.showInactive()"
-        (ngModelChange)="resource.setShowInactive($event)"
+        [ngModel]="patients.showInactive()"
+        (ngModelChange)="patients.setShowInactive($event)"
       />
       Mostrar inactivos
     </label>
   </div>
 
   <div class="min-h-0 flex-1 overflow-auto">
-    @if (resource.isLoading() && !resource.patients().length) {
-      <div class="space-y-2 p-2">
-        @for (i of [1, 2, 3, 4]; track i) {
-          <div class="h-14 animate-pulse rounded-2xl bg-white/50"></div>
-        }
+    @if (patients.isLoading() && !patients.patients().length) {
+      <div class="flex flex-col gap-2 p-2">
+        <app-skeleton [rows]="4" />
       </div>
-    } @else if (resource.isError()) {
-      <app-empty-state icon="alert" [title]="resource.errorMessage()">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="resource.reloadPatients()">
+    } @else if (patients.errorMessage()) {
+      <div class="flex flex-col items-start gap-3 p-2">
+        <app-alert class="self-stretch">{{ patients.errorMessage() }}</app-alert>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="patients.reload()">
           Reintentar
         </button>
-      </app-empty-state>
-    } @else if (!resource.patients().length) {
+      </div>
+    } @else if (!patients.patients().length) {
       <app-empty-state
         icon="patients"
-        [title]="resource.search() ? 'Sin resultados' : 'No hay pacientes'"
+        [title]="patients.search() ? 'Sin resultados' : 'No hay pacientes'"
         [message]="
-          resource.search().trim()
+          patients.search().trim()
             ? 'No hay pacientes que coincidan con la búsqueda.'
-            : resource.scope() === 'mine'
+            : patients.scope() === 'mine'
               ? 'Asígnate pacientes desde la pestaña Todos o registra uno nuevo.'
               : 'Registra al primer paciente de la clínica.'
         "
@@ -78,29 +77,32 @@
           <tr>
             <th>Paciente</th>
             <th class="hidden md:table-cell">Teléfono</th>
-            <th>Estado</th>
+            <th class="hidden sm:table-cell">Estado</th>
             <th class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          @for (patient of resource.patients(); track patient.id) {
+          @for (patient of patients.patients(); track patient.id) {
             <tr>
-              <td>
+              <td class="w-full max-sm:px-2">
                 <div class="flex items-center gap-3">
                   <span
-                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-xs font-bold text-secondary"
+                    class="hidden h-9 w-9 shrink-0 items-center sm:flex justify-center rounded-xl bg-secondary/10 text-xs font-bold text-secondary"
                     >{{ initials(patient.name) }}</span
                   >
                   <div class="min-w-0">
-                    <p class="truncate font-bold text-gray-900">{{ patient.name }}</p>
-                    <p class="truncate text-xs text-gray-500">{{ patient.email }}</p>
+                    <p class="font-bold break-words text-gray-900">{{ patient.name }}</p>
+                    <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
+                    @if (!patient.active) {
+                      <p class="text-xs font-bold text-gray-500 sm:hidden">Inactivo</p>
+                    }
                   </div>
                 </div>
               </td>
               <td class="hidden whitespace-nowrap md:table-cell">
                 {{ patient.phoneNumber ?? '—' }}
               </td>
-              <td>
+              <td class="hidden sm:table-cell">
                 <span
                   class="chip"
                   [class]="
@@ -112,27 +114,32 @@
                   {{ patient.active ? 'Activo' : 'Inactivo' }}
                 </span>
               </td>
-              <td>
-                <div class="flex justify-end gap-1">
-                  @if (isDoctor) {
+              <td class="whitespace-nowrap max-sm:px-2">
+                <div class="flex flex-nowrap justify-end gap-1">
+                  @if (patients.isDoctor) {
                     <button
                       type="button"
-                      class="btn btn-sm"
+                      class="btn btn-sm min-h-10"
                       [class]="
-                        resource.isMine(patient)
+                        patients.isMine(patient)
                           ? 'btn-ghost'
                           : 'bg-primary/10 text-primary hover:bg-primary/20'
                       "
+                      [id]="'patient-toggle-' + patient.id"
+                      [attr.aria-label]="
+                        (patients.isMine(patient) ? 'Quitar de mi lista: ' : 'Asignarme: ') +
+                        patient.name
+                      "
                       (click)="toggleMine(patient)"
                     >
-                      {{ resource.isMine(patient) ? 'Quitar de mi lista' : 'Asignarme' }}
+                      {{ patients.isMine(patient) ? 'Quitar de mi lista' : 'Asignarme' }}
                     </button>
                   } @else {
                     <button
                       type="button"
-                      class="btn-icon"
+                      class="btn-icon h-10 w-10"
                       title="Doctores asignados"
-                      aria-label="Doctores asignados"
+                      [attr.aria-label]="'Doctores asignados de ' + patient.name"
                       (click)="manageDoctors(patient)"
                     >
                       <app-ui-icon name="link" class="h-4 w-4" />
@@ -140,9 +147,10 @@
                   }
                   <button
                     type="button"
-                    class="btn-icon"
+                    class="btn-icon h-10 w-10"
                     title="Editar"
-                    aria-label="Editar"
+                    [id]="'patient-edit-' + patient.id"
+                    [attr.aria-label]="'Editar a ' + patient.name"
                     (click)="openForm(patient)"
                   >
                     <app-ui-icon name="edit" class="h-4 w-4" />
@@ -150,9 +158,9 @@
                   @if (patient.active) {
                     <button
                       type="button"
-                      class="btn-icon hover:text-red-600!"
+                      class="btn-icon h-10 w-10 hover:text-red-600!"
                       title="Desactivar"
-                      aria-label="Desactivar"
+                      [attr.aria-label]="'Desactivar a ' + patient.name"
                       (click)="deactivate(patient)"
                     >
                       <app-ui-icon name="block" class="h-4 w-4" />
@@ -167,13 +175,13 @@
     }
   </div>
 
-  @if (resource.pagination(); as info) {
+  @if (patients.pagination(); as info) {
     <app-pagination
       class="mt-3 px-2"
       [page]="info.number"
       [totalPages]="info.totalPages"
       [totalElements]="info.totalElements"
-      (pageChange)="resource.setPage($event)"
+      (pageChange)="patients.setPage($event)"
     />
   }
 </div>

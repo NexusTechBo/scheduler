@@ -1,0 +1,57 @@
+<app-dialog-frame title="Cancelar cita" (closed)="ref.close()">
+  <p class="text-[15px] leading-relaxed text-gray-600">
+    ¿Cancelar la cita de <span class="font-bold text-gray-900">{{ data.patientName }}</span> del
+    <span class="font-bold text-gray-900">{{ data.when }}</span
+    >? El horario quedará libre nuevamente.
+  </p>
+
+  <p class="field-label mt-5">Motivos rápidos</p>
+  <div class="flex flex-wrap gap-2">
+    @for (option of quickReasons; track option) {
+      <button
+        type="button"
+        class="chip cursor-pointer px-3 py-1.5 text-sm font-semibold ring-1 transition-colors"
+        [class]="
+          reason() === option
+            ? 'bg-primary/10 text-primary ring-primary/40'
+            : 'bg-white/60 text-gray-600 ring-gray-900/10 hover:bg-white hover:text-gray-800'
+        "
+        [attr.aria-pressed]="reason() === option"
+        (click)="pick(option)"
+      >
+        @if (reason() === option) {
+          <app-ui-icon name="check" class="h-3.5 w-3.5" [strokeWidth]="2.6" />
+        }
+        {{ option }}
+      </button>
+    }
+  </div>
+
+  <label class="field-label mt-5" for="cancel-reason"
+    >Mensaje para el paciente <span class="text-gray-400">(obligatorio)</span></label
+  >
+  <textarea
+    id="cancel-reason"
+    required
+    aria-required="true"
+    rows="3"
+    class="field-input resize-none"
+    placeholder="Escribe el motivo de la cancelación…"
+    [maxLength]="maxLength"
+    [value]="reason()"
+    (input)="reason.set($any($event.target).value)"
+  ></textarea>
+  <p
+    class="mt-1 text-right text-xs tabular-nums"
+    [class]="reason().length >= maxLength - 50 ? 'text-tertiary' : 'text-gray-400'"
+  >
+    {{ reason().length }}/{{ maxLength }}
+  </p>
+
+  <ng-container ngProjectAs="[dialogFooter]">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Volver</button>
+    <button type="button" class="btn btn-danger" [disabled]="!reason().trim()" (click)="submit()">
+      Cancelar cita
+    </button>
+  </ng-container>
+</app-dialog-frame>

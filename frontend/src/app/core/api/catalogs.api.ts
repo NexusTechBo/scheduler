@@ -3,8 +3,6 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { Specialty } from '../models/api.models';
 
-const PLACEHOLDER_SPECIALTY = 'None';
-
 @Injectable({ providedIn: 'root' })
 export class CatalogsApi {
   private readonly http = inject(HttpClient);
@@ -12,13 +10,7 @@ export class CatalogsApi {
   specialties(): Observable<Specialty[]> {
     return this.http
       .get<Specialty[]>('specialties')
-      .pipe(
-        map((list) =>
-          list
-            .filter((specialty) => specialty.name !== PLACEHOLDER_SPECIALTY)
-            .sort((a, b) => a.name.localeCompare(b.name)),
-        ),
-      );
+      .pipe(map((list) => list.sort((a, b) => a.name.localeCompare(b.name))));
   }
 
   createSpecialty(name: string): Observable<Specialty> {

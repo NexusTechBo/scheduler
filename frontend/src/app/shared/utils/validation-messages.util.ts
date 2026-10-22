@@ -1,4 +1,4 @@
-import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
 
 const VALIDATION_MESSAGES: Record<string, (error: { requiredLength?: number }) => string> = {
   required: () => 'Este campo es obligatorio',
@@ -19,6 +19,10 @@ export function notBlank(control: AbstractControl): ValidationErrors | null {
   return String(control.value ?? '').trim() ? null : { required: true };
 }
 
-export function fieldError(control: AbstractControl): string | null {
-  return control.touched ? getValidationErrorMessage(control.errors) : null;
-}
+export const ciValidator = Validators.pattern(/^\d+$/);
+export const CI_ERRORS = { pattern: 'Solo números' };
+
+export const phoneValidator = Validators.pattern(/^[\d\s()+-]{7,20}$/);
+export const PHONE_ERRORS = {
+  pattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
+};

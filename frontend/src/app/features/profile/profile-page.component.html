@@ -1,24 +1,24 @@
 <app-page-header title="Mi perfil" subtitle="Tus datos de contacto en la clínica" />
 
 <div class="min-h-0 flex-1 overflow-y-auto">
-  @if (resource.error()) {
+  @if (profileService.errorMessage(); as message) {
     <div class="glass-panel max-w-5xl rounded-3xl p-6">
       <app-empty-state
         icon="alert"
-        [title]="errorMessage()"
+        [title]="message"
         message="Intenta nuevamente en unos segundos."
       >
-        <button type="button" class="btn btn-secondary btn-sm" (click)="resource.reload()">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="profileService.reload()">
           Reintentar
         </button>
       </app-empty-state>
     </div>
   } @else {
-    <div class="grid max-w-5xl gap-5 lg:grid-cols-[20rem_1fr]">
-      <section class="glass-panel flex flex-col items-center rounded-3xl p-6 text-center">
-        @if (resource.isLoading()) {
-          <div class="h-20 w-20 animate-pulse rounded-3xl bg-white/60"></div>
-          <div class="mt-4 h-5 w-40 animate-pulse rounded-lg bg-white/60"></div>
+    <div class="grid max-w-5xl grid-cols-1 gap-5 lg:grid-cols-[20rem_1fr]">
+      <section class="glass-panel flex min-w-0 flex-col items-center rounded-3xl p-6 text-center">
+        @if (profileService.isLoading() && !profile()) {
+          <app-skeleton heightClass="h-20 w-20" />
+          <app-skeleton heightClass="mt-4 h-5 w-40" />
         } @else if (profile()) {
           @let p = profile()!;
           <div
@@ -26,9 +26,15 @@
           >
             {{ avatar() }}
           </div>
-          <p class="mt-4 text-lg font-extrabold text-gray-900">{{ p.name }}</p>
+          <p class="mt-4 max-w-full wrap-break-word text-lg font-extrabold text-gray-900">
+            {{ p.name }}
+          </p>
           <p class="text-sm font-semibold text-primary">{{ roleLabel() }}</p>
           <dl class="mt-5 w-full space-y-2.5 text-left text-sm">
+            <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
+              <dt class="font-semibold text-gray-500">Usuario</dt>
+              <dd class="min-w-0 break-all text-right font-bold text-gray-800">{{ p.username }}</dd>
+            </div>
             <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
               <dt class="font-semibold text-gray-500">CI</dt>
               <dd class="font-bold text-gray-800">{{ p.ci }}</dd>
@@ -42,37 +48,81 @@
             @if (clinic(); as clinic) {
               <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
                 <dt class="font-semibold text-gray-500">Clínica</dt>
-                <dd class="truncate font-bold text-gray-800">{{ clinic.name }}</dd>
+                <dd class="min-w-0 truncate font-bold text-gray-800">{{ clinic.name }}</dd>
               </div>
             }
           </dl>
         }
       </section>
 
-      <section class="glass-panel rounded-3xl p-6">
-        <h2 class="mb-5 text-xl font-extrabold text-gray-900">Datos personales</h2>
+      <section class="glass-panel min-w-0 rounded-3xl p-6">
         <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
-          <div>
-            <label class="field-label" for="profile-name">Nombre completo</label>
-            <input id="profile-name" class="field-input" formControlName="name" />
-            @if (errorOf('name'); as message) {
-              <p class="field-error">{{ message }}</p>
-            }
+          <h2 class="mb-1 text-xl font-extrabold text-gray-900">Datos personales</h2>
+          <app-form-field label="Nombre completo" fieldId="profile-name">
+            <input
+              id="profile-name"
+              class="field-input"
+              formControlName="name"
+              autocomplete="name"
+            />
+          </app-form-field>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <app-form-field label="Email" fieldId="profile-email">
+              <input
+                id="profile-email"
+                type="email"
+                class="field-input"
+                formControlName="email"
+                autocomplete="email"
+              />
+            </app-form-field>
+            <app-form-field
+              label="Teléfono (opcional)"
+              fieldId="profile-phone"
+              [errorMessages]="phoneErrors"
+            >
+              <input
+                id="profile-phone"
+                type="tel"
+                class="field-input"
+                formControlName="phoneNumber"
+                autocomplete="tel"
+              />
+            </app-form-field>
           </div>
-          <div>
-            <label class="field-label" for="profile-email">Email</label>
-            <input id="profile-email" type="email" class="field-input" formControlName="email" />
-            @if (errorOf('email'); as message) {
-              <p class="field-error">{{ message }}</p>
-            }
+
+          <h2 class="mb-1 pt-4 text-xl font-extrabold text-gray-900">Cambiar contraseña</h2>
+          <p class="text-sm text-gray-500">Opcional. Déjalo vacío para mantener la actual.</p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <app-form-field
+              label="Contraseña actual"
+              fieldId="profile-current-password"
+              [errorMessages]="{ required: 'Ingresa tu contraseña actual para cambiarla' }"
+            >
+              <input
+                id="profile-current-password"
+                type="password"
+                class="field-input"
+                formControlName="currentPassword"
+                autocomplete="current-password"
+              />
+            </app-form-field>
+            <app-form-field label="Nueva contraseña" fieldId="profile-new-password">
+              <input
+                id="profile-new-password"
+                type="password"
+                class="field-input"
+                formControlName="newPassword"
+                autocomplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+              />
+            </app-form-field>
           </div>
-          @if (isPatient) {
-            <div>
-              <label class="field-label" for="profile-phone">Teléfono</label>
-              <input id="profile-phone" class="field-input" formControlName="phoneNumber" />
-              <p class="mt-1.5 text-xs text-gray-500">Para que la clínica pueda contactarte.</p>
-            </div>
+
+          @if (error(); as message) {
+            <app-alert>{{ message }}</app-alert>
           }
+
           <div class="flex justify-end pt-2">
             <button type="submit" class="btn btn-primary" [disabled]="saving() || form.pristine">
               {{ saving() ? 'Guardando…' : 'Guardar cambios' }}

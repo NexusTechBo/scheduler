@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { LoginRequest, LoginResponse, ProfileResponse } from '../models/api.models';
+import { LoginRequest, LoginResponse, Staff } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApi {
@@ -11,7 +11,7 @@ export class AuthApi {
     return this.http.post<LoginResponse>('auth/login', request);
   }
 
-  me(): Observable<ProfileResponse> {
-    return this.http.get<ProfileResponse>('auth/me');
+  me(): Observable<Staff> {
+    return this.http.get<Staff>('auth/me');
   }
 }

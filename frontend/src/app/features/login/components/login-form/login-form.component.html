@@ -11,40 +11,21 @@
     </p>
   </div>
 
-  <div class="mb-5 flex items-center justify-between gap-3 rounded-2xl bg-white/60 px-4 py-3">
-    <div class="min-w-0">
-      <p class="text-xs font-bold tracking-wide text-gray-500">Clínica</p>
-      <p class="truncate text-sm font-bold text-gray-900">
-        {{ clinic()?.name ?? 'Sin seleccionar' }}
-      </p>
-    </div>
-    <a
-      routerLink="/clinic-options"
-      class="inline-flex min-h-6 shrink-0 items-center px-1 text-xs font-bold text-primary hover:underline"
-    >
-      Cambiar
-    </a>
-  </div>
-
   <div class="space-y-4">
-    <div>
-      <label class="field-label" for="login-email">Correo electrónico</label>
+    <app-form-field label="Usuario" fieldId="login-username">
       <input
-        id="login-email"
-        type="email"
+        id="login-username"
+        type="text"
         class="field-input"
-        formControlName="email"
-        autocomplete="email"
-        placeholder="tucorreo@clinica.com"
-        [attr.aria-invalid]="!!errorOf('email')"
-        [attr.aria-describedby]="errorOf('email') ? 'login-email-error' : null"
+        formControlName="username"
+        autocomplete="username"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="usuario@clinica.com"
       />
-      @if (errorOf('email'); as message) {
-        <p id="login-email-error" class="field-error">{{ message }}</p>
-      }
-    </div>
-    <div>
-      <label class="field-label" for="login-password">Contraseña</label>
+    </app-form-field>
+    <app-form-field label="Contraseña" fieldId="login-password">
       <input
         id="login-password"
         type="password"
@@ -52,13 +33,8 @@
         formControlName="password"
         autocomplete="current-password"
         placeholder="Ingresa tu contraseña"
-        [attr.aria-invalid]="!!errorOf('password')"
-        [attr.aria-describedby]="errorOf('password') ? 'login-password-error' : null"
       />
-      @if (errorOf('password'); as message) {
-        <p id="login-password-error" class="field-error">{{ message }}</p>
-      }
-    </div>
+    </app-form-field>
   </div>
 
   <button type="submit" class="btn btn-primary mt-6 w-full" [disabled]="submitting()">
@@ -75,6 +51,6 @@
 
   <a routerLink="/register" class="btn btn-secondary mt-4 w-full">Registrar clínica</a>
   <p class="mt-4 text-center text-xs font-medium text-gray-500">
-    Los pacientes y el personal son creados por la clínica.
+    El personal es creado por el administrador de la clínica.
   </p>
 </form>

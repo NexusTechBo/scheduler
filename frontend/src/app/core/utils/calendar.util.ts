@@ -92,6 +92,10 @@ export function formatTime(value: string): string {
   return time.slice(0, 5);
 }
 
+export function formatTimeRange(start: string, end: string): string {
+  return `${formatTime(start)} – ${formatTime(end)}`;
+}
+
 export function datePart(dateTime: string): string {
   return dateTime.slice(0, 10);
 }

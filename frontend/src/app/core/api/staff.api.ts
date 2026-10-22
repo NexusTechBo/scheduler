@@ -6,6 +6,7 @@ import {
   Page,
   PageQuery,
   Patient,
+  ProfileUpdateRequest,
   Staff,
   StaffFilters,
   StaffRegisterRequest,
@@ -35,7 +36,7 @@ export class StaffApi {
     return this.http.put<Staff>(`personal/update/${id}`, request);
   }
 
-  updateSelf(request: StaffUpdateRequest): Observable<Staff> {
+  updateSelf(request: ProfileUpdateRequest): Observable<Staff> {
     return this.http.put<Staff>('personal/update', request);
   }
 

@@ -1,64 +1,83 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, finalize } from 'rxjs';
-import { AuthApi } from '../../core/api/auth.api';
-import { PatientsApi } from '../../core/api/patients.api';
-import { StaffApi } from '../../core/api/staff.api';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
+import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { ROLE_LABEL, initials } from '../../core/utils/labels.util';
-import { NotificationService } from '../../shared/services/notification.service';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
-import { fieldError } from '../../shared/utils/validation-messages.util';
+import {
+  PHONE_ERRORS,
+  notBlank,
+  phoneValidator,
+} from '../../shared/utils/validation-messages.util';
+import { ProfileService } from './services/profile.service';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { AlertComponent } from '../../shared/ui/alert/alert.component';
+
+export function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
+}
 
 @Component({
   selector: 'app-profile-page',
-  imports: [ReactiveFormsModule, PageHeaderComponent, EmptyStateComponent],
+  imports: [
+    AlertComponent,
+    SkeletonComponent,
+    ReactiveFormsModule,
+    FormFieldComponent,
+    PageHeaderComponent,
+    EmptyStateComponent,
+  ],
+  providers: [ProfileService],
   templateUrl: './profile-page.component.html',
   host: { class: 'flex min-h-0 flex-1 flex-col' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfilePageComponent {
-  private readonly authApi = inject(AuthApi);
-  private readonly patientsApi = inject(PatientsApi);
-  private readonly staffApi = inject(StaffApi);
-  private readonly auth = inject(AuthService);
-  private readonly notifications = inject(NotificationService);
+  protected readonly profileService = inject(ProfileService);
+  protected readonly clinic = inject(AuthService).clinic;
 
-  protected readonly isPatient = this.auth.hasRole('PATIENT');
-  protected readonly clinic = this.auth.clinic;
-  protected readonly resource = rxResource({ loader: () => this.authApi.me() });
-  protected readonly profile = this.resource.value;
-  protected readonly roleLabel = computed(() =>
-    this.profile() ? ROLE_LABEL[this.profile()!.role] : '',
-  );
-  protected readonly errorMessage = computed(() =>
-    apiErrorMessage(this.resource.error(), 'No se pudo cargar tu perfil'),
-  );
+  protected readonly profile = this.profileService.profile;
+  protected readonly roleLabel = computed(() => {
+    const profile = this.profile();
+    return profile ? ROLE_LABEL[profile.role] : '';
+  });
   protected readonly avatar = computed(() => initials(this.profile()?.name));
+  protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    name: ['', Validators.required],
+    name: ['', notBlank],
     email: ['', [Validators.required, Validators.email]],
-    phoneNumber: [''],
+    phoneNumber: ['', phoneValidator],
+    currentPassword: ['', currentPasswordWhenChanging],
+    newPassword: ['', Validators.minLength(8)],
   });
 
   constructor() {
-    effect(() => {
-      const profile = this.profile();
-      if (profile)
+    toObservable(this.profile)
+      .pipe(filter(Boolean), takeUntilDestroyed())
+      .subscribe((profile) =>
         this.form.reset({
           name: profile.name,
           email: profile.email,
           phoneNumber: profile.phoneNumber ?? '',
-        });
-    });
-  }
-
-  protected errorOf(name: keyof typeof this.form.controls): string | null {
-    return fieldError(this.form.controls[name]);
+        }),
+      );
+    this.form.controls.newPassword.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.form.controls.currentPassword.updateValueAndValidity());
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.error.set(null));
   }
 
   protected save(): void {
@@ -67,27 +86,18 @@ export class ProfilePageComponent {
       this.form.markAllAsTouched();
       return;
     }
-    const { name, email, phoneNumber } = this.form.getRawValue();
-    const role = this.auth.role();
-    let request: Observable<unknown>;
-    if (role === 'PATIENT')
-      request = this.patientsApi.updateSelf({
-        name,
-        email,
-        phoneNumber: phoneNumber.trim() || null,
-      });
-    else if (role === 'ADMINISTRATOR')
-      request = this.staffApi.update(this.auth.userId()!, { name, email });
-    else request = this.staffApi.updateSelf({ name, email });
-
+    const { name, email, phoneNumber, currentPassword, newPassword } = this.form.getRawValue();
     this.saving.set(true);
-    request.pipe(finalize(() => this.saving.set(false))).subscribe({
-      next: () => {
-        this.notifications.success('Perfil actualizado');
-        this.resource.reload();
-      },
-      error: (error) =>
-        this.notifications.error(apiErrorMessage(error, 'No se pudo actualizar el perfil')),
-    });
+    this.profileService
+      .update({
+        name: name.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber.trim() || null,
+        ...(newPassword ? { currentPassword, newPassword } : {}),
+      })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo actualizar el perfil')),
+      });
   }
 }

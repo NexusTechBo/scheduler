@@ -1,0 +1,61 @@
+<div class="mb-3 flex items-center justify-between">
+  <button
+    type="button"
+    (click)="shiftMonth(-1)"
+    class="flex h-8 w-8 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-white/60"
+    aria-label="Mes anterior"
+  >
+    <app-ui-icon name="chevronLeft" class="h-4 w-4" [strokeWidth]="2" />
+  </button>
+  <p class="text-sm font-extrabold text-gray-900">{{ monthLabel() }}</p>
+  <button
+    type="button"
+    (click)="shiftMonth(1)"
+    class="flex h-8 w-8 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-white/60"
+    aria-label="Mes siguiente"
+  >
+    <app-ui-icon name="chevronRight" class="h-4 w-4" [strokeWidth]="2" />
+  </button>
+</div>
+
+<div class="mb-1.5 grid grid-cols-7 text-center text-[11px] font-bold tracking-wide text-gray-500">
+  @for (weekday of weekdays; track weekday.value) {
+    <span>{{ weekday.short }}</span>
+  }
+</div>
+
+<div class="grid grid-cols-7 gap-y-1" (mouseleave)="hover.emit(null)">
+  @for (week of weeks(); track $index) {
+    @for (day of week; track day.iso) {
+      @let state = dayState(day);
+      <button
+        type="button"
+        (click)="pick.emit(day.iso)"
+        (keydown)="onKeydown($event, day.iso)"
+        [attr.data-iso]="day.iso"
+        [attr.tabindex]="day.iso === focusIso() ? 0 : -1"
+        [attr.cdkFocusInitial]="day.iso === focusIso() ? '' : null"
+        (mouseenter)="hover.emit(day.iso)"
+        [disabled]="state.disabled"
+        [attr.aria-label]="formatLongDate(day.iso)"
+        [attr.aria-pressed]="state.edge"
+        [attr.aria-current]="state.isToday ? 'date' : null"
+        class="mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold transition-colors {{
+          state.disabled
+            ? 'cursor-not-allowed text-gray-300'
+            : state.edge
+              ? 'bg-primary font-bold text-white'
+              : state.inRange
+                ? 'bg-primary/15 font-bold text-primary'
+                : state.isToday
+                  ? 'font-extrabold text-primary'
+                  : day.inCurrentMonth
+                    ? 'text-gray-700 hover:bg-white/70'
+                    : 'text-gray-300 hover:bg-white/40'
+        }}"
+      >
+        {{ day.date.getDate() }}
+      </button>
+    }
+  }
+</div>

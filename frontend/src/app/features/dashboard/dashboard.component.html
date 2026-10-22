@@ -2,7 +2,7 @@
 
 <div class="min-h-0 flex-1 overflow-y-auto pb-2">
   <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    @for (kpi of kpis(); track kpi.label) {
+    @for (kpi of dashboard.kpis(); track kpi.label) {
       <div class="glass-panel flex items-center gap-4 rounded-3xl p-5">
         <span
           class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
@@ -11,10 +11,12 @@
           <app-ui-icon [name]="kpi.icon" class="h-6 w-6" />
         </span>
         <div>
-          @if (weekResource.isLoading()) {
-            <div class="mb-1 h-7 w-10 animate-pulse rounded-lg bg-white/70"></div>
+          @if (dashboard.weekResource.isLoading()) {
+            <app-skeleton heightClass="mb-1 h-7 w-10" />
           } @else {
-            <p class="text-[28px] font-extrabold leading-none text-gray-900">{{ kpi.value }}</p>
+            <p class="text-[28px] font-extrabold leading-none text-gray-900">
+              {{ kpi.value ?? '—' }}
+            </p>
           }
           <p class="mt-1 text-sm font-semibold text-gray-500">{{ kpi.label }}</p>
         </div>
@@ -32,22 +34,28 @@
         <a routerLink="/calendar" class="btn btn-secondary btn-sm">Ver calendario</a>
       </div>
 
-      @if (weekResource.isLoading()) {
-        <div class="space-y-3">
-          @for (i of [1, 2, 3]; track i) {
-            <div class="h-18.5 animate-pulse rounded-2xl bg-white/50"></div>
-          }
+      @if (dashboard.weekResource.isLoading()) {
+        <div class="flex flex-col gap-3">
+          <app-skeleton [rows]="3" heightClass="h-18.5" />
         </div>
-      } @else if (weekResource.error()) {
-        <app-empty-state icon="alert" title="No se pudo cargar la agenda">
-          <button type="button" class="btn btn-secondary btn-sm" (click)="weekResource.reload()">
+      } @else if (dashboard.weekResource.error()) {
+        <div class="flex flex-col items-start gap-3">
+          <app-alert class="self-stretch">No se pudo cargar la agenda.</app-alert>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            (click)="dashboard.weekResource.reload()"
+          >
             Reintentar
           </button>
-        </app-empty-state>
+        </div>
       } @else {
         <div class="-m-2 flex flex-1 flex-col gap-3 p-2">
-          @for (appointment of todayAppointments(); track appointment.id) {
-            <app-appointment-list-item [appointment]="appointment" (click)="open(appointment)" />
+          @for (appointment of dashboard.todayAppointments(); track appointment.id) {
+            <app-appointment-list-item
+              [appointment]="appointment"
+              (click)="dashboard.open(appointment)"
+            />
           } @empty {
             <app-empty-state
               class="flex-1"
@@ -63,7 +71,7 @@
     <section class="glass-panel min-w-0 rounded-3xl p-6">
       <h2 class="mb-4 text-xl font-extrabold text-gray-900">Accesos rápidos</h2>
       <div class="space-y-2.5">
-        @for (link of quickLinks; track link.route) {
+        @for (link of dashboard.quickLinks; track link.route) {
           <a
             [routerLink]="link.route"
             class="flex items-center gap-3.5 rounded-2xl bg-white/50 px-4 py-3.5 transition-all hover:-translate-y-px hover:bg-white/85 hover:shadow-md"

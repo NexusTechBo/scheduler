@@ -5,25 +5,19 @@
 
 <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1fr_22rem]">
   <section class="glass-panel min-h-0 overflow-y-auto rounded-3xl p-6">
-    @if (resource.isLoading()) {
+    @if (specialties.isLoading()) {
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        @for (i of [1, 2, 3]; track i) {
-          <div class="h-16 animate-pulse rounded-2xl bg-white/50"></div>
-        }
+        <app-skeleton [rows]="3" heightClass="h-16" />
       </div>
-    } @else if (resource.isError()) {
-      <app-empty-state icon="alert" [title]="resource.errorMessage()">
-        <button
-          type="button"
-          class="btn btn-secondary btn-sm"
-          (click)="resource.reloadSpecialties()"
-        >
+    } @else if (specialties.errorMessage()) {
+      <app-empty-state icon="alert" [title]="specialties.errorMessage()!">
+        <button type="button" class="btn btn-secondary btn-sm" (click)="specialties.reload()">
           Reintentar
         </button>
       </app-empty-state>
     } @else {
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        @for (specialty of resource.specialties(); track specialty.id) {
+        @for (specialty of specialties.specialties(); track specialty.id) {
           <div class="flex items-center gap-3 rounded-2xl bg-white/50 px-4 py-3.5">
             <span
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
@@ -47,18 +41,23 @@
   <section class="glass-panel self-start rounded-3xl p-6">
     <h2 class="mb-4 text-lg font-extrabold text-gray-900">Nueva especialidad</h2>
     <form (ngSubmit)="create()" class="space-y-3">
-      <label class="field-label" for="specialty-name">Nombre</label>
-      <input
-        id="specialty-name"
-        name="name"
-        class="field-input"
-        placeholder="Cardiología"
-        [ngModel]="name()"
-        (ngModelChange)="name.set($event)"
-        maxlength="255"
-        autocomplete="off"
-      />
-      <button type="submit" class="btn btn-primary w-full" [disabled]="!name().trim() || saving()">
+      <app-form-field label="Nombre" fieldId="specialty-name">
+        <input
+          id="specialty-name"
+          name="name"
+          class="field-input"
+          placeholder="Cardiología"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          maxlength="255"
+          autocomplete="off"
+        />
+      </app-form-field>
+      <button
+        type="submit"
+        class="btn btn-primary w-full"
+        [disabled]="!name().trim() || specialties.saving()"
+      >
         <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
         Crear
       </button>

@@ -1,0 +1,63 @@
+<app-dialog-frame
+  title="Agregar horario"
+  subtitle="Bloque semanal en el que atiendes"
+  (closed)="ref.close()"
+>
+  <form id="availability-form" [formGroup]="form" (ngSubmit)="save()" class="space-y-5">
+    <div>
+      <p class="field-label">Días</p>
+      <div class="flex flex-wrap gap-1.5">
+        @for (day of days; track day.value) {
+          <button
+            type="button"
+            class="chip cursor-pointer px-3 py-1.5 text-sm transition-colors"
+            [class]="
+              selectedDays().has(day.value)
+                ? 'bg-primary text-white'
+                : 'bg-white/60 text-gray-600 hover:bg-white'
+            "
+            [attr.aria-pressed]="selectedDays().has(day.value)"
+            (click)="toggleDay(day.value)"
+          >
+            {{ day.short }}
+          </button>
+        }
+      </div>
+      @if (!selectedDays().size) {
+        <p class="field-error">Selecciona al menos un día</p>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <app-form-field
+        label="Desde"
+        fieldId="av-start"
+        [linkedErrorId]="rangeInvalid() ? 'av-end-error' : null"
+      >
+        <app-time-picker id="av-start" formControlName="startTime" />
+      </app-form-field>
+      <app-form-field label="Hasta" fieldId="av-end" [errorMessages]="endErrors">
+        <app-time-picker id="av-end" formControlName="endTime" [min]="endMin()" />
+      </app-form-field>
+    </div>
+
+    <app-form-field label="Duración de cada cita" fieldId="av-duration">
+      <app-select
+        id="av-duration"
+        formControlName="slotDurationMinutes"
+        [options]="durationOptions"
+      />
+    </app-form-field>
+
+    @if (error(); as message) {
+      <app-alert>{{ message }}</app-alert>
+    }
+  </form>
+
+  <ng-container ngProjectAs="[dialogFooter]">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Cancelar</button>
+    <button type="submit" form="availability-form" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Agregar' }}
+    </button>
+  </ng-container>
+</app-dialog-frame>
