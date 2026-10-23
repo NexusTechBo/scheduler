@@ -35,6 +35,9 @@ public class Patient {
     @Builder.Default
     private boolean active = true;
 
+    @Version
+    private Long version;
+
     @ManyToMany(mappedBy = "patients",  fetch = FetchType.LAZY)
     @Builder.Default
     private List<Personal> doctors = new ArrayList<>();

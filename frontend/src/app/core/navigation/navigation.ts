@@ -1,35 +1,80 @@
 import { Role } from '../models/api.models';
-import { UiIconName } from '../../shared/ui/ui-icon/ui-icon.component';
+
+export const HOME_URL = '/dashboard';
+
+type NavIcon = 'home' | 'board' | 'calendar' | 'list' | 'patients' | 'clock' | 'staff' | 'tag';
 
 export interface NavItem {
   label: string;
+  description: string;
   route: string;
-  icon: UiIconName;
+  icon: NavIcon;
   roles: Role[];
 }
 
 export const ROLES = {
   staff: ['ADMINISTRATOR', 'DOCTOR', 'ASSISTANT'],
-  everyone: ['ADMINISTRATOR', 'DOCTOR', 'ASSISTANT', 'PATIENT'],
-  clinical: ['DOCTOR', 'ASSISTANT'],
-  booking: ['DOCTOR', 'ASSISTANT', 'PATIENT'],
   doctor: ['DOCTOR'],
   admin: ['ADMINISTRATOR'],
-  patient: ['PATIENT'],
 } as const satisfies Record<string, readonly Role[]>;
 
-export const NAV_ITEMS: NavItem[] = [
-  { label: 'Inicio', route: '/dashboard', icon: 'home', roles: [...ROLES.staff] },
-  { label: 'Mis citas', route: '/appointments', icon: 'list', roles: [...ROLES.patient] },
-  { label: 'Agendar cita', route: '/appointments/new', icon: 'plus', roles: [...ROLES.patient] },
-  { label: 'Tablero', route: '/board', icon: 'board', roles: [...ROLES.staff] },
-  { label: 'Calendario', route: '/calendar', icon: 'calendar', roles: [...ROLES.everyone] },
-  { label: 'Citas', route: '/appointments', icon: 'list', roles: [...ROLES.staff] },
-  { label: 'Pacientes', route: '/patients', icon: 'patients', roles: [...ROLES.clinical] },
-  { label: 'Mi disponibilidad', route: '/availability', icon: 'clock', roles: [...ROLES.doctor] },
-  { label: 'Personal', route: '/staff', icon: 'staff', roles: [...ROLES.admin] },
-  { label: 'Especialidades', route: '/specialties', icon: 'tag', roles: [...ROLES.admin] },
-  { label: 'Asistente IA', route: '/assistant', icon: 'sparkles', roles: [...ROLES.patient] },
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: 'Inicio',
+    description: 'Resumen de la actividad',
+    route: HOME_URL,
+    icon: 'home',
+    roles: [...ROLES.staff],
+  },
+  {
+    label: 'Tablero',
+    description: 'Confirma o cancela citas pendientes',
+    route: '/board',
+    icon: 'board',
+    roles: [...ROLES.staff],
+  },
+  {
+    label: 'Calendario',
+    description: 'Citas del mes, día por día',
+    route: '/calendar',
+    icon: 'calendar',
+    roles: [...ROLES.staff],
+  },
+  {
+    label: 'Citas',
+    description: 'Historial y próximas citas',
+    route: '/appointments',
+    icon: 'list',
+    roles: [...ROLES.staff],
+  },
+  {
+    label: 'Pacientes',
+    description: 'Registra y asigna pacientes',
+    route: '/patients',
+    icon: 'patients',
+    roles: [...ROLES.staff],
+  },
+  {
+    label: 'Mi disponibilidad',
+    description: 'Horario semanal y bloqueos',
+    route: '/availability',
+    icon: 'clock',
+    roles: [...ROLES.doctor],
+  },
+  {
+    label: 'Personal',
+    description: 'Doctores y asistentes de la clínica',
+    route: '/staff',
+    icon: 'staff',
+    roles: [...ROLES.admin],
+  },
+  {
+    label: 'Especialidades',
+    description: 'Catálogo de especialidades',
+    route: '/specialties',
+    icon: 'tag',
+    roles: [...ROLES.admin],
+  },
 ];
 
 export function navItemsFor(role: Role | null): NavItem[] {

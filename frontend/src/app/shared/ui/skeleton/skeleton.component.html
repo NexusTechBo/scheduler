@@ -1,0 +1,8 @@
+<span role="status" class="sr-only">Cargando…</span>
+@for (row of rowList(); track row) {
+  <div
+    aria-hidden="true"
+    class="animate-pulse rounded-2xl bg-white/50"
+    [class]="heightClass()"
+  ></div>
+}

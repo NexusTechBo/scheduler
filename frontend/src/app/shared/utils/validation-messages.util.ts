@@ -1,4 +1,4 @@
-import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
 
 const VALIDATION_MESSAGES: Record<string, (error: { requiredLength?: number }) => string> = {
   required: () => 'Este campo es obligatorio',
@@ -19,6 +19,25 @@ export function notBlank(control: AbstractControl): ValidationErrors | null {
   return String(control.value ?? '').trim() ? null : { required: true };
 }
 
-export function fieldError(control: AbstractControl): string | null {
-  return control.touched ? getValidationErrorMessage(control.errors) : null;
+export const ciValidator = Validators.pattern(/^\d+$/);
+export const CI_ERRORS = { pattern: 'Solo números' };
+
+export const phoneValidator = Validators.pattern(/^[\d\s()+-]{7,20}$/);
+export const PHONE_ERRORS = {
+  pattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
+};
+
+export const usernameValidator = Validators.pattern(/^[a-z0-9._-]{3,50}$/);
+export const USERNAME_ERRORS = {
+  pattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
+};
+
+export function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('role')?.value === 'DOCTOR' && !control.value
+    ? { required: true }
+    : null;
+}
+
+export function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
 }

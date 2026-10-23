@@ -105,7 +105,8 @@ public class PersonalServiceImpl implements PersonalService {
                 throw new BusinessException("personal.doctorHasActiveAvailabilities");
         }
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
-        personal.setRole(request.role());
+        if (personal.getRole() != ERole.ADMINISTRATOR)
+            personal.setRole(request.role());
         personal.setSpecialty(getSpecialtyOrThrowById(request.specialtyId()));
         if (request.password() != null)
             personal.setPassword(passwordEncoder.encode(request.password()));
@@ -138,10 +139,20 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     @Transactional
-    public void deactivatePersonalById(Long personalId) {
+    public void deactivatePersonalById(Long personalId, Long userId) {
+        if (personalId.equals(userId))
+            throw new BusinessException("You cannot deactivate your own account");
         var personal = getPersonalOrThrowById(personalId);
         personal.setActive(false);
         personalRepository.save(personal);
+    }
+
+    @Override
+    @Transactional
+    public PersonalResponse activatePersonalById(Long personalId) {
+        var personal = getPersonalOrThrowById(personalId);
+        personal.setActive(true);
+        return personalMapper.toResponse(personalRepository.save(personal));
     }
 
     @Override
