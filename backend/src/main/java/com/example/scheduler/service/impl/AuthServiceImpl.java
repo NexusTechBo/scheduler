@@ -45,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
                 throw new UnauthorizedException("auth.userNotActive");
             if (!passwordEncoder.matches(request.password(), personal.getPassword()))
                 throw new UnauthorizedException("auth.invalidCredentials");
-            return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic.getId(), personal.getName()));
+            return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic, personal.getName()));
         } finally {
             TenantContext.clear();
         }

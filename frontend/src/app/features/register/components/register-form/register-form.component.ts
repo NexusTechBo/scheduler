@@ -1,66 +1,59 @@
-import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { finalize, switchMap, tap } from 'rxjs';
-import { ClinicsApi } from '../../../../core/api/clinics.api';
-import { AuthService } from '../../../../core/auth/auth.service';
-import { apiErrorMessage } from '../../../../core/http/api-error';
-import { NotificationService } from '../../../../shared/services/notification.service';
-import { fieldError } from '../../../../shared/utils/validation-messages.util';
-import { REGISTER_FORM } from './constants/register-form.constants';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
+import {
+  CI_ERRORS,
+  PHONE_ERRORS,
+  USERNAME_ERRORS,
+  ciValidator,
+  notBlank,
+  phoneValidator,
+  usernameValidator,
+} from '../../../../shared/utils/validation-messages.util';
+import { RegisterService } from '../../register.service';
 
 @Component({
   selector: 'app-register-form',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, FormFieldComponent],
   templateUrl: './register-form.component.html',
   host: { class: 'flex min-h-screen items-center justify-center px-4 py-10 sm:px-6' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterFormComponent {
-  private readonly clinicsApi = inject(ClinicsApi);
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-  private readonly notifications = inject(NotificationService);
+  protected readonly register = inject(RegisterService);
 
-  protected readonly submitting = signal(false);
-  protected readonly formGroup = inject(FormBuilder).nonNullable.group(REGISTER_FORM);
+  protected readonly form = inject(FormBuilder).nonNullable.group({
+    name: ['', notBlank],
+    subdomain: ['', [Validators.required, Validators.pattern(/^[a-z0-9]{3,50}$/)]],
+    phoneNumber: ['', [notBlank, phoneValidator]],
+    adminName: ['', notBlank],
+    adminCi: ['', [notBlank, ciValidator]],
+    adminUsername: ['', [Validators.required, usernameValidator]],
+    adminEmail: ['', [Validators.required, Validators.email]],
+    adminPassword: ['', [Validators.required, Validators.minLength(8)]],
+  });
 
-  protected errorOf(name: keyof typeof this.formGroup.controls): string | null {
-    return fieldError(this.formGroup.controls[name]);
-  }
+  protected readonly suffix = toSignal(
+    this.form.controls.subdomain.valueChanges.pipe(
+      map((value) => (this.form.controls.subdomain.valid ? value : '')),
+    ),
+    { initialValue: '' },
+  );
+  protected readonly ciErrors = CI_ERRORS;
+  protected readonly phoneErrors = PHONE_ERRORS;
+  protected readonly subdomainErrors = {
+    pattern: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
+  };
+  protected readonly usernameErrors = USERNAME_ERRORS;
 
   protected submit(): void {
-    if (this.submitting()) return;
-    if (this.formGroup.invalid) {
-      this.formGroup.markAllAsTouched();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
-
-    const request = this.formGroup.getRawValue();
-    this.submitting.set(true);
-    this.clinicsApi
-      .create(request)
-      .pipe(
-        tap((clinic) =>
-          this.auth.selectClinic({
-            id: clinic.id,
-            name: clinic.name,
-            phoneNumber: clinic.phoneNumber,
-          }),
-        ),
-        switchMap((clinic) =>
-          this.auth.login(request.adminEmail, request.adminPassword, clinic.id),
-        ),
-        finalize(() => this.submitting.set(false)),
-      )
-      .subscribe({
-        next: () => {
-          this.notifications.success('¡Clínica registrada! Ya puedes crear a tu personal.');
-          this.router.navigateByUrl(this.auth.homeUrl()).finally();
-        },
-        error: (error) =>
-          this.notifications.error(
-            apiErrorMessage(error, 'Ocurrió un error al registrar, intenta de nuevo'),
-          ),
-      });
+    this.register.register(this.form.getRawValue());
   }
 }

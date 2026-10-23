@@ -30,8 +30,8 @@ public class PatientServiceImpl implements PatientService {
     private final PersonalMapper personalMapper;
 
     @Override
-    public Page<PatientResponse> findAllPatients(Pageable pageable) {
-        return patientRepository.findAll(pageable).map(patientMapper::toResponse);
+    public Page<PatientResponse> findAllPatients(String search, Boolean isActive, Pageable pageable) {
+        return patientRepository.search(search == null ? "" : search.strip(), isActive, pageable).map(patientMapper::toResponse);
     }
 
     @Override
@@ -79,6 +79,14 @@ public class PatientServiceImpl implements PatientService {
         var patient = getPatientOrThrowById(patientId);
         patient.setActive(false);
         patientRepository.save(patient);
+    }
+
+    @Override
+    @Transactional
+    public PatientResponse activatePatientById(Long patientId) {
+        var patient = getPatientOrThrowById(patientId);
+        patient.setActive(true);
+        return patientMapper.toResponse(patientRepository.save(patient));
     }
 
     @Override

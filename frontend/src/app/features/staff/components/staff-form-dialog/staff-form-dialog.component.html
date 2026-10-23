@@ -1,0 +1,136 @@
+<app-dialog-frame
+  [title]="staff ? 'Editar personal' : 'Nuevo miembro del personal'"
+  [subtitle]="staff ? staff.username : 'Doctor o asistente de la clínica'"
+  (closed)="ref.close()"
+>
+  <form id="staff-form" [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+    @if (canChangeRole) {
+      <fieldset>
+        <legend class="field-label">Rol</legend>
+        <div class="grid grid-cols-2 gap-2">
+          @for (role of roles; track role.id) {
+            <label
+              class="flex cursor-pointer items-center justify-center rounded-2xl border-2 py-2.5 text-sm font-bold transition-colors"
+              [class]="
+                form.controls.role.value === role.id
+                  ? 'border-primary bg-white text-primary'
+                  : 'border-transparent bg-white/50 text-gray-600'
+              "
+            >
+              <input type="radio" class="sr-only" formControlName="role" [value]="role.id" />
+              {{ role.label }}
+            </label>
+          }
+        </div>
+      </fieldset>
+    }
+
+    <app-form-field label="Nombre completo" fieldId="staff-name">
+      <input
+        id="staff-name"
+        class="field-input"
+        formControlName="name"
+        placeholder="Dr. Juan Pérez"
+        autocomplete="off"
+      />
+    </app-form-field>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <app-form-field label="Email" fieldId="staff-email">
+        <input
+          id="staff-email"
+          type="email"
+          class="field-input"
+          formControlName="email"
+          autocomplete="off"
+        />
+      </app-form-field>
+      <app-form-field
+        label="Teléfono (opcional)"
+        fieldId="staff-phone"
+        [errorMessages]="phoneErrors"
+      >
+        <input
+          id="staff-phone"
+          type="tel"
+          class="field-input"
+          formControlName="phoneNumber"
+          autocomplete="off"
+        />
+      </app-form-field>
+    </div>
+
+    @if (isDoctor()) {
+      <app-form-field
+        label="Especialidad"
+        fieldId="staff-specialty"
+        [errorMessages]="{ required: 'Selecciona la especialidad del doctor' }"
+      >
+        <app-select
+          id="staff-specialty"
+          icon="tag"
+          placeholder="Selecciona una especialidad"
+          formControlName="specialtyId"
+          [options]="specialtyOptions()"
+        />
+      </app-form-field>
+    }
+
+    @if (!staff) {
+      <div class="grid gap-4">
+        <app-form-field label="CI" fieldId="staff-ci" [errorMessages]="ciErrors">
+          <input
+            id="staff-ci"
+            class="field-input"
+            formControlName="ci"
+            inputmode="numeric"
+            autocomplete="off"
+          />
+        </app-form-field>
+        <app-form-field label="Usuario" fieldId="staff-username" [errorMessages]="usernameErrors">
+          <div class="flex items-center gap-1.5">
+            <input
+              id="staff-username"
+              class="field-input min-w-40 flex-1"
+              formControlName="username"
+              autocomplete="off"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="juan.perez"
+            />
+            <span class="min-w-0 truncate text-sm font-semibold text-gray-500">{{
+              clinicSuffix()
+            }}</span>
+          </div>
+        </app-form-field>
+      </div>
+    }
+
+    <app-form-field
+      [label]="staff ? 'Nueva contraseña (opcional)' : 'Contraseña inicial'"
+      fieldId="staff-password"
+      [hint]="staff ? 'Déjala vacía para mantener la actual' : ''"
+    >
+      <input
+        id="staff-password"
+        type="password"
+        class="field-input"
+        formControlName="password"
+        autocomplete="new-password"
+        placeholder="Mínimo 8 caracteres"
+      />
+    </app-form-field>
+
+    @if (error(); as message) {
+      <app-alert>{{ message }}</app-alert>
+    }
+  </form>
+
+  <ng-container ngProjectAs="[dialogFooter]">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Cancelar</button>
+    <button type="submit" form="staff-form" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : staff ? 'Guardar cambios' : 'Crear miembro' }}
+    </button>
+  </ng-container>
+</app-dialog-frame>

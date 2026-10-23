@@ -1,0 +1,76 @@
+<app-dialog-frame
+  title="Doctores del paciente"
+  [subtitle]="assignment.patient.name"
+  (closed)="ref.close()"
+>
+  <p class="field-label">Asignados</p>
+  <div class="mb-5 space-y-2">
+    @if (assignment.assignedLoading()) {
+      <app-skeleton />
+    } @else if (assignment.assignedErrorMessage()) {
+      <app-load-error
+        [message]="assignment.assignedErrorMessage()!"
+        (retry)="assignment.reloadAssigned()"
+      />
+    } @else {
+      @for (doctor of assignment.assignedDoctors(); track doctor.id; let i = $index) {
+        <div class="flex items-center gap-3 rounded-2xl bg-white/60 px-3.5 py-2.5">
+          <span
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary"
+            >{{ initials(doctor.name) }}</span
+          >
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold text-gray-900">{{ doctor.name }}</p>
+            <p class="truncate text-xs text-gray-500">
+              {{ doctor.specialtyName | specialtyLabel }}
+            </p>
+          </div>
+          <button
+            #removeButton
+            type="button"
+            class="btn-icon hover:text-red-600!"
+            [disabled]="assignment.assigning()"
+            (click)="remove(doctor.id, i)"
+            [attr.aria-label]="'Quitar a ' + doctor.name"
+          >
+            <app-ui-icon name="trash" class="h-4 w-4" />
+          </button>
+        </div>
+      } @empty {
+        <p class="rounded-2xl bg-white/40 px-4 py-3 text-sm text-gray-500">
+          Este paciente aún no tiene doctores asignados.
+        </p>
+      }
+    }
+  </div>
+
+  <p role="status" class="mb-3 min-h-5 text-sm font-semibold text-secondary">
+    {{ assignment.message() }}
+  </p>
+
+  @if (assignment.doctorsErrorMessage(); as error) {
+    <app-load-error [message]="error" (retry)="assignment.reloadDoctors()" />
+  } @else {
+    <app-form-field label="Asignar a otro doctor" fieldId="doctor-to-add">
+      <div class="flex gap-2">
+        <app-select
+          class="min-w-0 flex-1"
+          id="doctor-to-add"
+          icon="stethoscope"
+          placeholder="Selecciona un doctor"
+          [options]="doctorOptions()"
+          [ngModel]="doctorToAdd()"
+          (ngModelChange)="doctorToAdd.set($event)"
+        />
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="!doctorToAdd() || assignment.assigning()"
+          (click)="add()"
+        >
+          Asignar
+        </button>
+      </div>
+    </app-form-field>
+  }
+</app-dialog-frame>

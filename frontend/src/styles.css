@@ -96,7 +96,7 @@ app-board-card:nth-of-type(3n + 3) {
 
 @layer components {
   .btn {
-    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors disabled:opacity-50;
   }
 
   .btn-primary {
@@ -120,7 +120,7 @@ app-board-card:nth-of-type(3n + 3) {
   }
 
   .btn-icon {
-    @apply inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-white/70 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-white/70 hover:text-gray-800 disabled:opacity-40;
   }
 
   .field-label {
@@ -128,7 +128,7 @@ app-board-card:nth-of-type(3n + 3) {
   }
 
   .field-input {
-    @apply w-full rounded-2xl border border-gray-900/10 bg-gray-900/[0.04] px-4 py-2.5 text-sm text-gray-700 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] transition-colors placeholder:text-gray-400 focus:border-primary focus:bg-white focus:shadow-none focus:ring-2 focus:ring-primary/60 focus:outline-none disabled:opacity-60;
+    @apply w-full rounded-2xl border border-gray-900/10 bg-gray-900/4 px-4 py-2.5 text-sm text-gray-700 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] transition-colors focus:ring-2 focus:ring-primary/60 focus:outline-none disabled:opacity-60;
   }
 
   .field-input.ng-invalid.ng-touched,
@@ -145,11 +145,11 @@ app-board-card:nth-of-type(3n + 3) {
   }
 
   .data-table th {
-    @apply sticky top-0 z-[1] bg-white/60 px-4 py-3 text-xs font-bold tracking-wide text-gray-500 uppercase backdrop-blur-md first:rounded-l-2xl last:rounded-r-2xl;
+    @apply sticky top-0 z-1 bg-white px-4 py-3 text-xs font-bold tracking-wide text-gray-500 uppercase first:rounded-l-2xl last:rounded-r-2xl;
   }
 
   .data-table td {
-    @apply border-b border-gray-900/[0.05] px-4 py-3.5 font-medium text-gray-700;
+    @apply border-b border-gray-900/5 px-4 py-3.5 font-medium text-gray-700;
   }
 
   .data-table tbody tr {
@@ -165,6 +165,11 @@ app-board-card:nth-of-type(3n + 3) {
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  app-form-field :is(input, textarea, select, button),
+  .field-input {
+    scroll-margin-bottom: 2.5rem;
   }
 }
 

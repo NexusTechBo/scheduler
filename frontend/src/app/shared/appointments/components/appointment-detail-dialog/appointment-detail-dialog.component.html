@@ -1,0 +1,102 @@
+<app-dialog-frame
+  title="Detalle de la cita"
+  [subtitle]="detail.appointment() ? 'Cita #' + detail.appointment()!.id : ''"
+  (closed)="close()"
+>
+  @if (detail.isLoading()) {
+    <div class="flex flex-col gap-3">
+      <app-skeleton [rows]="3" />
+    </div>
+  } @else if (detail.errorMessage()) {
+    <app-load-error [message]="detail.errorMessage()!" (retry)="detail.reload()" />
+  } @else if (detail.appointment()) {
+    @let appt = detail.appointment()!;
+    <div class="space-y-3">
+      <div class="flex items-center justify-between rounded-2xl bg-white/60 px-4 py-3">
+        <div>
+          <p class="text-[15px] font-bold text-gray-900">{{ detail.dateLabel() }}</p>
+          <p class="text-sm font-medium text-gray-500">{{ appt | timeRange }}</p>
+        </div>
+        <app-status-badge [status]="appt.status" />
+      </div>
+
+      @if (appt.status === 'CANCELLED') {
+        <div class="flex items-start gap-3 rounded-2xl bg-white/60 px-4 py-3">
+          <span
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-900/6 text-gray-500"
+          >
+            <app-ui-icon name="chat" class="h-5 w-5" />
+          </span>
+          <div class="min-w-0 pt-0.5">
+            <p class="text-xs font-bold uppercase tracking-wide text-gray-500">
+              Motivo de cancelación
+            </p>
+            @if (appt.cancellationReason) {
+              <p
+                class="mt-0.5 whitespace-pre-line wrap-break-word text-[15px] leading-relaxed text-gray-800"
+              >
+                {{ appt.cancellationReason }}
+              </p>
+            } @else {
+              <p class="mt-0.5 text-sm italic text-gray-400">No se indicó un motivo.</p>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-3">
+        <span
+          class="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary"
+        >
+          <app-ui-icon name="user" class="h-5 w-5" />
+        </span>
+        <div class="min-w-0">
+          <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Paciente</p>
+          <p class="truncate text-[15px] font-bold text-gray-900">{{ appt.patientName }}</p>
+          <p class="truncate text-sm text-gray-500">{{ appt.patientEmail }}</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-3">
+        <span
+          class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
+        >
+          <app-ui-icon name="stethoscope" class="h-5 w-5" />
+        </span>
+        <div class="min-w-0">
+          <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Doctor</p>
+          <p class="truncate text-[15px] font-bold text-gray-900">{{ appt.doctorName }}</p>
+          <p class="truncate text-sm text-gray-500">
+            {{ appt.doctorSpecialty | specialtyLabel }} · {{ appt.doctorEmail }}
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+  <ng-container ngProjectAs="[dialogFooter]">
+    @if (detail.canCancel()) {
+      <button
+        type="button"
+        class="btn btn-danger"
+        [disabled]="detail.busy()"
+        (click)="cancel($event)"
+      >
+        Cancelar cita
+      </button>
+    }
+    @if (detail.canConfirm()) {
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="detail.busy()"
+        (click)="confirm($event)"
+      >
+        <app-ui-icon name="check" class="h-4 w-4" [strokeWidth]="2.4" />
+        Confirmar
+      </button>
+    }
+    @if (!detail.canCancel() && !detail.canConfirm()) {
+      <button type="button" class="btn btn-secondary" (click)="close()">Cerrar</button>
+    }
+  </ng-container>
+</app-dialog-frame>

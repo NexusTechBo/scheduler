@@ -1,4 +1,5 @@
-import { Injectable, NgZone, effect, inject } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IMessage, ReconnectionTimeMode, RxStomp } from '@stomp/rx-stomp';
 import { Observable, defer } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
@@ -21,6 +22,10 @@ export class BoardSocket {
     this.stomp.watch({ destination: `/topic/clinic/${this.auth.session()?.clinicId}/board` }),
   );
 
+  isConnected(): boolean {
+    return this.stomp.connected();
+  }
+
   constructor() {
     this.stomp.configure({
       brokerURL: wsUrl('/ws'),
@@ -33,11 +38,11 @@ export class BoardSocket {
       maxReconnectDelay: 30_000,
     });
 
-    this.stomp.stompErrors$.subscribe(() => this.zone.run(() => this.auth.logout()));
+    this.stomp.stompErrors$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.zone.run(() => this.auth.logout()));
 
-    effect(() => {
-      if (this.auth.isAuthenticated()) this.zone.runOutsideAngular(() => this.stomp.activate());
-      else void this.stomp.deactivate();
-    });
+    this.zone.runOutsideAngular(() => this.stomp.activate());
+    inject(DestroyRef).onDestroy(() => void this.stomp.deactivate());
   }
 }
