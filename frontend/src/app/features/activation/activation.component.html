@@ -1,0 +1,122 @@
+<app-glass-background class="grid min-h-screen w-full grid-cols-10">
+  <app-banner class="relative z-10 col-span-6 hidden lg:block" />
+  <div
+    class="relative z-10 col-span-10 flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:col-span-4"
+  >
+    <section
+      class="glass-panel w-full max-w-sm rounded-3xl p-6 sm:p-8"
+      aria-labelledby="activation-title"
+      [attr.aria-busy]="activation.status() === 'loading'"
+    >
+      @if (activation.status() === 'success') {
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <app-ui-icon name="check" class="h-6 w-6 text-primary" />
+        </div>
+      }
+
+      @switch (activation.status()) {
+        @case ('loading') {
+          <h1 id="activation-title" class="text-2xl font-extrabold tracking-tight text-gray-900">
+            Activando tu clínica…
+          </h1>
+        }
+        @case ('success') {
+          <h1
+            #heading
+            id="activation-title"
+            tabindex="-1"
+            class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
+          >
+            ¡Tu clínica {{ activation.result()?.clinicName }} está activa!
+          </h1>
+        }
+        @case ('error') {
+          <h1
+            #heading
+            id="activation-title"
+            tabindex="-1"
+            class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
+          >
+            No pudimos activar tu clínica
+          </h1>
+        }
+        @case ('invalid') {
+          <h1
+            #heading
+            id="activation-title"
+            tabindex="-1"
+            class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
+          >
+            Enlace no válido
+          </h1>
+        }
+      }
+
+      <p
+        aria-live="polite"
+        class="mt-2 text-sm font-medium"
+        [class.text-red-700]="activation.status() === 'error'"
+        [class.text-gray-600]="activation.status() !== 'error'"
+      >
+        @switch (activation.status()) {
+          @case ('loading') {
+            Esto solo tomará un momento.
+          }
+          @case ('success') {
+            Ya puedes iniciar sesión con tu usuario de administrador:
+          }
+          @case ('error') {
+            {{ activation.errorMessage() }}
+          }
+          @case ('invalid') {
+            El enlace de activación no es válido o ya venció.
+          }
+        }
+      </p>
+
+      @switch (activation.status()) {
+        @case ('success') {
+          <p
+            class="mt-3 select-all break-all rounded-xl bg-white/70 px-4 py-3 text-center font-mono text-sm font-semibold text-gray-900"
+          >
+            {{ activation.result()?.adminUsername }}
+          </p>
+          @if (activation.hasSession()) {
+            <p class="mt-6 rounded-2xl bg-amber-50 p-3 text-xs font-medium text-amber-800">
+              Tienes una sesión abierta. Al continuar se cerrará para que entres con tu nueva
+              clínica.
+            </p>
+            <button
+              type="button"
+              class="btn btn-primary mt-3 w-full"
+              (click)="activation.continueToLogin()"
+            >
+              Iniciar sesión
+            </button>
+          } @else {
+            <a
+              routerLink="/login"
+              [state]="{ username: activation.result()?.adminUsername }"
+              class="btn btn-primary mt-6 w-full"
+              >Iniciar sesión</a
+            >
+          }
+        }
+        @case ('error') {
+          <button type="button" class="btn btn-primary mt-6 w-full" (click)="activation.retry()">
+            Reintentar
+          </button>
+        }
+        @case ('invalid') {
+          <div class="mt-6">
+            <p class="mb-3 text-sm font-medium text-gray-600">
+              Ingresa el correo del administrador y te enviaremos un nuevo enlace.
+            </p>
+            <app-resend-activation label="Enviar nuevo enlace" fieldId="activation-resend-email" />
+          </div>
+          <a routerLink="/login" class="btn btn-ghost mt-4 w-full">Ir a iniciar sesión</a>
+        }
+      }
+    </section>
+  </div>
+</app-glass-background>

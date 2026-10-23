@@ -1,6 +1,8 @@
 package com.example.scheduler.service.impl;
 
 import com.example.scheduler.notification.AppointmentNotificationEvent;
+import com.example.scheduler.notification.ClinicActivatedEvent;
+import com.example.scheduler.notification.ClinicActivationEvent;
 import com.example.scheduler.notification.EmailTemplates;
 import com.example.scheduler.notification.EmailTemplates.EmailContent;
 import com.example.scheduler.notification.StaffCreatedEvent;
@@ -25,19 +27,25 @@ public class EmailServiceImpl implements EmailService {
     static final String STAFF_CREDENTIALS = "STAFF_CREDENTIALS";
     static final String APPOINTMENT_CONFIRMED = "APPOINTMENT_CONFIRMED";
     static final String APPOINTMENT_CANCELLED = "APPOINTMENT_CANCELLED";
+    static final String CLINIC_ACTIVATION = "CLINIC_ACTIVATION";
+    static final String CLINIC_WELCOME = "CLINIC_WELCOME";
+    private static final Pattern TRAILING_SLASHES = Pattern.compile("/+$");
     private static final Pattern EMAIL_IN_TEXT = Pattern.compile("([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+)");
     private static final Pattern LINE_BREAKS = Pattern.compile("[\\r\\n]+\\s*");
 
     private final JavaMailSender mailSender;
     private final String from;
     private final String fromName;
+    private final String frontendUrl;
 
     public EmailServiceImpl(JavaMailSender mailSender,
                             @Value("${app.mail.from}") String from,
-                            @Value("${app.mail.from-name:Scheduler}") String fromName) {
+                            @Value("${app.mail.from-name:Scheduler}") String fromName,
+                            @Value("${app.frontend-url}") String frontendUrl) {
         this.mailSender = mailSender;
         this.from = from;
         this.fromName = fromName;
+        this.frontendUrl = TRAILING_SLASHES.matcher(frontendUrl.strip()).replaceAll("");
     }
 
     @Override
@@ -53,6 +61,22 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendAppointmentCancelled(AppointmentNotificationEvent event) {
         sendToPatient(APPOINTMENT_CANCELLED, event, EmailTemplates::appointmentCancelled);
+    }
+
+    @Override
+    public void sendClinicActivation(ClinicActivationEvent event) {
+        send(CLINIC_ACTIVATION, clinicAdminRef(event.clinicId()), event.adminEmail(),
+                () -> EmailTemplates.clinicActivation(event, frontendUrl));
+    }
+
+    @Override
+    public void sendClinicWelcome(ClinicActivatedEvent event) {
+        send(CLINIC_WELCOME, clinicAdminRef(event.clinicId()), event.adminEmail(),
+                () -> EmailTemplates.clinicWelcome(event, frontendUrl));
+    }
+
+    private static String clinicAdminRef(Long clinicId) {
+        return "clinic=" + clinicId + " recipient=admin";
     }
 
     private void sendToPatient(String type, AppointmentNotificationEvent event,

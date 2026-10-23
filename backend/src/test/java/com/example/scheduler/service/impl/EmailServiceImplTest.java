@@ -3,6 +3,8 @@ package com.example.scheduler.service.impl;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.notification.AppointmentNotificationEvent;
+import com.example.scheduler.notification.ClinicActivatedEvent;
+import com.example.scheduler.notification.ClinicActivationEvent;
 import com.example.scheduler.notification.StaffCreatedEvent;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
@@ -38,7 +40,47 @@ class EmailServiceImplTest {
         mailSender = mock(JavaMailSender.class);
         when(mailSender.createMimeMessage())
                 .thenAnswer(_ -> new MimeMessage(Session.getInstance(new Properties())));
-        emailService = new EmailServiceImpl(mailSender, "no-reply@scheduler.local", "Scheduler");
+        emailService = new EmailServiceImpl(mailSender, "no-reply@scheduler.local", "Scheduler", "https://app.example.com//");
+    }
+
+    @Test
+    void clinicActivationContainsEncodedLinkAndEscapesUserValues() throws Exception {
+        emailService.sendClinicActivation(new ClinicActivationEvent(
+                7L, "Clínica <Sur>", "Ana <b>Pérez</b>", "ana@mail.com", "ab+c/d=e", START));
+
+        var message = captureSent(1).getFirst();
+        var html = (String) message.getContent();
+        assertThat(recipient(message)).isEqualTo("ana@mail.com");
+        assertThat(message.getSubject()).isEqualTo("Activa tu clínica Clínica <Sur>");
+        assertThat(html)
+                .contains("https://app.example.com/activar?token=ab%2Bc%2Fd%3De", "48 horas", "Ana &lt;b&gt;P", "Clínica &lt;Sur&gt;")
+                .doesNotContain("<b>Pérez</b>", "ab+c/d=e", "<Sur>", ".com//activar");
+    }
+
+    @Test
+    void clinicWelcomeContainsUsernameAndLoginLink() throws Exception {
+        emailService.sendClinicWelcome(new ClinicActivatedEvent(
+                7L, "Clínica Sur", "Ana", "ana@mail.com", "admin@clinicasur.com"));
+
+        var message = captureSent(1).getFirst();
+        assertThat(recipient(message)).isEqualTo("ana@mail.com");
+        assertThat(message.getSubject()).isEqualTo("Tu clínica Clínica Sur está activa");
+        assertThat((String) message.getContent())
+                .contains("Hola Ana", "admin@clinicasur.com", "href=\"https://app.example.com/login\"");
+    }
+
+    @Test
+    void clinicActivationSubjectStripsControlCharacters() throws Exception {
+        emailService.sendClinicActivation(new ClinicActivationEvent(
+                7L, "Evil\r\nBcc: x@y.com", "Ana", "ana@mail.com", "token", START));
+
+        assertThat(captureSent(1).getFirst().getSubject()).isEqualTo("Activa tu clínica EvilBcc: x@y.com");
+    }
+
+    @Test
+    void clinicActivationEventToStringHidesToken() {
+        var event = new ClinicActivationEvent(7L, "C", "Ana", "a@mail.com", "secretToken", START);
+        assertThat(event.toString()).doesNotContain("secretToken");
     }
 
     @Test

@@ -4,6 +4,8 @@ import com.example.scheduler.enums.ERole;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -36,6 +38,43 @@ public final class EmailTemplates {
                 escape(event.username()),
                 escape(event.rawPassword()),
                 escape(roleLabel(event.role())));
+        return new EmailContent(subject, layout(body));
+    }
+
+    public static EmailContent clinicActivation(ClinicActivationEvent event, String frontendUrl) {
+        var clinic = clinicLabel(event.clinicName());
+        var subject = "Activa tu clínica " + clinic;
+        var link = frontendUrl + "/activar?token=" + URLEncoder.encode(event.token(), StandardCharsets.UTF_8);
+        var body = """
+                <p>Hola %s,</p>
+                <p>Gracias por registrar <strong>%s</strong>. Para activar tu clínica y poder iniciar sesión, confirma tu correo con el siguiente botón:</p>
+                %s
+                <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
+                <p>Este enlace vence en 48 horas. Si no solicitaste este registro, puedes ignorar este correo.</p>
+                """.formatted(
+                escape(event.adminName()),
+                escape(clinic),
+                button(link, "Activar clínica"),
+                anchor(link));
+        return new EmailContent(subject, layout(body));
+    }
+
+    public static EmailContent clinicWelcome(ClinicActivatedEvent event, String frontendUrl) {
+        var clinic = clinicLabel(event.clinicName());
+        var subject = "Tu clínica " + clinic + " está activa";
+        var link = frontendUrl + "/login";
+        var body = """
+                <p>Hola %s,</p>
+                <p>Tu clínica <strong>%s</strong> ya está activa. Ya puedes iniciar sesión con tu usuario:</p>
+                <table cellpadding="4">%s</table>
+                %s
+                <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
+                """.formatted(
+                escape(event.adminName()),
+                escape(clinic),
+                row("Usuario", event.adminUsername()),
+                button(link, "Iniciar sesión"),
+                anchor(link));
         return new EmailContent(subject, layout(body));
     }
 
@@ -88,6 +127,16 @@ public final class EmailTemplates {
 
     private static String row(String label, String value) {
         return "<tr><td><strong>" + label + ":</strong></td><td>" + escape(value) + "</td></tr>";
+    }
+
+    private static String button(String href, String label) {
+        return "<p><a href=\"" + escape(href) + "\" style=\"display: inline-block; padding: 10px 20px; background-color: #2563eb; "
+                + "color: #ffffff; text-decoration: none; border-radius: 6px;\">" + escape(label) + "</a></p>";
+    }
+
+    private static String anchor(String href) {
+        var url = escape(href);
+        return "<a href=\"" + url + "\">" + url + "</a>";
     }
 
     private static String layout(String body) {

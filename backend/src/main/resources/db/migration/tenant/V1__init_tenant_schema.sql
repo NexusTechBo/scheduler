@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.personal (
     role VARCHAR(50) NOT NULL
         CHECK (role IN ('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')),
     active BOOLEAN NOT NULL DEFAULT TRUE,
+    version BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT uq_${flyway:defaultSchema}_personal_username UNIQUE (username),
     CONSTRAINT uq_${flyway:defaultSchema}_personal_ci UNIQUE (ci),
     CONSTRAINT uq_${flyway:defaultSchema}_personal_email UNIQUE (email),
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS ${flyway:defaultSchema}.patients (
     email VARCHAR(255) NOT NULL,
     phone_number VARCHAR(255),
     active BOOLEAN NOT NULL DEFAULT TRUE,
+    version BIGINT NOT NULL DEFAULT 0,
     CONSTRAINT uq_${flyway:defaultSchema}_patients_ci UNIQUE (ci),
     CONSTRAINT uq_${flyway:defaultSchema}_patients_email UNIQUE (email),
     CONSTRAINT uq_${flyway:defaultSchema}_patients_phone_number UNIQUE (phone_number)

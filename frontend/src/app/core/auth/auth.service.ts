@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { NavigationExtras, Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
 import { Observable, map, tap } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
@@ -117,9 +117,9 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  logout(extras: NavigationExtras = {}): void {
     this.clearSession();
-    this.router.navigate(['/login']).finally();
+    this.router.navigate(['/login'], extras).finally();
   }
 
   private clearSession(): void {

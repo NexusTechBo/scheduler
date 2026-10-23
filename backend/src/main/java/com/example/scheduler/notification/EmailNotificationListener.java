@@ -24,6 +24,18 @@ public class EmailNotificationListener {
 
     @Async(AsyncConfig.MAIL_TASK_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onClinicActivation(ClinicActivationEvent event) {
+        emailService.sendClinicActivation(event);
+    }
+
+    @Async(AsyncConfig.MAIL_TASK_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onClinicActivated(ClinicActivatedEvent event) {
+        emailService.sendClinicWelcome(event);
+    }
+
+    @Async(AsyncConfig.MAIL_TASK_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentNotification(AppointmentNotificationEvent event) {
         switch (event.status()) {
             case CONFIRMED -> emailService.sendAppointmentConfirmed(event);
