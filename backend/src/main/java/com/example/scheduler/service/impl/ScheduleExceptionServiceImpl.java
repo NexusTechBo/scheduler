@@ -41,13 +41,17 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     @Transactional
     public ScheduleExceptionResponse addDoctorScheduleException(Long doctorId, ScheduleExceptionRequest request) {
         var doctor = doctorRepository.findByIdForUpdate(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
+                .orElseThrow(() -> new ResourceNotFoundException("doctor.notFound", doctorId));
         if (request.date().isBefore(LocalDate.now(clock)))
-            throw new BadRequestException("The block date cannot be in the past");
+            throw new BadRequestException("scheduleException.date.past");
         var affected = findAffectedAppointments(doctorId, request);
         if (!affected.isEmpty() && !Boolean.TRUE.equals(request.cancelAppointments()))
-            throw new BusinessException((affected.size() == 1 ? "There is " + affected.size() + " active appointment" : "There are " + affected.size() + " active appointments")
-                    + " in this range. Send cancelAppointments=true to block it and cancel them");
+            throw new BusinessException(
+                    "scheduleException.activeAppointmentsConflict",
+                    "ACTIVE_APPOINTMENTS_CONFLICT",
+                    affected.size(),
+                    affected.size()
+            );
         var fullDay = request.isFullDayBlock();
         var scheduleException = scheduleExceptionRepository.save(ScheduleException.builder()
                 .doctor(doctor)
@@ -72,9 +76,9 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     @Transactional
     public void deleteDoctorScheduleExceptionById(Long scheduleExceptionId, Long doctorId) {
         var scheduleException = scheduleExceptionRepository.findById(scheduleExceptionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Schedule exception not found with id: " + scheduleExceptionId));
+                .orElseThrow(() -> new ResourceNotFoundException("scheduleException.notFound", scheduleExceptionId));
         if (!scheduleException.getDoctor().getId().equals(doctorId))
-            throw new ForbiddenException("Not authorized to do this");
+            throw new ForbiddenException("common.forbidden");
         scheduleExceptionRepository.delete(scheduleException);
     }
 

@@ -32,6 +32,13 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService {
+
+    private static final String ERR_DOCTOR_NOT_FOUND = "personal.doctorNotFound";
+    private static final String ERR_DOCTOR_ONLY_ACTIVE = "personal.doctorOnlyActive";
+    private static final String ERR_AVAILABILITY_OVERLAPS = "availability.overlaps";
+    private static final String ERR_AVAILABILITY_NOT_FOUND = "availability.notFound";
+    private static final String ERR_AVAILABILITY_UNAUTHORIZED = "availability.unauthorized";
+
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final ScheduleExceptionRepository scheduleExceptionRepository;
     private final AppointmentRepository appointmentRepository;
@@ -43,15 +50,15 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Transactional
     public DoctorAvailabilityResponse addDoctorAvailability(Long doctorId, DoctorAvailabilityRequest request) {
         var doctor = personalRepository.findByIdForUpdate(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
+                .orElseThrow(() -> new ResourceNotFoundException(ERR_DOCTOR_NOT_FOUND, doctorId));
         if (doctor.getRole() != ERole.DOCTOR || !doctor.isActive())
-            throw new ForbiddenException("Only an active doctor can add availabilities");
+            throw new ForbiddenException(ERR_DOCTOR_ONLY_ACTIVE);
         var overlaps = doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, request.dayOfWeek()).stream()
                 .anyMatch(a ->
                         request.startTime().isBefore(a.getEndTime()) && request.endTime().isAfter(a.getStartTime())
                 );
         if (overlaps)
-            throw new BusinessException("That availability overlaps an existing block");
+            throw new BusinessException(ERR_AVAILABILITY_OVERLAPS);
         var availability = DoctorAvailability.builder()
                 .doctor(doctor)
                 .dayOfWeek(request.dayOfWeek())
@@ -108,9 +115,9 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     @Transactional
     public void deactivateDoctorAvailabilityById(Long availabilityId, Long doctorId) {
         var availability = doctorAvailabilityRepository.findByIdAndActiveIsTrue(availabilityId)
-                .orElseThrow(() -> new ResourceNotFoundException("Availability not found with id: " + availabilityId));
+                .orElseThrow(() -> new ResourceNotFoundException(ERR_AVAILABILITY_NOT_FOUND, availabilityId));
         if (!availability.getDoctor().getId().equals(doctorId))
-            throw new ForbiddenException("Not authorized to do this");
+            throw new ForbiddenException(ERR_AVAILABILITY_UNAUTHORIZED);
         availability.setActive(false);
     }
 
