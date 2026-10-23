@@ -131,10 +131,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public void cancelAppointments(List<Appointment> appointments, String reason) {
         if (appointments.isEmpty()) return;
+        var clinicName = getCurrentClinicName();
         for (Appointment appointment : appointments) {
             appointment.setStatus(AppointmentStatus.CANCELLED);
             appointment.setCancellationReason(reason);
-            publishEmailNotification(saveAndNotify(appointment), getCurrentClinicName());
+            publishEmailNotification(saveAndNotify(appointment), clinicName);
         }
     }
 
