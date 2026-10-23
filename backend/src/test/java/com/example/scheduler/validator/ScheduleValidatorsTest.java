@@ -24,7 +24,8 @@ class ScheduleValidatorsTest {
                 .extracting(v -> v.getPropertyPath().toString(), ConstraintViolation::getMessage)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("endTime", "End time must be after start time"));
         assertThat(validator.validate(new DoctorAvailabilityRequest(DayOfWeek.MONDAY, NINE, NINE, 30)))
-                .extracting(v -> v.getPropertyPath().toString()).containsExactly("endTime");
+                .extracting(v -> v.getPropertyPath().toString())
+                .containsExactly("endTime");
         assertThat(validator.validate(new DoctorAvailabilityRequest(DayOfWeek.MONDAY, NINE, TEN, 30))).isEmpty();
     }
 
@@ -35,10 +36,12 @@ class ScheduleValidatorsTest {
                 .extracting(v -> v.getPropertyPath().toString())
                 .containsExactlyInAnyOrder("startTime", "endTime");
         assertThat(validator.validate(new ScheduleExceptionRequest(date, NINE, null, false, null, null)))
-                .extracting(v -> v.getPropertyPath().toString()).containsExactly("endTime");
+                .extracting(v -> v.getPropertyPath().toString())
+                .containsExactly("endTime");
         assertThat(validator.validate(new ScheduleExceptionRequest(date, null, null, true, null, null))).isEmpty();
         assertThat(validator.validate(new ScheduleExceptionRequest(date, NINE, TEN, false, null, null))).isEmpty();
         assertThat(validator.validate(new ScheduleExceptionRequest(date, TEN, NINE, false, null, null)))
-                .extracting(v -> v.getPropertyPath().toString()).containsExactly("endTime");
+                .extracting(v -> v.getPropertyPath().toString())
+                .containsExactly("endTime");
     }
 }

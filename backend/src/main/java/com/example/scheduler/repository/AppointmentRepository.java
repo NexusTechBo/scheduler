@@ -45,6 +45,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("excludedStatuses") List<AppointmentStatus> excludedStatuses
     );
 
+    @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
     @Query("SELECT a FROM Appointment a " +
             "WHERE a.doctor.id = :doctorId " +
             "AND a.status NOT IN :excludedStatuses " +

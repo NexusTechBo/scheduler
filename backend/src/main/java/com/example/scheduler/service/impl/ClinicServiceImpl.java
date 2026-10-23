@@ -7,11 +7,13 @@ import com.example.scheduler.entity.Clinic;
 import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BusinessException;
+import com.example.scheduler.notification.StaffCreatedEvent;
 import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.service.ClinicService;
 import com.example.scheduler.service.SchemaProvisioningService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -26,6 +28,7 @@ public class ClinicServiceImpl implements ClinicService {
     private final PasswordEncoder passwordEncoder;
     private final SchemaProvisioningService schemaProvisioningService;
     private final PlatformTransactionManager transactionManager;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
@@ -55,6 +58,14 @@ public class ClinicServiceImpl implements ClinicService {
                         .ci(request.adminCi())
                         .role(ERole.ADMINISTRATOR)
                         .build());
+                eventPublisher.publishEvent(new StaffCreatedEvent(
+                        admin.getEmail(),
+                        admin.getName(),
+                        admin.getUsername(),
+                        request.adminPassword(),
+                        admin.getRole(),
+                        clinic.getName()
+                ));
                 return new ClinicCreatedResponse(
                         clinic.getId(),
                         clinic.getName(),

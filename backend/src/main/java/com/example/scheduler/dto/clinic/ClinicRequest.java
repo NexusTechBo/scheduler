@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 
 public record ClinicRequest(
         @NotBlank
+        @Size(max = 100)
+        @Pattern(regexp = "^[^\\p{Cntrl}]*$", message = "must not contain control characters")
         String name,
         @NotNull
         @Pattern(regexp = "^[a-z0-9]{3,50}$", message = "must be 3-50 characters: lowercase letters or digits")

@@ -6,6 +6,7 @@ import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
 import com.example.scheduler.entity.Appointment;
+import com.example.scheduler.entity.Clinic;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
@@ -13,6 +14,7 @@ import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.AppointmentMapper;
+import com.example.scheduler.notification.AppointmentNotificationEvent;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.websocket.AppointmentChangedEvent;
@@ -48,6 +50,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentMapper appointmentMapper;
     private final ScheduleExceptionRepository  scheduleExceptionRepository;
     private final DoctorAvailabilityRepository  doctorAvailabilityRepository;
+    private final ClinicRepository clinicRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -105,7 +108,9 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (appointment.getStatus() != AppointmentStatus.PENDING)
             throw new BusinessException("Just can confirm an appointment pending");
         appointment.setStatus(AppointmentStatus.CONFIRMED);
-        return appointmentMapper.toResponse(saveAndNotify(appointment));
+        var saved = saveAndNotify(appointment);
+        publishEmailNotification(saved, getCurrentClinicName());
+        return appointmentMapper.toResponse(saved);
     }
 
     @Override
@@ -117,16 +122,19 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BusinessException("This appointment is already cancelled");
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancellationReason(request.reason());
-        return appointmentMapper.toResponse(saveAndNotify(appointment));
+        var saved = saveAndNotify(appointment);
+        publishEmailNotification(saved, getCurrentClinicName());
+        return appointmentMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
     public void cancelAppointments(List<Appointment> appointments, String reason) {
+        if (appointments.isEmpty()) return;
         for (Appointment appointment : appointments) {
             appointment.setStatus(AppointmentStatus.CANCELLED);
             appointment.setCancellationReason(reason);
-            saveAndNotify(appointment);
+            publishEmailNotification(saveAndNotify(appointment), getCurrentClinicName());
         }
     }
 
@@ -176,10 +184,34 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private Appointment saveAndNotify(Appointment appointment) {
         var saved = appointmentRepository.save(appointment);
-        var clinicId = Long.valueOf(TenantContext.getCurrentTenant().substring("clinic_".length()));
-        eventPublisher.publishEvent(
-                new AppointmentChangedEvent(clinicId, new BoardEvent(saved.getId(), saved.getStatus())));
+        eventPublisher.publishEvent(new AppointmentChangedEvent(
+                TenantContext.getCurrentClinicId(),
+                new BoardEvent(saved.getId(), saved.getStatus())
+        ));
         return saved;
+    }
+
+    private void publishEmailNotification(Appointment appointment, String clinicName) {
+        var doctor = appointment.getDoctor();
+        var patient = appointment.getPatient();
+        var specialty = doctor.getSpecialty();
+        eventPublisher.publishEvent(new AppointmentNotificationEvent(
+                appointment.getStatus(),
+                appointment.getId(),
+                clinicName,
+                doctor.getName(),
+                specialty != null ? specialty.getName() : null,
+                patient.getName(),
+                patient.getEmail(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                appointment.getCancellationReason()));
+    }
+
+    private String getCurrentClinicName() {
+        return clinicRepository.findById(TenantContext.getCurrentClinicId())
+                .map(Clinic::getName)
+                .orElse(null);
     }
 
     private Appointment getAppointmentOrThrowById(Long appointmentId) {

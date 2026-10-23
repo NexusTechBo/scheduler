@@ -16,10 +16,12 @@ import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
+import com.example.scheduler.notification.StaffCreatedEvent;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.PersonalService;
 import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -44,6 +46,7 @@ public class PersonalServiceImpl implements PersonalService {
     private final PasswordEncoder passwordEncoder;
     private final AppointmentRepository appointmentRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     @Override
@@ -64,7 +67,8 @@ public class PersonalServiceImpl implements PersonalService {
     @Override
     @Transactional
     public PersonalResponse createPersonal(PersonalRequest request) {
-        var username = request.username() + getCurrentClinic().getSubdomain();
+        var clinic = getCurrentClinic();
+        var username = request.username() + clinic.getSubdomain();
         if (personalRepository.existsByUsername(username))
             throw new BusinessException("The username " + username + " is already taken");
         if (personalRepository.existsByCi(request.ci()))
@@ -84,7 +88,16 @@ public class PersonalServiceImpl implements PersonalService {
                 .role(request.role())
                 .specialty(getSpecialtyOrThrowById(request.specialtyId()))
                 .build();
-        return personalMapper.toResponse(personalRepository.save(personal));
+        var saved = personalRepository.save(personal);
+        eventPublisher.publishEvent(new StaffCreatedEvent(
+                saved.getEmail(),
+                saved.getName(),
+                saved.getUsername(),
+                request.password(),
+                saved.getRole(),
+                clinic.getName()
+        ));
+        return personalMapper.toResponse(saved);
     }
 
     @Override
@@ -187,7 +200,7 @@ public class PersonalServiceImpl implements PersonalService {
     }
 
     private Clinic getCurrentClinic() {
-        var clinicId = Long.valueOf(TenantContext.getCurrentTenant().substring("clinic_".length()));
+        var clinicId = TenantContext.getCurrentClinicId();
         return clinicRepository.findById(clinicId)
                 .orElseThrow(() -> new ResourceNotFoundException("Clinic not found with id: " + clinicId));
     }
