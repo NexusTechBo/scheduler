@@ -37,6 +37,12 @@ public class SchemaProvisioningServiceImpl implements SchemaProvisioningService,
                 .migrate();
     }
 
+    @Override
+    public void dropTenantSchema(String schemaName) {
+        validateSchemaName(schemaName);
+        jdbcTemplate.execute("DROP SCHEMA IF EXISTS \"" + schemaName + "\" CASCADE");
+    }
+
     private void validateSchemaName(String schemaName) {
         if (schemaName == null || !schemaName.matches("^clinic_\\d+$"))
             throw new IllegalArgumentException("Invalid tenant schema name: " + schemaName);

@@ -1,0 +1,29 @@
+<section
+  class="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8"
+  aria-labelledby="register-success-title"
+>
+  <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+    <app-ui-icon name="check" class="h-6 w-6 text-primary" />
+  </div>
+  <h1
+    #heading
+    id="register-success-title"
+    tabindex="-1"
+    class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
+  >
+    ¡Clínica registrada!
+  </h1>
+  <p class="mt-2 text-sm font-medium text-gray-600">
+    Te enviamos un correo a <strong class="break-all text-gray-900">{{ email() }}</strong> para
+    activar tu cuenta. El enlace vence en 48 horas.
+  </p>
+
+  <div class="mt-6">
+    <p class="mb-2 text-xs font-medium text-gray-500">
+      ¿No te llegó? Revisa tu carpeta de spam o solicita uno nuevo.
+    </p>
+    <app-resend-activation [email]="email()" startCooldown />
+  </div>
+
+  <a routerLink="/login" class="btn btn-primary mt-6 w-full">Ir a iniciar sesión</a>
+</section>

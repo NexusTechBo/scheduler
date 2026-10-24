@@ -13,7 +13,7 @@ import java.time.LocalTime;
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TimeRange {
-    String message() default "End time must be after start time";
+    String message() default "{validation.timeRange.endAfterStart}";
 
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};

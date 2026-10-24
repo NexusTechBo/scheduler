@@ -4,7 +4,9 @@ import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
+import com.example.scheduler.enums.ClinicStatus;
 import com.example.scheduler.exception.BadRequestException;
+import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.exception.UnauthorizedException;
 import com.example.scheduler.mapper.PersonalMapper;
@@ -45,6 +47,8 @@ public class AuthServiceImpl implements AuthService {
                 throw new UnauthorizedException("auth.userNotActive");
             if (!passwordEncoder.matches(request.password(), personal.getPassword()))
                 throw new UnauthorizedException("auth.invalidCredentials");
+            if (clinic.getStatus() != ClinicStatus.ACTIVE)
+                throw new ForbiddenException("auth.clinicNotActivated");
             return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic, personal.getName()));
         } finally {
             TenantContext.clear();

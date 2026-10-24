@@ -74,6 +74,19 @@ export interface ClinicCreatedResponse {
   adminEmail: string;
 }
 
+export interface ActivateClinicRequest {
+  token: string;
+}
+
+export interface ClinicActivatedResponse {
+  clinicName: string;
+  adminUsername: string;
+}
+
+export interface ResendActivationRequest {
+  email: string;
+}
+
 export interface AppointmentRequest {
   doctorId: number;
   patientId: number;

@@ -5,18 +5,26 @@ import com.example.scheduler.dto.clinic.ClinicCreatedResponse;
 import com.example.scheduler.dto.clinic.ClinicRequest;
 import com.example.scheduler.entity.Clinic;
 import com.example.scheduler.entity.Personal;
+import com.example.scheduler.enums.ClinicStatus;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BusinessException;
+import com.example.scheduler.repository.ClinicActivationTokenRepository;
 import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PersonalRepository;
+import com.example.scheduler.service.ClinicActivationService;
 import com.example.scheduler.service.ClinicService;
 import com.example.scheduler.service.SchemaProvisioningService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClinicServiceImpl implements ClinicService {
@@ -26,20 +34,25 @@ public class ClinicServiceImpl implements ClinicService {
     private final PasswordEncoder passwordEncoder;
     private final SchemaProvisioningService schemaProvisioningService;
     private final PlatformTransactionManager transactionManager;
+    private final ClinicActivationService clinicActivationService;
+    private final ClinicActivationTokenRepository tokenRepository;
+    private final Clock clock;
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
+        var subdomain = "@" + request.subdomain() + ".com";
+        var tx = new TransactionTemplate(transactionManager);
+        removeAbandonedClinics(request.name().strip(), subdomain, tx);
         if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
             throw new BusinessException("clinic.alreadyExists");
-        var subdomain = "@" + request.subdomain() + ".com";
         if (clinicRepository.existsBySubdomain(subdomain))
             throw new BusinessException("clinic.subdomainTaken", subdomain);
-        var tx = new TransactionTemplate(transactionManager);
         var clinic = tx.execute(_ ->
             clinicRepository.save(Clinic.builder()
                     .name(request.name())
                     .phoneNumber(request.phoneNumber())
                     .subdomain(subdomain)
+                    .status(ClinicStatus.PENDING_ACTIVATION)
                     .build())
         );
         var schemaName = "clinic_" + clinic.getId();
@@ -55,6 +68,7 @@ public class ClinicServiceImpl implements ClinicService {
                         .ci(request.adminCi())
                         .role(ERole.ADMINISTRATOR)
                         .build());
+                clinicActivationService.issueActivationToken(clinic, admin.getName(), admin.getEmail());
                 return new ClinicCreatedResponse(
                         clinic.getId(),
                         clinic.getName(),
@@ -67,5 +81,34 @@ public class ClinicServiceImpl implements ClinicService {
         } finally {
             TenantContext.clear();
         }
+    }
+
+    private void removeAbandonedClinics(String name, String subdomain, TransactionTemplate tx) {
+        for (var clinicId : clinicRepository.findPendingIdsByNameOrSubdomain(name, subdomain)) {
+            try {
+                var removed = tx.execute(_ -> clinicRepository.findByIdForUpdate(clinicId)
+                        .filter(this::isAbandoned)
+                        .map(this::removeAbandonedClinic)
+                        .orElse(false));
+                if (Boolean.TRUE.equals(removed))
+                    log.info("Abandoned pending clinic {} removed to free name/subdomain", clinicId);
+            } catch (RuntimeException e) {
+                log.warn("Could not remove abandoned clinic {}", clinicId, e);
+            }
+        }
+    }
+
+    private boolean isAbandoned(Clinic clinic) {
+        var clinicId = clinic.getId();
+        return clinic.getStatus() == ClinicStatus.PENDING_ACTIVATION
+                && tokenRepository.existsByClinicId(clinicId)
+                && !tokenRepository.existsByClinicIdAndUsedAtIsNullAndExpiresAtAfter(clinicId, LocalDateTime.now(clock));
+    }
+
+    private boolean removeAbandonedClinic(Clinic clinic) {
+        clinicRepository.delete(clinic);
+        clinicRepository.flush();
+        schemaProvisioningService.dropTenantSchema("clinic_" + clinic.getId());
+        return true;
     }
 }

@@ -99,5 +99,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/register/register.component').then((m) => m.RegisterComponent),
   },
+  {
+    path: 'activar',
+    title: 'Activar clínica',
+    loadComponent: () =>
+      import('./features/activation/activation.component').then((m) => m.ActivationComponent),
+  },
   { path: '**', redirectTo: '' },
 ];
