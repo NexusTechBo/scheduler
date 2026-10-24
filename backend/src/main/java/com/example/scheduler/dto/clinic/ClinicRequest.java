@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 public record ClinicRequest(
         @NotBlank
         @Size(max = 100)
-        @Pattern(regexp = "^[^\\p{Cntrl}]*$", message = "must not contain control characters")
+        @Pattern(regexp = "^[^\\p{Cntrl}]*$", message = "{validation.noControlChars}")
         String name,
         @NotNull
         @Pattern(regexp = "^[a-z0-9]{3,50}$", message = "{validation.subdomain.pattern}")

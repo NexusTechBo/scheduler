@@ -18,8 +18,8 @@ class ClinicRequestValidationTest {
     @Test
     void rejectsControlCharactersInName() {
         assertThat(validator.validate(request("Evil\r\nBcc: x@y.com")))
-                .extracting(v -> v.getPropertyPath().toString(), ConstraintViolation::getMessage)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple("name", "must not contain control characters"));
+                .extracting(v -> v.getPropertyPath().toString(), ConstraintViolation::getMessageTemplate)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("name", "{validation.noControlChars}"));
         assertThat(validator.validate(request("Tab\there")))
                 .extracting(v -> v.getPropertyPath().toString())
                 .containsExactly("name");

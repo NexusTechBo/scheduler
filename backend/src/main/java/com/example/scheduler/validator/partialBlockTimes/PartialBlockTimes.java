@@ -13,7 +13,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PartialBlockTimes {
-    String message() default "A partial block needs start and end time";
+    String message() default "{validation.partialBlock.timesRequired}";
 
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
@@ -27,11 +27,11 @@ public @interface PartialBlockTimes {
             context.disableDefaultConstraintViolation();
             var valid = true;
             if (value.startTime() == null) {
-                buildViolation(context, "A partial block needs a start time", "startTime");
+                buildViolation(context, "{validation.partialBlock.startTimeRequired}", "startTime");
                 valid = false;
             }
             if (value.endTime() == null) {
-                buildViolation(context, "A partial block needs an end time", "endTime");
+                buildViolation(context, "{validation.partialBlock.endTimeRequired}", "endTime");
                 valid = false;
             }
             return valid;

@@ -31,19 +31,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-/**
- * Activation tokens live in the public schema while the clinic administrator lives in the tenant schema.
- * Activation and resend run in a single transaction bound to the clinic tenant: the search path is
- * {@code clinic_<id>, public} and the public entities are schema-qualified, so both are reachable atomically.
- * Locks are always taken clinic row first, then token rows, to avoid deadlocks between activate and resend.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClinicActivationServiceImpl implements ClinicActivationService {
     static final Duration TOKEN_VALIDITY = Duration.ofHours(48);
     static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
-    static final String INVALID_LINK_MESSAGE = "The activation link is invalid or has expired";
+    static final String INVALID_LINK_MESSAGE = "clinic.activationLinkInvalid";
 
     private final ClinicRepository clinicRepository;
     private final ClinicActivationTokenRepository tokenRepository;
@@ -58,7 +52,6 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
         createActivationToken(clinic, adminName, adminEmail);
     }
 
-    /** Caller must be inside a transaction: the event is delivered AFTER_COMMIT. */
     private void createActivationToken(Clinic clinic, String adminName, String adminEmail) {
         var token = ActivationTokens.generate();
         var now = LocalDateTime.now(clock);
@@ -108,7 +101,6 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
                     return null;
                 });
             } catch (RuntimeException e) {
-                // The response is always 202; one failing clinic must not block the others or leak through the status.
                 log.error("Activation resend failed for clinic {}: {}", clinicId, e.getClass().getSimpleName());
             }
         }
@@ -130,13 +122,11 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
         log.info("Activation token re-issued for clinic {}", clinicId);
     }
 
-    /** Must run inside a transaction bound to the clinic tenant. */
     private Personal getClinicAdmin(Long clinicId) {
         return personalRepository.findFirstByRoleOrderByIdAsc(ERole.ADMINISTRATOR)
                 .orElseThrow(() -> new IllegalStateException("Clinic " + clinicId + " has no administrator"));
     }
 
-    /** Runs the action in a new transaction bound to the clinic tenant, then restores whatever tenant was bound before. */
     private <T> T inClinicTenant(Long clinicId, TransactionCallback<T> action) {
         var previousTenant = TenantContext.getCurrentTenant();
         try {

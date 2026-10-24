@@ -61,7 +61,7 @@ class AuthServiceImplTest {
     void pendingClinicWithCorrectPasswordIsForbidden() {
         assertThatThrownBy(() -> service.login(new LoginRequest(USERNAME, "password123")))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("The clinic has not been activated yet. Check your email to activate it")
+                .hasMessage("auth.clinicNotActivated")
                 .extracting(e -> ((ApiException) e).getStatus())
                 .isEqualTo(HttpStatus.FORBIDDEN);
         verify(jwtUtil, never()).generate(anyLong(), anyString(), any(), anyString());
@@ -72,7 +72,7 @@ class AuthServiceImplTest {
     void pendingClinicWithWrongPasswordIsUnauthorized() {
         assertThatThrownBy(() -> service.login(new LoginRequest(USERNAME, "wrong")))
                 .isInstanceOf(ApiException.class)
-                .hasMessage("Invalid Credentials")
+                .hasMessage("auth.invalidCredentials")
                 .extracting(e -> ((ApiException) e).getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 

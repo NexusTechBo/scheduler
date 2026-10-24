@@ -48,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
             if (!passwordEncoder.matches(request.password(), personal.getPassword()))
                 throw new UnauthorizedException("auth.invalidCredentials");
             if (clinic.getStatus() != ClinicStatus.ACTIVE)
-                throw new ForbiddenException("The clinic has not been activated yet. Check your email to activate it");
+                throw new ForbiddenException("auth.clinicNotActivated");
             return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic, personal.getName()));
         } finally {
             TenantContext.clear();

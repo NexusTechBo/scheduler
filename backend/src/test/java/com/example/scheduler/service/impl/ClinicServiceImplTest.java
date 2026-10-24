@@ -131,7 +131,7 @@ class ClinicServiceImplTest {
 
         assertThatThrownBy(() -> service.createClinic(request()))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("A clinic with this name already exists");
+                .hasMessage("clinic.alreadyExists");
         verify(clinicRepository, never()).delete(any());
         verify(schemaProvisioningService, never()).dropTenantSchema(any());
     }
@@ -145,7 +145,7 @@ class ClinicServiceImplTest {
 
         assertThatThrownBy(() -> service.createClinic(request()))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("The subdomain " + SUBDOMAIN + " is already taken");
+                .hasMessage("clinic.subdomainTaken");
         verify(clinicRepository, never()).delete(any());
         verify(schemaProvisioningService, never()).dropTenantSchema(any());
     }
@@ -162,7 +162,7 @@ class ClinicServiceImplTest {
 
         assertThatThrownBy(() -> service.createClinic(request()))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("A clinic with this name already exists");
+                .hasMessage("clinic.alreadyExists");
         verify(transactionManager).rollback(any());
         verify(schemaProvisioningService, never()).createTenantSchema(any());
     }
@@ -174,7 +174,7 @@ class ClinicServiceImplTest {
 
         assertThatThrownBy(() -> service.createClinic(request()))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("The subdomain " + SUBDOMAIN + " is already taken");
+                .hasMessage("clinic.subdomainTaken");
         verify(clinicRepository, never()).delete(any());
         verify(schemaProvisioningService, never()).dropTenantSchema(any());
     }

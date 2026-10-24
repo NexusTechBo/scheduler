@@ -212,7 +212,7 @@ class ClinicActivationServiceImplTest {
     private void assertInvalidLink() {
         assertThatThrownBy(() -> service.activateClinic(new ActivateClinicRequest(TOKEN)))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessage("The activation link is invalid or has expired");
+                .hasMessage("clinic.activationLinkInvalid");
         verify(eventPublisher, never()).publishEvent(any(Object.class));
         assertThat(TenantContext.getCurrentTenant()).isNull();
     }

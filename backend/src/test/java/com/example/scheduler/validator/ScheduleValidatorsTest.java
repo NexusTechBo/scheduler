@@ -21,8 +21,8 @@ class ScheduleValidatorsTest {
     @Test
     void timeRangeRejectsEndNotAfterStartOnEndField() {
         assertThat(validator.validate(new DoctorAvailabilityRequest(DayOfWeek.MONDAY, TEN, NINE, 30)))
-                .extracting(v -> v.getPropertyPath().toString(), ConstraintViolation::getMessage)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple("endTime", "End time must be after start time"));
+                .extracting(v -> v.getPropertyPath().toString(), ConstraintViolation::getMessageTemplate)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("endTime", "{validation.timeRange.endAfterStart}"));
         assertThat(validator.validate(new DoctorAvailabilityRequest(DayOfWeek.MONDAY, NINE, NINE, 30)))
                 .extracting(v -> v.getPropertyPath().toString())
                 .containsExactly("endTime");
