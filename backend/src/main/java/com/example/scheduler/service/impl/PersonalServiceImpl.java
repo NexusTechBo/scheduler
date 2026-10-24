@@ -141,7 +141,7 @@ public class PersonalServiceImpl implements PersonalService {
     @Transactional
     public void deactivatePersonalById(Long personalId, Long userId) {
         if (personalId.equals(userId))
-            throw new BusinessException("You cannot deactivate your own account");
+            throw new BusinessException("personal.cannotDeactivateSelf");
         var personal = getPersonalOrThrowById(personalId);
         personal.setActive(false);
         personalRepository.save(personal);

@@ -4,10 +4,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.query.SemanticException;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -42,7 +45,7 @@ public class GlobalExceptionHandler {
         log.debug("Controlled error {}: {}", ex.getStatus().value(), ex.getMessageKey());
         String resolvedMessage = msg(ex.getMessageKey(), ex.getArgs());
         return ResponseEntity.status(ex.getStatus())
-                .body(ErrorResponse.of(ex.getStatus(), resolvedMessage, req.getRequestURI(), ex.getCode(), ex.getAffectedCount()));
+                .body(ErrorResponse.of(ex.getStatus(), resolvedMessage, req.getRequestURI()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -113,6 +116,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex, HttpServletRequest req) {
         log.warn("Optimistic locking conflict on {}: {}", req.getRequestURI(), ex.getMessage());
         return build(HttpStatus.CONFLICT, msg("error.data.optimisticLock"), req);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handlePropertyReference(PropertyReferenceException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, msg("error.param.invalidSortProperty", ex.getPropertyName()), req);
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidApiUsage(InvalidDataAccessApiUsageException ex, HttpServletRequest req) {
+        if (ex.contains(SemanticException.class)) {
+            log.debug("Invalid query input on {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
+            return build(HttpStatus.BAD_REQUEST, msg("error.param.invalidSort"), req);
+        }
+        return handleUnexpected(ex, req);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

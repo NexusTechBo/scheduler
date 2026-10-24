@@ -16,6 +16,8 @@ import com.example.scheduler.repository.ScheduleExceptionRepository;
 import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.service.ScheduleExceptionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
-    private static final String DEFAULT_CANCELLATION_REASON = "El doctor bloqueó este horario";
+    private static final String DEFAULT_CANCELLATION_REASON = "scheduleException.defaultCancellationReason";
 
     private final ScheduleExceptionRepository scheduleExceptionRepository;
     private final PersonalRepository doctorRepository;
@@ -36,22 +38,18 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     private final AppointmentService appointmentService;
     private final ScheduleExceptionMapper mapper;
     private final Clock clock;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
     public ScheduleExceptionResponse addDoctorScheduleException(Long doctorId, ScheduleExceptionRequest request) {
         var doctor = doctorRepository.findByIdForUpdate(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("doctor.notFound", doctorId));
+                .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", doctorId));
         if (request.date().isBefore(LocalDate.now(clock)))
             throw new BadRequestException("scheduleException.date.past");
         var affected = findAffectedAppointments(doctorId, request);
         if (!affected.isEmpty() && !Boolean.TRUE.equals(request.cancelAppointments()))
-            throw new BusinessException(
-                    "scheduleException.activeAppointmentsConflict",
-                    "ACTIVE_APPOINTMENTS_CONFLICT",
-                    affected.size(),
-                    affected.size()
-            );
+            throw new BusinessException("scheduleException.activeAppointmentsConflict", affected.size());
         var fullDay = request.isFullDayBlock();
         var scheduleException = scheduleExceptionRepository.save(ScheduleException.builder()
                 .doctor(doctor)
@@ -95,6 +93,8 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     }
 
     private String cancellationReason(String reason) {
-        return reason == null || reason.isBlank() ? DEFAULT_CANCELLATION_REASON : reason;
+        return reason == null || reason.isBlank()
+                ? messageSource.getMessage(DEFAULT_CANCELLATION_REASON, null, LocaleContextHolder.getLocale())
+                : reason;
     }
 }

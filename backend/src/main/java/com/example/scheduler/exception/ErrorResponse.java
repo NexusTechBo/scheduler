@@ -13,23 +13,12 @@ public record ErrorResponse(
         String error,
         String message,
         String path,
-        String code,
-        Integer affectedCount,
         List<FieldErrorItem> errors
 ) {
     public record FieldErrorItem(String field, String message) {}
 
     public static ErrorResponse of(HttpStatus status, String message, String path) {
-        return new ErrorResponse(
-                Instant.now(),
-                status.value(),
-                status.getReasonPhrase(),
-                message,
-                path,
-                null,
-                null,
-                null
-        );
+        return of(status, message, path, null);
     }
 
     public static ErrorResponse of(HttpStatus status, String message, String path, List<FieldErrorItem> errors) {
@@ -39,22 +28,7 @@ public record ErrorResponse(
                 status.getReasonPhrase(),
                 message,
                 path,
-                null,
-                null,
                 errors
-        );
-    }
-
-    public static ErrorResponse of(HttpStatus status, String message, String path, String code, Integer affectedCount) {
-        return new ErrorResponse(
-                Instant.now(),
-                status.value(),
-                status.getReasonPhrase(),
-                message,
-                path,
-                code,
-                affectedCount,
-                null
         );
     }
 }
