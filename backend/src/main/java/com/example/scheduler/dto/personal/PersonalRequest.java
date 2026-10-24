@@ -20,7 +20,7 @@ public record PersonalRequest(
         @NotBlank
         String ci,
         @NotNull
-        @Pattern(regexp = "^[a-z0-9._-]{3,50}$", message = "must be 3-50 characters: lowercase letters, digits, '.', '_' or '-'")
+        @Pattern(regexp = "^[a-z0-9._-]{3,50}$", message = "{validation.username.pattern}")
         String username,
         @NotBlank
         @Size(min = 8)

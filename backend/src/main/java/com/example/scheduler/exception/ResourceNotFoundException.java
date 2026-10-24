@@ -3,7 +3,7 @@ package com.example.scheduler.exception;
 import org.springframework.http.HttpStatus;
 
 public class ResourceNotFoundException extends ApiException {
-    public ResourceNotFoundException(String message) {
-        super(HttpStatus.NOT_FOUND, message);
+    public ResourceNotFoundException(String messageKey, Object... args) {
+        super(HttpStatus.NOT_FOUND, messageKey, args);
     }
 }

@@ -44,9 +44,9 @@ public class ClinicServiceImpl implements ClinicService {
         var tx = new TransactionTemplate(transactionManager);
         removeAbandonedClinics(request.name().strip(), subdomain, tx);
         if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
-            throw new BusinessException("A clinic with this name already exists");
+            throw new BusinessException("clinic.alreadyExists");
         if (clinicRepository.existsBySubdomain(subdomain))
-            throw new BusinessException("The subdomain " + subdomain + " is already taken");
+            throw new BusinessException("clinic.subdomainTaken", subdomain);
         var clinic = tx.execute(_ ->
             clinicRepository.save(Clinic.builder()
                     .name(request.name())
@@ -83,16 +83,6 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    /**
-     * Frees the name/subdomain held by abandoned pending clinics: PENDING_ACTIVATION with at least one token and
-     * none of them usable. A pending clinic without tokens is never removed, because that is also the state of a
-     * registration still in progress (clinic row committed, schema being provisioned, admin + token not yet saved).
-     * <p>
-     * The clinic row is locked while deciding so a concurrent activation either wins (clinic becomes ACTIVE and is kept)
-     * or finds the clinic gone. Name and subdomain may belong to two different clinics. Each clinic is handled on its
-     * own: an abandoned clinic matching the name is removed even if the request then gets a 409 on the subdomain
-     * (intended, it was abandoned anyway). A failed removal is logged and skipped so the normal 409 checks still run.
-     */
     private void removeAbandonedClinics(String name, String subdomain, TransactionTemplate tx) {
         for (var clinicId : clinicRepository.findPendingIdsByNameOrSubdomain(name, subdomain)) {
             try {
@@ -108,7 +98,6 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    /** Must be evaluated while holding the clinic row lock. */
     private boolean isAbandoned(Clinic clinic) {
         var clinicId = clinic.getId();
         return clinic.getStatus() == ClinicStatus.PENDING_ACTIVATION
@@ -116,7 +105,6 @@ public class ClinicServiceImpl implements ClinicService {
                 && !tokenRepository.existsByClinicIdAndUsedAtIsNullAndExpiresAtAfter(clinicId, LocalDateTime.now(clock));
     }
 
-    /** Row delete (tokens cascade in the DB) and schema drop share the transaction, so a failure rolls back both. */
     private boolean removeAbandonedClinic(Clinic clinic) {
         clinicRepository.delete(clinic);
         clinicRepository.flush();

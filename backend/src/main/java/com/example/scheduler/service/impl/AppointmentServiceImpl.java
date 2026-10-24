@@ -48,8 +48,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepository;
     private final PersonalRepository personalRepository;
     private final AppointmentMapper appointmentMapper;
-    private final ScheduleExceptionRepository  scheduleExceptionRepository;
-    private final DoctorAvailabilityRepository  doctorAvailabilityRepository;
+    private final ScheduleExceptionRepository scheduleExceptionRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final ClinicRepository clinicRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
@@ -61,23 +61,23 @@ public class AppointmentServiceImpl implements AppointmentService {
         var doctorId = request.doctorId();
         var startTime = request.startTime();
         var endTime = findSlotEnd(request.doctorId(), startTime)
-                .orElseThrow(() -> new BusinessException("The doctor does not attend at that time"));
+                .orElseThrow(() -> new BusinessException("appointment.outOfJourney"));
         var doctor = personalRepository.findByIdForUpdate(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
+                .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", doctorId));
         var patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
+                .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
         if (doctor.getRole() != ERole.DOCTOR)
-            throw new BadRequestException("Personal with id " + request.doctorId() + " is not a doctor");
+            throw new BadRequestException("personal.doctorNotFound", doctorId);
         if (!doctor.isActive())
-            throw new BusinessException("The doctor is not active");
+            throw new BusinessException("auth.userNotActive");
         if (!patient.isActive())
-            throw new BusinessException("The patient is not active");
+            throw new BusinessException("auth.userNotActive");
         if (startTime.isBefore(LocalDateTime.now(clock)))
-            throw new BadRequestException("The appointment cannot be in the past");
+            throw new BadRequestException("appointment.pastDate");
         if (isBlocked(doctorId, startTime, endTime))
-            throw new BusinessException("That schedule is blocked");
+            throw new BusinessException("appointment.scheduleBlocked");
         if (isSlotTaken(doctorId, startTime, endTime))
-            throw new BusinessException("That slot is already taken");
+            throw new BusinessException("appointment.slotTaken");
         var appointment = Appointment.builder()
                 .doctor(doctor)
                 .patient(patient)
@@ -106,7 +106,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         var appointment = getAppointmentOrThrowById(AppointmentId);
         verifyPermission(appointment, userId, role);
         if (appointment.getStatus() != AppointmentStatus.PENDING)
-            throw new BusinessException("Just can confirm an appointment pending");
+            throw new BusinessException("appointment.confirmOnlyPending");
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         var saved = saveAndNotify(appointment);
         publishEmailNotification(saved, getCurrentClinicName());
@@ -119,7 +119,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         var appointment = getAppointmentOrThrowById(AppointmentId);
         verifyPermission(appointment, userId, role);
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
-            throw new BusinessException("This appointment is already cancelled");
+            throw new BusinessException("appointment.alreadyCancelled");
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancellationReason(request.reason());
         var saved = saveAndNotify(appointment);
@@ -217,13 +217,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private Appointment getAppointmentOrThrowById(Long appointmentId) {
         return appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + appointmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("appointment.notFound", appointmentId));
     }
 
     private void verifyPermission(Appointment appointment, Long userId, String role) {
         if (ERole.DOCTOR.name().equals(role))
             if (!appointment.getDoctor().getId().equals(userId))
-                throw new ForbiddenException("Not authorized to do this");
+                throw new ForbiddenException("appointment.unauthorized");
     }
 
     private boolean isBlocked(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {

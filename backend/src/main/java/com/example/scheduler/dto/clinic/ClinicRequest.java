@@ -12,14 +12,14 @@ public record ClinicRequest(
         @Pattern(regexp = "^[^\\p{Cntrl}]*$", message = "must not contain control characters")
         String name,
         @NotNull
-        @Pattern(regexp = "^[a-z0-9]{3,50}$", message = "must be 3-50 characters: lowercase letters or digits")
+        @Pattern(regexp = "^[a-z0-9]{3,50}$", message = "{validation.subdomain.pattern}")
         String subdomain,
         @NotBlank
         String phoneNumber,
         @NotBlank
         String adminName,
         @NotNull
-        @Pattern(regexp = "^[a-z0-9._-]{3,50}$", message = "must be 3-50 characters: lowercase letters, digits, '.', '_' or '-'")
+        @Pattern(regexp = "^[a-z0-9._-]{3,50}$", message = "{validation.username.pattern}")
         String adminUsername,
         @NotBlank
         @Email

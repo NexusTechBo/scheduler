@@ -12,7 +12,17 @@ export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const token = auth.token();
-  const request = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+  const currentLang = localStorage.getItem('lang') || navigator.language.slice(0, 2) || 'es';
+
+  const headers: Record<string, string> = {
+    'Accept-Language': currentLang,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const request = req.clone({ setHeaders: headers });
 
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {

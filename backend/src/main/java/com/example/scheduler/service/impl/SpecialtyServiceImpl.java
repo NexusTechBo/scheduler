@@ -29,7 +29,7 @@ public class SpecialtyServiceImpl implements SpecialtyService {
     @Transactional
     public SpecialtyResponse createSpecialty(SpecialtyRequest request) {
         if (specialtyRepository.existsByNameIgnoreCase(request.name()))
-            throw new BusinessException("This specialty already exists");
+            throw new BusinessException("specialty.alreadyExists");
         return specialtyMapper.toResponse(specialtyRepository.save(Specialty.builder().name(request.name()).build()));
     }
 }
