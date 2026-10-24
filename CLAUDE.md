@@ -9,8 +9,11 @@ scheduler/
 ├── backend/        Spring Boot REST API (Gradle)
 ├── frontend/       Angular SPA (npm)
 ├── render.yaml     Render deployment (both services as Docker)
-└── .claude/        project skills and agents
+├── .githooks/      git hooks (pre-commit: Prettier check); enable with `git config core.hooksPath .githooks`
+└── .claude/        project skills, agents and hooks (settings.json + hooks/*.js)
 ```
+
+Claude Code hooks: Prettier runs on every edited `frontend/src` file; editing an existing Flyway migration asks first; `.env` files can't be written (reading asks); `git commit` / `git push` are always denied — the user commits after reviewing.
 
 ## Backend — `backend/`
 
@@ -35,7 +38,7 @@ scheduler/
 - **Auth & roles:** `AuthService` keeps the session (decoded JWT) in a signal + `localStorage`; routes use `authGuard`, `guestGuard`, `roleGuard(...ROLES.x)`; menu items per role in `core/navigation/navigation.ts`.
 - **UI language:** Spanish (texts, `LOCALE_ID = 'es'`). Code, identifiers and comments in English.
 - **Dev proxy:** `proxy.conf.js` forwards `/api` and `/ws` to `BACKEND_URL` (default `http://localhost:8080`).
-- **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npx ng test --watch=false`.
+- **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npx ng test --watch=false` · `npm run format` / `npm run format:check`.
 
 ## Generated artifacts (repository root, git-ignored)
 
