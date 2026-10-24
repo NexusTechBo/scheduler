@@ -30,10 +30,10 @@ public class ClinicServiceImpl implements ClinicService {
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
         if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
-            throw new BusinessException("A clinic with this name already exists");
+            throw new BusinessException("clinic.alreadyExists");
         var subdomain = "@" + request.subdomain() + ".com";
         if (clinicRepository.existsBySubdomain(subdomain))
-            throw new BusinessException("The subdomain " + subdomain + " is already taken");
+            throw new BusinessException("clinic.subdomainTaken", subdomain);
         var tx = new TransactionTemplate(transactionManager);
         var clinic = tx.execute(_ ->
             clinicRepository.save(Clinic.builder()

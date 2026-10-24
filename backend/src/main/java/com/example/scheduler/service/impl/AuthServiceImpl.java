@@ -34,17 +34,17 @@ public class AuthServiceImpl implements AuthService {
         var username = request.username().toLowerCase(Locale.ROOT);
         var at = username.lastIndexOf('@');
         if (at < 0)
-            throw new BadRequestException("Invalid Credentials");
+            throw new BadRequestException("auth.invalidCredentials");
         var clinic = clinicRepository.findBySubdomain(username.substring(at))
-                .orElseThrow(() -> new UnauthorizedException("Invalid Credentials"));
+                .orElseThrow(() -> new UnauthorizedException("auth.invalidCredentials"));
         try {
             TenantContext.setCurrentTenant("clinic_" + clinic.getId());
             var personal = personalRepository.findByUsername(username)
-                    .orElseThrow(() -> new UnauthorizedException("Invalid Credentials"));
+                    .orElseThrow(() -> new UnauthorizedException("auth.invalidCredentials"));
             if (!personal.isActive())
-                throw new UnauthorizedException("Your user is not active");
+                throw new UnauthorizedException("auth.userNotActive");
             if (!passwordEncoder.matches(request.password(), personal.getPassword()))
-                throw new UnauthorizedException("Invalid Credentials");
+                throw new UnauthorizedException("auth.invalidCredentials");
             return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic, personal.getName()));
         } finally {
             TenantContext.clear();
@@ -56,6 +56,6 @@ public class AuthServiceImpl implements AuthService {
     public PersonalResponse findProfile(Long userId) {
         return personalRepository.findById(userId)
                 .map(personalMapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Personal not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", userId));
     }
 }

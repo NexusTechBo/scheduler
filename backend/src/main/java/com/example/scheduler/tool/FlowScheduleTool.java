@@ -43,11 +43,11 @@ public class FlowScheduleTool {
 
     private void getSpecialtyOrThrowById(Long specialtyId) {
         specialtyRepository.findById(specialtyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Specialty not found with id: " + specialtyId));
+                .orElseThrow(() -> new ResourceNotFoundException("specialty.notFound", specialtyId));
     }
 
     private Patient getPatientOrThrowByPhoneNumber(String phoneNumber) {
         return patientRepository.findByPhoneNumber(phoneNumber)
-                .orElseThrow(() -> new  ResourceNotFoundException("Patient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("patient.notFoundPhone", phoneNumber));
     }
 }
