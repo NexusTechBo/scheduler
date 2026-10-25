@@ -12,7 +12,8 @@ export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const token = auth.token();
-  const currentLang = localStorage.getItem('lang') || navigator.language.slice(0, 2) || 'es';
+  const savedLang = localStorage.getItem('lang') || navigator.language.slice(0, 2);
+  const currentLang = savedLang === 'en' ? 'en' : 'es';
 
   const headers: Record<string, string> = {
     'Accept-Language': currentLang,

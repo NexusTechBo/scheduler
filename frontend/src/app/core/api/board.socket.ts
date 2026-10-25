@@ -29,8 +29,17 @@ export class BoardSocket {
   constructor() {
     this.stomp.configure({
       brokerURL: wsUrl('/ws'),
-      beforeConnect: (stomp) =>
-        stomp.configure({ connectHeaders: { Authorization: `Bearer ${this.auth.token() ?? ''}` } }),
+      beforeConnect: (stomp) => {
+        const savedLang = localStorage.getItem('lang') || navigator.language.slice(0, 2);
+        const currentLang = savedLang === 'en' ? 'en' : 'es';
+
+        stomp.configure({
+          connectHeaders: {
+            Authorization: `Bearer ${this.auth.token() ?? ''}`,
+            'accept-language': currentLang,
+          },
+        });
+      },
       heartbeatIncoming: 10_000,
       heartbeatOutgoing: 10_000,
       reconnectDelay: 1_000,

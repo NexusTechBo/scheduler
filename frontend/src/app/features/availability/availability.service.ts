@@ -144,15 +144,12 @@ export class AvailabilityService {
     return this.api.addException({ ...request, cancelAppointments: false }).pipe(
       map(() => 'Agenda bloqueada'),
       catchError((error) => {
-        const count = activeAppointmentsConflict(error);
-        if (count === null) return throwError(() => error);
-        return this.confirmCancelAppointments(count).pipe(
+        const conflictMessage = activeAppointmentsConflict(error);
+        if (conflictMessage === null) return throwError(() => error);
+
+        return this.confirmCancelAppointments(conflictMessage).pipe(
           switchMap(() => this.api.addException({ ...request, cancelAppointments: true })),
-          map(() =>
-            count === 1
-              ? 'Agenda bloqueada. Se canceló la cita y se notificó al paciente'
-              : 'Agenda bloqueada. Se cancelaron las citas y se notificó a los pacientes',
-          ),
+          map(() => 'Agenda bloqueada y citas canceladas'),
         );
       }),
       tap((message) => {
@@ -178,13 +175,11 @@ export class AvailabilityService {
       .pipe(tap(() => this.reload()));
   }
 
-  private confirmCancelAppointments(count: number): Observable<true> {
+  private confirmCancelAppointments(conflictMessage: string): Observable<true> {
     const message =
-      count === 1
-        ? 'Hay 1 cita activa en este horario. Si bloqueas, se cancelará y se notificará al paciente.'
-        : count > 1
-          ? `Hay ${count} citas activas en este horario. Si bloqueas, se cancelarán y se notificará a los pacientes.`
-          : 'Hay citas activas en este horario. Si bloqueas, se cancelarán y se notificará a los pacientes.';
+      conflictMessage ||
+      'Hay citas activas en este horario. Si bloqueas, se cancelarán y se notificará a los pacientes.';
+
     return this.confirm
       .ask({
         title: 'Cancelar citas',
