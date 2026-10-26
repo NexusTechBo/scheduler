@@ -4,7 +4,8 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   selector: 'app-alert',
   templateUrl: './alert.component.html',
   host: {
-    class: 'block rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700',
+    class:
+      'block rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700 whitespace-pre-line',
     role: 'alert',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,

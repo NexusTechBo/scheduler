@@ -110,8 +110,8 @@ export class AvailabilityFormDialogComponent {
         this.selectedDays.set(new Set(failed.map((f) => f.day)));
         const label = (day: DayOfWeek) => this.days.find((d) => d.value === day)!.label;
         this.error.set(
-          (saved.length ? `Se guardó: ${saved.map(label).join(', ')}. ` : '') +
-            `No se pudo guardar: ${failed.map((f) => `${label(f.day)} (${f.message})`).join('; ')}`,
+          (saved.length ? `Se guardó: ${saved.map(label).join(', ')}. \n` : '') +
+            `No se pudo guardar:\n${failed.map((f) => `- ${label(f.day)} (${f.message})`).join('\n')}`,
         );
       });
   }
