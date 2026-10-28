@@ -38,12 +38,12 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public PatientResponse createPatient(PatientRequest request) {
         if (patientRepository.existsByCi(request.ci()))
-            throw new BusinessException("This patient already exists");
+            throw new BusinessException("patient.alreadyExists");
         if (patientRepository.existsByEmail(request.email()))
-            throw new BadRequestException("Patient with email " + request.email() + " already exists");
+            throw new BadRequestException("patient.emailAlreadyExists", request.email());
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
-            throw new BusinessException("Patient with phone number " + phoneNumber + " already exists");
+            throw new BusinessException("patient.phoneAlreadyExists", phoneNumber);
         var patient = Patient.builder()
                 .ci(request.ci())
                 .name(request.name())
@@ -63,12 +63,12 @@ public class PatientServiceImpl implements PatientService {
     public PatientResponse updatePatientById(Long patientId, PatientRequest request) {
         var patient = getPatientOrThrowById(patientId);
         if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
-            throw new BusinessException("This patient already exists");
+            throw new BusinessException("patient.alreadyExists");
         if (!patient.getEmail().equals(request.email()) && patientRepository.existsByEmail(request.email()))
-            throw new BadRequestException("Patient with email " + request.email() + " already exists");
+            throw new BadRequestException("patient.emailAlreadyExists", request.email());
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null && !Objects.equals(patient.getPhoneNumber(), phoneNumber) && patientRepository.existsByPhoneNumber(phoneNumber))
-            throw new BusinessException("Patient with phone number " + phoneNumber + " already exists");
+            throw new BusinessException("patient.phoneAlreadyExists", phoneNumber);
         patientMapper.toEntityUpdated(request, patient, phoneNumber);
         return patientMapper.toResponse(patientRepository.save(patient));
     }
@@ -97,11 +97,11 @@ public class PatientServiceImpl implements PatientService {
 
     private Patient getPatientOrThrowById(Long patientId) {
         return patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
+                .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
     }
 
     private Patient getPatientDoctorsOrThrowById(Long patientId) {
         return patientRepository.findPatientDoctorsById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
+                .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
     }
 }

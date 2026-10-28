@@ -31,6 +31,8 @@ services:
         sync: false
       - key: GEMINI_API_KEY
         sync: false
+      - key: APP_FRONTEND_URL  # base de los enlaces en correos (activación, login)
+        value: https://scheduler-frontend.onrender.com
 
   - type: web
     name: scheduler-frontend

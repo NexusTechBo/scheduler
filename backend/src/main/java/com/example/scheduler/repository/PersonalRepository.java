@@ -39,6 +39,8 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
 
     Optional<Personal> findByUsername(String username);
 
+    Optional<Personal> findFirstByRoleOrderByIdAsc(ERole role);
+
     @NullMarked
     @EntityGraph(attributePaths = {"specialty"})
     Optional<Personal> findById(Long id);

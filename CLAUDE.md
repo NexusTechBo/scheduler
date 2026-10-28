@@ -9,18 +9,22 @@ scheduler/
 ├── backend/        Spring Boot REST API (Gradle)
 ├── frontend/       Angular SPA (npm)
 ├── render.yaml     Render deployment (both services as Docker)
-└── .claude/        project skills and agents
+├── .githooks/      git hooks (pre-commit: Prettier check); enable with `git config core.hooksPath .githooks`
+└── .claude/        project skills, agents and hooks (settings.json + hooks/*.js)
 ```
+
+Claude Code hooks: Prettier runs on every edited `frontend/src` file; editing an existing Flyway migration asks first; `.env` files can't be written (reading asks); `git commit` / `git push` are always denied — the user commits after reviewing.
 
 ## Backend — `backend/`
 
 - **Stack:** Java 26, Spring Boot 4, Spring Data JPA / Hibernate, PostgreSQL, Flyway, Spring Security + jjwt (JWT), Spring WebSocket (STOMP), springdoc OpenAPI, MapStruct, Lombok, Spring AI (Google GenAI), Twilio, Spring Mail.
-- **Package:** `com.example.scheduler` → `config`, `config/tenant`, `controller`, `dto/<feature>`, `entity`, `enums`, `exception`, `mapper`, `middleware`, `repository`, `security`, `service` + `service/impl`, `tool`, `util`, `validator`, `websocket`.
-- **Domain:** `Clinic` (public schema) · `Personal` (staff, roles `ADMINISTRATOR | DOCTOR | ASSISTANT`, optional `Specialty`) · `Patient` (many-to-many with doctors via `doctor_patient`) · `DoctorAvailability` · `ScheduleException` · `Appointment` (`PENDING | CONFIRMED | CANCELLED`).
-- **Multi-tenancy (schema per clinic):** the `public` schema holds `clinics`; each clinic has its own schema `clinic_<id>`. `TenantContext` (ThreadLocal) is set from the JWT `clinicId` claim in `JwtAuthFilter` / `JwtChannelInterceptor` and always cleared in `finally`; `CustomTenantResolver` falls back to `public`. New tenant schemas are created by `SchemaProvisioningService`. Any code that runs outside a request (seeders, schedulers, async) must set and clear the tenant itself.
+- **Package:** `com.example.scheduler` → `config`, `config/tenant`, `controller`, `dto/<feature>`, `entity`, `enums`, `exception`, `mapper`, `middleware`, `notification`, `repository`, `security`, `service` + `service/impl`, `tool`, `util`, `validator`, `websocket`.
+- **Domain:** `Clinic` (public schema, `PENDING_ACTIVATION | ACTIVE`; activated by an emailed link, tokens in `ClinicActivationToken`) · `Personal` (staff, roles `ADMINISTRATOR | DOCTOR | ASSISTANT`, optional `Specialty`) · `Patient` (many-to-many with doctors via `doctor_patient`) · `DoctorAvailability` · `ScheduleException` · `Appointment` (`PENDING | CONFIRMED | CANCELLED`).
+- **Multi-tenancy (schema per clinic):** the `public` schema holds `clinics`; each clinic has its own schema `clinic_<slug>`. `TenantContext` (ThreadLocal, clinic id + schema) is set from the JWT `clinicId` + `clinicSlug` claims in `JwtAuthFilter` / `JwtChannelInterceptor` and always cleared in `finally`; `CustomTenantResolver` falls back to `public`. New tenant schemas are created by `SchemaProvisioningService`. Any code that runs outside a request (seeders, schedulers, async) must set and clear the tenant itself.
 - **Migrations:** `src/main/resources/db/migration/public` (public schema) and `.../tenant` (applied to every clinic schema). `ddl-auto: none`; never edit an applied migration, add `V{n}__description.sql`.
-- **Auth:** login `POST /api/auth/login` with username `<user>@<clinic-subdomain>`; the token carries `sub` (user id), `role`, `clinicId`, `clinicName`, `clinicSubdomain`, `username`. Every request re-checks the user is active with the same role (`ActiveUserChecker`). Public paths come from `security.public-paths`.
+- **Auth:** login `POST /api/auth/login` with username `<user>@<clinic-slug>.com`; the token carries `sub` (user id), `role`, `clinicId`, `clinicName`, `clinicSlug`, `username`. Every request re-checks the user is active with the same role (`ActiveUserChecker`). Public paths come from `security.public-paths`.
 - **WebSocket:** STOMP endpoint `/ws`, topic `/topic/clinic/{clinicId}/board`; events are published with `@TransactionalEventListener(AFTER_COMMIT)`.
+- **Email:** `notification` events (staff credentials, clinic activation/welcome, appointment confirmed/cancelled to the patient) are sent after commit, `@Async` on the `mailTaskExecutor` pool, via `EmailService`; sender from `app.mail.from` / `app.mail.from-name` (`MAIL_FROM`, `MAIL_FROM_NAME`); links point to `app.frontend-url` (`APP_FRONTEND_URL`). Send failures are logged and never fail the request.
 - **Errors:** services throw `ApiException` subclasses; `GlobalExceptionHandler` returns the `ErrorResponse` JSON.
 - **Config:** `application.yaml` + `application-dev.yaml`; secrets from env vars / git-ignored `.env` (template in `backend/.env.example`). Business time zone via `app.zone` and an injected `Clock`.
 - **Dev data:** `config/DataSeeder` seeds two clinics with staff and patients when the DB is empty (credentials are in that class).
@@ -34,7 +38,7 @@ scheduler/
 - **Auth & roles:** `AuthService` keeps the session (decoded JWT) in a signal + `localStorage`; routes use `authGuard`, `guestGuard`, `roleGuard(...ROLES.x)`; menu items per role in `core/navigation/navigation.ts`.
 - **UI language:** Spanish (texts, `LOCALE_ID = 'es'`). Code, identifiers and comments in English.
 - **Dev proxy:** `proxy.conf.js` forwards `/api` and `/ws` to `BACKEND_URL` (default `http://localhost:8080`).
-- **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npx ng test --watch=false`.
+- **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npx ng test --watch=false` · `npm run format` / `npm run format:check`.
 
 ## Generated artifacts (repository root, git-ignored)
 

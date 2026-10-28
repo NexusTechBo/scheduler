@@ -41,7 +41,7 @@ export interface TokenPayload {
   role: Role;
   clinicId: number;
   clinicName: string;
-  clinicSubdomain: string;
+  clinicSlug: string;
   username: string;
   exp: number;
 }
@@ -56,7 +56,7 @@ export interface ProfileUpdateRequest {
 
 export interface ClinicRequest {
   name: string;
-  subdomain: string;
+  slug: string;
   phoneNumber: string;
   adminName: string;
   adminUsername: string;
@@ -69,9 +69,22 @@ export interface ClinicCreatedResponse {
   id: number;
   name: string;
   phoneNumber: string;
-  subdomain: string;
+  slug: string;
   adminUsername: string;
   adminEmail: string;
+}
+
+export interface ActivateClinicRequest {
+  token: string;
+}
+
+export interface ClinicActivatedResponse {
+  clinicName: string;
+  adminUsername: string;
+}
+
+export interface ResendActivationRequest {
+  email: string;
 }
 
 export interface AppointmentRequest {

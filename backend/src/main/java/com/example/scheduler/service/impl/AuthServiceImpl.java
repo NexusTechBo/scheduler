@@ -4,7 +4,9 @@ import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
+import com.example.scheduler.enums.ClinicStatus;
 import com.example.scheduler.exception.BadRequestException;
+import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.exception.UnauthorizedException;
 import com.example.scheduler.mapper.PersonalMapper;
@@ -33,18 +35,20 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
         var username = request.username().toLowerCase(Locale.ROOT);
         var at = username.lastIndexOf('@');
-        if (at < 0)
-            throw new BadRequestException("Invalid Credentials");
-        var clinic = clinicRepository.findBySubdomain(username.substring(at))
-                .orElseThrow(() -> new UnauthorizedException("Invalid Credentials"));
+        if (at < 0 || !username.endsWith(".com"))
+            throw new BadRequestException("auth.invalidCredentials");
+        var clinic = clinicRepository.findBySlug(username.substring(at + 1, username.length() - ".com".length()))
+                .orElseThrow(() -> new UnauthorizedException("auth.invalidCredentials"));
         try {
-            TenantContext.setCurrentTenant("clinic_" + clinic.getId());
+            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
             var personal = personalRepository.findByUsername(username)
-                    .orElseThrow(() -> new UnauthorizedException("Invalid Credentials"));
+                    .orElseThrow(() -> new UnauthorizedException("auth.invalidCredentials"));
             if (!personal.isActive())
-                throw new UnauthorizedException("Your user is not active");
+                throw new UnauthorizedException("auth.userNotActive");
             if (!passwordEncoder.matches(request.password(), personal.getPassword()))
-                throw new UnauthorizedException("Invalid Credentials");
+                throw new UnauthorizedException("auth.invalidCredentials");
+            if (clinic.getStatus() != ClinicStatus.ACTIVE)
+                throw new ForbiddenException("auth.clinicNotActivated");
             return new LoginResponse(jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic, personal.getName()));
         } finally {
             TenantContext.clear();
@@ -56,6 +60,6 @@ public class AuthServiceImpl implements AuthService {
     public PersonalResponse findProfile(Long userId) {
         return personalRepository.findById(userId)
                 .map(personalMapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Personal not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", userId));
     }
 }

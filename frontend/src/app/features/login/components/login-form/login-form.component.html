@@ -1,45 +1,56 @@
-<form
-  [formGroup]="form"
-  (ngSubmit)="submit()"
-  class="glass-panel w-full max-w-sm rounded-3xl p-6 sm:p-8"
-  novalidate
->
-  <div class="mb-6">
-    <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">Inicia sesión</h1>
-    <p class="mt-1 text-sm font-medium text-gray-500">
-      Ingresa tus credenciales para acceder a tu cuenta
-    </p>
-  </div>
+<div class="glass-panel w-full max-w-sm rounded-3xl p-6 sm:p-8">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="mb-6">
+      <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">Inicia sesión</h1>
+      <p class="mt-1 text-sm font-medium text-gray-500">
+        Ingresa tus credenciales para acceder a tu cuenta
+      </p>
+    </div>
 
-  <div class="space-y-4">
-    <app-form-field label="Usuario" fieldId="login-username">
-      <input
-        id="login-username"
-        type="text"
-        class="field-input"
-        formControlName="username"
-        autocomplete="username"
-        autocapitalize="none"
-        autocorrect="off"
-        spellcheck="false"
-        placeholder="usuario@clinica.com"
-      />
-    </app-form-field>
-    <app-form-field label="Contraseña" fieldId="login-password">
-      <input
-        id="login-password"
-        type="password"
-        class="field-input"
-        formControlName="password"
-        autocomplete="current-password"
-        placeholder="Ingresa tu contraseña"
-      />
-    </app-form-field>
-  </div>
+    <div class="space-y-4">
+      <app-form-field label="Usuario" fieldId="login-username">
+        <input
+          id="login-username"
+          type="text"
+          class="field-input"
+          formControlName="username"
+          autocomplete="username"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="usuario@clinica.com"
+        />
+      </app-form-field>
+      <app-form-field label="Contraseña" fieldId="login-password">
+        <input
+          id="login-password"
+          type="password"
+          class="field-input"
+          formControlName="password"
+          autocomplete="current-password"
+          placeholder="Ingresa tu contraseña"
+        />
+      </app-form-field>
+    </div>
 
-  <button type="submit" class="btn btn-primary mt-6 w-full" [disabled]="submitting()">
-    {{ submitting() ? 'Ingresando…' : 'Ingresar' }}
-  </button>
+    <button type="submit" class="btn btn-primary mt-6 w-full" [disabled]="submitting()">
+      {{ submitting() ? 'Ingresando…' : 'Ingresar' }}
+    </button>
+  </form>
+
+  <div aria-live="polite">
+    @if (pendingActivation()) {
+      <div class="mt-6 rounded-2xl bg-amber-50 p-4">
+        <p class="text-sm font-semibold text-amber-800">
+          Tu clínica aún no está activada. Revisa tu correo para activarla.
+        </p>
+        <p class="mb-3 mt-1 text-xs font-medium text-amber-700">
+          ¿No encuentras el correo? Podemos enviarte un nuevo enlace.
+        </p>
+        <app-resend-activation label="Reenviar correo" fieldId="login-resend-email" />
+      </div>
+    }
+  </div>
 
   <div class="mt-6 flex items-center gap-3">
     <span class="h-px flex-1 bg-gray-900/10"></span>
@@ -53,4 +64,4 @@
   <p class="mt-4 text-center text-xs font-medium text-gray-500">
     El personal es creado por el administrador de la clínica.
   </p>
-</form>
+</div>

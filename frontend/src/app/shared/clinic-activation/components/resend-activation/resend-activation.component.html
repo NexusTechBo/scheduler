@@ -1,0 +1,28 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-3" novalidate>
+  @if (!email()) {
+    <app-form-field label="Correo del administrador" [fieldId]="fieldId()">
+      <input
+        [id]="fieldId()"
+        type="email"
+        class="field-input"
+        formControlName="email"
+        autocomplete="email"
+        placeholder="admin@email.com"
+      />
+    </app-form-field>
+  }
+
+  <button type="submit" class="btn btn-secondary w-full" [disabled]="!resend.canSend()">
+    {{ buttonLabel() }}
+  </button>
+
+  <div aria-live="polite">
+    @if (resend.error(); as error) {
+      <p class="text-sm font-medium text-red-700">{{ error }}</p>
+    } @else if (resend.sent()) {
+      <p class="text-sm font-medium text-gray-600">
+        Si el correo corresponde a una clínica pendiente, te enviamos un nuevo enlace.
+      </p>
+    }
+  </div>
+</form>

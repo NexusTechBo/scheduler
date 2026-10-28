@@ -13,7 +13,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidRole {
-    String message() default "The role you have entered is not permitted";
+    String message() default "{validation.role.invalid}";
 
     Class<?>[] groups() default {};
 

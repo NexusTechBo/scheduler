@@ -13,7 +13,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SpecialtyRoleMatch {
-    String message() default "Invalid specialty for the given role";
+    String message() default "{validation.specialtyRole.mismatch}";
 
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
@@ -31,11 +31,11 @@ public @interface SpecialtyRoleMatch {
             if (value == null || value.role() == null) return true;
             var existsSpecialty = value.specialtyId() != null;
             if (value.role() == ERole.DOCTOR && !existsSpecialty) {
-                buildViolation(context, "The doctor role should have a specialty");
+                buildViolation(context, "{validation.specialtyRole.doctorRequired}");
                 return false;
             }
             if (value.role() == ERole.ASSISTANT && existsSpecialty) {
-                buildViolation(context, "Only doctors can have a specialty");
+                buildViolation(context, "{validation.specialtyRole.mismatch}");
                 return false;
             }
             return true;

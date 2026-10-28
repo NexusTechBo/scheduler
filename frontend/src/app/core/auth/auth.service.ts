@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { NavigationExtras, Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
 import { Observable, map, tap } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
@@ -14,7 +14,7 @@ interface Session {
   role: Role;
   clinicId: number;
   clinicName: string;
-  clinicSubdomain: string;
+  clinicSlug: string;
   username: string;
   expiresAt: number;
 }
@@ -44,7 +44,7 @@ function decodeSession(token: string | null): Session | null {
       role: payload.role,
       clinicId: Number(payload.clinicId),
       clinicName: payload.clinicName,
-      clinicSubdomain: payload.clinicSubdomain,
+      clinicSlug: payload.clinicSlug,
       username: payload.username,
       expiresAt: payload.exp * 1000,
     };
@@ -78,7 +78,7 @@ export class AuthService {
 
   readonly clinic = computed(() => {
     const session = this._session();
-    return session ? { name: session.clinicName, subdomain: session.clinicSubdomain } : null;
+    return session ? { name: session.clinicName, slug: session.clinicSlug } : null;
   });
 
   setProfile(profile: Staff): void {
@@ -117,9 +117,9 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  logout(extras: NavigationExtras = {}): void {
     this.clearSession();
-    this.router.navigate(['/login']).finally();
+    this.router.navigate(['/login'], extras).finally();
   }
 
   private clearSession(): void {

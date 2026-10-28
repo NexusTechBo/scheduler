@@ -35,7 +35,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             var header = request.getHeader("Authorization");
             if (header != null && header.startsWith("Bearer ")) {
                 jwtUtil.parse(header.substring(7)).ifPresent(claims -> {
-                    TenantContext.setCurrentTenant("clinic_" + claims.get("clinicId", Long.class));
+                    TenantContext.setCurrentTenant(claims.get("clinicId", Long.class), claims.get("clinicSlug", String.class));
                     var role = claims.get("role", String.class);
                     var userId = Long.valueOf(claims.getSubject());
                     try {

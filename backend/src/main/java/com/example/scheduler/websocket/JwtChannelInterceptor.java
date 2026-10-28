@@ -45,7 +45,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         var claims = jwtUtil.parse(header.substring(7))
                 .orElseThrow(() -> new MessageDeliveryException("Invalid token"));
         var clinicId = claims.get("clinicId", Long.class);
-        TenantContext.setCurrentTenant("clinic_" + clinicId);
+        TenantContext.setCurrentTenant(clinicId, claims.get("clinicSlug", String.class));
         try {
             if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), claims.get("role", String.class)))
                 throw new MessageDeliveryException("Invalid token");

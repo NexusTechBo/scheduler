@@ -36,16 +36,16 @@
       </app-form-field>
     </div>
     <app-form-field
-      label="Subdominio"
-      fieldId="register-subdomain"
-      [hint]="'Los usuarios de tu clínica terminarán en @' + (suffix() || 'subdominio') + '.com'"
-      [errorMessages]="subdomainErrors"
+      label="Identificador de la clínica"
+      fieldId="register-slug"
+      [hint]="'Los usuarios de tu clínica terminarán en @' + (suffix() || 'identificador') + '.com'"
+      [errorMessages]="slugErrors"
     >
       <input
-        id="register-subdomain"
+        id="register-slug"
         type="text"
         class="field-input"
-        formControlName="subdomain"
+        formControlName="slug"
         autocomplete="off"
         placeholder="clinicacentral"
       />
@@ -95,7 +95,7 @@
           placeholder="admin"
         />
         <span class="min-w-0 truncate text-sm font-semibold text-gray-500"
-          >&#64;{{ suffix() || 'subdominio' }}.com</span
+          >&#64;{{ suffix() || 'identificador' }}.com</span
         >
       </div>
     </app-form-field>
@@ -106,7 +106,7 @@
         class="field-input"
         formControlName="adminEmail"
         autocomplete="email"
-        placeholder="admin@tuclinica.com"
+        placeholder="admin@email.com"
       />
     </app-form-field>
     <app-form-field label="Contraseña" fieldId="register-admin-password">
