@@ -128,15 +128,16 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
     }
 
     private <T> T inClinicTenant(Long clinicId, TransactionCallback<T> action) {
-        var previousTenant = TenantContext.getCurrentTenant();
+        var slug = clinicRepository.findSlugById(clinicId).orElseThrow(ClinicActivationServiceImpl::invalidLink);
+        var previousTenant = TenantContext.current();
         try {
-            TenantContext.setCurrentTenant("clinic_" + clinicId);
+            TenantContext.setCurrentTenant(clinicId, slug);
             return new TransactionTemplate(transactionManager).execute(action);
         } finally {
             if (previousTenant == null)
                 TenantContext.clear();
             else
-                TenantContext.setCurrentTenant(previousTenant);
+                TenantContext.setCurrentTenant(previousTenant.clinicId(), previousTenant.clinicSlug());
         }
     }
 

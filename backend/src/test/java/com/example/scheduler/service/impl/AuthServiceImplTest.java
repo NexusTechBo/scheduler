@@ -43,9 +43,9 @@ class AuthServiceImplTest {
         jwtUtil = mock(JwtUtil.class);
         service = new AuthServiceImpl(clinicRepository, personalRepository, mock(PersonalMapper.class), passwordEncoder, jwtUtil);
 
-        clinic = Clinic.builder().id(5L).name("Clínica Sur").subdomain("@clinicasur.com")
+        clinic = Clinic.builder().id(5L).name("Clínica Sur").slug("clinicasur")
                 .status(ClinicStatus.PENDING_ACTIVATION).build();
-        when(clinicRepository.findBySubdomain("@clinicasur.com")).thenReturn(Optional.of(clinic));
+        when(clinicRepository.findBySlug("clinicasur")).thenReturn(Optional.of(clinic));
         when(personalRepository.findByUsername(USERNAME)).thenReturn(Optional.of(Personal.builder()
                 .id(1L)
                 .username(USERNAME)

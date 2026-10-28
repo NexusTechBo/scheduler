@@ -14,7 +14,7 @@ interface Session {
   role: Role;
   clinicId: number;
   clinicName: string;
-  clinicSubdomain: string;
+  clinicSlug: string;
   username: string;
   expiresAt: number;
 }
@@ -44,7 +44,7 @@ function decodeSession(token: string | null): Session | null {
       role: payload.role,
       clinicId: Number(payload.clinicId),
       clinicName: payload.clinicName,
-      clinicSubdomain: payload.clinicSubdomain,
+      clinicSlug: payload.clinicSlug,
       username: payload.username,
       expiresAt: payload.exp * 1000,
     };
@@ -78,7 +78,7 @@ export class AuthService {
 
   readonly clinic = computed(() => {
     const session = this._session();
-    return session ? { name: session.clinicName, subdomain: session.clinicSubdomain } : null;
+    return session ? { name: session.clinicName, slug: session.clinicSlug } : null;
   });
 
   setProfile(profile: Staff): void {

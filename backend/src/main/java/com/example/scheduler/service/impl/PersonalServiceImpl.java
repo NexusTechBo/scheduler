@@ -68,7 +68,7 @@ public class PersonalServiceImpl implements PersonalService {
     @Transactional
     public PersonalResponse createPersonal(PersonalRequest request) {
         var clinic = getCurrentClinic();
-        var username = request.username() + clinic.getSubdomain();
+        var username = request.username() + Utils.usernameSuffix(clinic.getSlug());
         if (personalRepository.existsByUsername(username))
             throw new BusinessException("personal.usernameTaken", username);
         if (personalRepository.existsByCi(request.ci()))

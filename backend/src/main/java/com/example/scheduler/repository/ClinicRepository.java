@@ -11,15 +11,17 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ClinicRepository extends JpaRepository<Clinic, Long> {
-    /** LOWER on both sides, the same comparison as {@link #findPendingIdsByNameOrSubdomain}. */
     @Query("SELECT COUNT(c) > 0 FROM Clinic c WHERE LOWER(c.name) = LOWER(:name)")
     boolean existsByNameIgnoreCase(@Param("name") String name);
-    boolean existsBySubdomain(String subdomain);
-    Optional<Clinic> findBySubdomain(String subdomain);
+    boolean existsBySlug(String slug);
+    Optional<Clinic> findBySlug(String slug);
+
+    @Query("SELECT c.slug FROM Clinic c WHERE c.id = :id")
+    Optional<String> findSlugById(@Param("id") Long id);
 
     @Query("SELECT c.id FROM Clinic c WHERE c.status = ClinicStatus.PENDING_ACTIVATION AND " +
-            "(LOWER(c.name) = LOWER(:name) OR c.subdomain = :subdomain)")
-    List<Long> findPendingIdsByNameOrSubdomain(@Param("name") String name, @Param("subdomain") String subdomain);
+            "(LOWER(c.name) = LOWER(:name) OR c.slug = :slug)")
+    List<Long> findPendingIdsByNameOrSlug(@Param("name") String name, @Param("slug") String slug);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Clinic c WHERE c.id = :id")

@@ -2,25 +2,32 @@ package com.example.scheduler.config.tenant;
 
 public class TenantContext {
     private static final String CLINIC_SCHEMA_PREFIX = "clinic_";
-    private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();
+    private static final ThreadLocal<Tenant> CURRENT_TENANT = new ThreadLocal<>();
 
-    public static void setCurrentTenant(String tenantId) {
-        CURRENT_TENANT.set(tenantId);
+    public record Tenant(Long clinicId, String clinicSlug) {}
+
+    public static String schemaName(String clinicSlug) {
+        return CLINIC_SCHEMA_PREFIX + clinicSlug;
     }
 
-    public static String getCurrentTenant() {
+    public static void setCurrentTenant(Long clinicId, String clinicSlug) {
+        CURRENT_TENANT.set(new Tenant(clinicId, clinicSlug));
+    }
+
+    public static Tenant current() {
         return CURRENT_TENANT.get();
     }
 
+    public static String getCurrentTenant() {
+        var tenant = current();
+        return tenant == null ? null : schemaName(tenant.clinicSlug());
+    }
+
     public static Long getCurrentClinicId() {
-        var tenant = getCurrentTenant();
-        if (tenant == null || !tenant.startsWith(CLINIC_SCHEMA_PREFIX))
+        var tenant = current();
+        if (tenant == null)
             throw new IllegalStateException("No clinic tenant bound");
-        try {
-            return Long.valueOf(tenant.substring(CLINIC_SCHEMA_PREFIX.length()));
-        } catch (NumberFormatException e) {
-            throw new IllegalStateException("No clinic tenant bound", e);
-        }
+        return tenant.clinicId();
     }
 
     public static void clear() {

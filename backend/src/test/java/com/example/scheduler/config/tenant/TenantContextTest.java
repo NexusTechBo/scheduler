@@ -14,17 +14,15 @@ class TenantContextTest {
     }
 
     @Test
-    void parsesClinicIdFromTenantSchema() {
-        TenantContext.setCurrentTenant("clinic_42");
+    void bindsClinicIdAndSchemaNamedAfterSlug() {
+        TenantContext.setCurrentTenant(42L, "clinicasur");
         assertThat(TenantContext.getCurrentClinicId()).isEqualTo(42L);
+        assertThat(TenantContext.getCurrentTenant()).isEqualTo("clinic_clinicasur");
     }
 
     @Test
     void throwsWhenNoClinicTenantIsBound() {
         assertThatThrownBy(TenantContext::getCurrentClinicId).isInstanceOf(IllegalStateException.class);
-        TenantContext.setCurrentTenant("public");
-        assertThatThrownBy(TenantContext::getCurrentClinicId).isInstanceOf(IllegalStateException.class);
-        TenantContext.setCurrentTenant("clinic_abc");
-        assertThatThrownBy(TenantContext::getCurrentClinicId).isInstanceOf(IllegalStateException.class);
+        assertThat(TenantContext.getCurrentTenant()).isNull();
     }
 }

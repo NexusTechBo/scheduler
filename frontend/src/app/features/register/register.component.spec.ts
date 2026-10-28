@@ -26,7 +26,7 @@ describe('RegisterComponent', () => {
 
     fixture.debugElement.injector.get(RegisterService).register({
       name: 'Clínica Central',
-      subdomain: 'central',
+      slug: 'central',
       phoneNumber: '70000000',
       adminName: 'Ana Pérez',
       adminUsername: 'ana',
@@ -38,8 +38,8 @@ describe('RegisterComponent', () => {
       id: 1,
       name: 'Clínica Central',
       phoneNumber: '70000000',
-      subdomain: 'central',
-      adminUsername: 'ana@central',
+      slug: 'central',
+      adminUsername: 'ana@central.com',
       adminEmail: 'ana@central.com',
     });
     fixture.detectChanges();

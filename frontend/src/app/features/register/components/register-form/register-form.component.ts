@@ -27,7 +27,7 @@ export class RegisterFormComponent {
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', notBlank],
-    subdomain: ['', [Validators.required, Validators.pattern(/^[a-z0-9]{3,50}$/)]],
+    slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9]{3,50}$/)]],
     phoneNumber: ['', [notBlank, phoneValidator]],
     adminName: ['', notBlank],
     adminCi: ['', [notBlank, ciValidator]],
@@ -37,14 +37,14 @@ export class RegisterFormComponent {
   });
 
   protected readonly suffix = toSignal(
-    this.form.controls.subdomain.valueChanges.pipe(
-      map((value) => (this.form.controls.subdomain.valid ? value : '')),
+    this.form.controls.slug.valueChanges.pipe(
+      map((value) => (this.form.controls.slug.valid ? value : '')),
     ),
     { initialValue: '' },
   );
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
-  protected readonly subdomainErrors = {
+  protected readonly slugErrors = {
     pattern: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
   };
   protected readonly usernameErrors = USERNAME_ERRORS;

@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 class ClinicServiceImplTest {
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 23, 10, 0);
-    private static final String SUBDOMAIN = "@clinicasur.com";
+    private static final String SLUG = "clinicasur";
 
     private ClinicRepository clinicRepository;
     private PersonalRepository personalRepository;
@@ -95,35 +95,35 @@ class ClinicServiceImplTest {
         var saved = ArgumentCaptor.forClass(Clinic.class);
         verify(clinicRepository).save(saved.capture());
         assertThat(saved.getValue().getStatus()).isEqualTo(ClinicStatus.PENDING_ACTIVATION);
-        verify(schemaProvisioningService).createTenantSchema("clinic_10");
+        verify(schemaProvisioningService).createTenantSchema("clinic_" + SLUG);
         // The admin gets the activation email instead of the credentials email (no StaffCreatedEvent publisher here).
         verify(clinicActivationService).issueActivationToken(saved.getValue(), "Ana", "ana@mail.com");
-        assertThat(response.adminUsername()).isEqualTo("admin" + SUBDOMAIN);
+        assertThat(response.adminUsername()).isEqualTo("admin@" + SLUG + ".com");
         assertThat(TenantContext.getCurrentTenant()).isNull();
     }
 
     @Test
     void abandonedPendingClinicsAreRemovedAndRegistrationProceeds() {
         var byName = pendingClinic(7L);
-        var bySubdomain = pendingClinic(8L);
-        when(clinicRepository.findPendingIdsByNameOrSubdomain("Clínica Sur", SUBDOMAIN)).thenReturn(List.of(7L, 8L));
+        var bySlug = pendingClinic(8L);
+        when(clinicRepository.findPendingIdsByNameOrSlug("Clínica Sur", SLUG)).thenReturn(List.of(7L, 8L));
         when(clinicRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(byName));
-        when(clinicRepository.findByIdForUpdate(8L)).thenReturn(Optional.of(bySubdomain));
+        when(clinicRepository.findByIdForUpdate(8L)).thenReturn(Optional.of(bySlug));
         when(tokenRepository.existsByClinicId(any())).thenReturn(true);
         when(tokenRepository.existsByClinicIdAndUsedAtIsNullAndExpiresAtAfter(any(), eq(NOW))).thenReturn(false);
 
         service.createClinic(request());
 
         verify(clinicRepository).delete(byName);
-        verify(clinicRepository).delete(bySubdomain);
-        verify(schemaProvisioningService).dropTenantSchema("clinic_7");
-        verify(schemaProvisioningService).dropTenantSchema("clinic_8");
-        verify(schemaProvisioningService).createTenantSchema("clinic_10");
+        verify(clinicRepository).delete(bySlug);
+        verify(schemaProvisioningService).dropTenantSchema("clinic_pending7");
+        verify(schemaProvisioningService).dropTenantSchema("clinic_pending8");
+        verify(schemaProvisioningService).createTenantSchema("clinic_" + SLUG);
     }
 
     @Test
     void pendingClinicWithValidTokenKeepsNameTaken() {
-        when(clinicRepository.findPendingIdsByNameOrSubdomain(any(), any())).thenReturn(List.of(7L));
+        when(clinicRepository.findPendingIdsByNameOrSlug(any(), any())).thenReturn(List.of(7L));
         when(clinicRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(pendingClinic(7L)));
         when(tokenRepository.existsByClinicId(7L)).thenReturn(true);
         when(tokenRepository.existsByClinicIdAndUsedAtIsNullAndExpiresAtAfter(7L, NOW)).thenReturn(true);
@@ -138,14 +138,14 @@ class ClinicServiceImplTest {
 
     @Test
     void pendingClinicWithoutTokensIsKeptBecauseItMayBeARegistrationInProgress() {
-        when(clinicRepository.findPendingIdsByNameOrSubdomain(any(), any())).thenReturn(List.of(7L));
+        when(clinicRepository.findPendingIdsByNameOrSlug(any(), any())).thenReturn(List.of(7L));
         when(clinicRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(pendingClinic(7L)));
         when(tokenRepository.existsByClinicId(7L)).thenReturn(false);
-        when(clinicRepository.existsBySubdomain(SUBDOMAIN)).thenReturn(true);
+        when(clinicRepository.existsBySlug(SLUG)).thenReturn(true);
 
         assertThatThrownBy(() -> service.createClinic(request()))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("clinic.subdomainTaken");
+                .hasMessage("clinic.slugTaken");
         verify(clinicRepository, never()).delete(any());
         verify(schemaProvisioningService, never()).dropTenantSchema(any());
     }
@@ -153,11 +153,11 @@ class ClinicServiceImplTest {
     @Test
     void failedRemovalIsSkippedAndNormalConflictCheckRuns() {
         var abandoned = pendingClinic(7L);
-        when(clinicRepository.findPendingIdsByNameOrSubdomain(any(), any())).thenReturn(List.of(7L));
+        when(clinicRepository.findPendingIdsByNameOrSlug(any(), any())).thenReturn(List.of(7L));
         when(clinicRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(abandoned));
         when(tokenRepository.existsByClinicId(7L)).thenReturn(true);
         when(tokenRepository.existsByClinicIdAndUsedAtIsNullAndExpiresAtAfter(7L, NOW)).thenReturn(false);
-        doThrow(new IllegalStateException("drop failed")).when(schemaProvisioningService).dropTenantSchema("clinic_7");
+        doThrow(new IllegalStateException("drop failed")).when(schemaProvisioningService).dropTenantSchema("clinic_pending7");
         when(clinicRepository.existsByNameIgnoreCase("Clínica Sur")).thenReturn(true);
 
         assertThatThrownBy(() -> service.createClinic(request()))
@@ -168,13 +168,13 @@ class ClinicServiceImplTest {
     }
 
     @Test
-    void activeClinicKeepsSubdomainTaken() {
-        when(clinicRepository.findPendingIdsByNameOrSubdomain(any(), any())).thenReturn(List.of());
-        when(clinicRepository.existsBySubdomain(SUBDOMAIN)).thenReturn(true);
+    void activeClinicKeepsSlugTaken() {
+        when(clinicRepository.findPendingIdsByNameOrSlug(any(), any())).thenReturn(List.of());
+        when(clinicRepository.existsBySlug(SLUG)).thenReturn(true);
 
         assertThatThrownBy(() -> service.createClinic(request()))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("clinic.subdomainTaken");
+                .hasMessage("clinic.slugTaken");
         verify(clinicRepository, never()).delete(any());
         verify(schemaProvisioningService, never()).dropTenantSchema(any());
     }
@@ -183,7 +183,7 @@ class ClinicServiceImplTest {
     void clinicActivatedWhileWaitingForLockIsKept() {
         var activated = pendingClinic(7L);
         activated.setStatus(ClinicStatus.ACTIVE);
-        when(clinicRepository.findPendingIdsByNameOrSubdomain(any(), any())).thenReturn(List.of(7L));
+        when(clinicRepository.findPendingIdsByNameOrSlug(any(), any())).thenReturn(List.of(7L));
         when(clinicRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(activated));
         when(clinicRepository.existsByNameIgnoreCase("Clínica Sur")).thenReturn(true);
 
@@ -193,7 +193,7 @@ class ClinicServiceImplTest {
     }
 
     private static Clinic pendingClinic(Long id) {
-        return Clinic.builder().id(id).name("Clínica Sur").status(ClinicStatus.PENDING_ACTIVATION).build();
+        return Clinic.builder().id(id).name("Clínica Sur").slug("pending" + id).status(ClinicStatus.PENDING_ACTIVATION).build();
     }
 
     private static ClinicRequest request() {

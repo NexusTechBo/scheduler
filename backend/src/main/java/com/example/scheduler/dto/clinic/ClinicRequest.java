@@ -12,8 +12,8 @@ public record ClinicRequest(
         @Pattern(regexp = "^[^\\p{Cntrl}]*$", message = "{validation.noControlChars}")
         String name,
         @NotNull
-        @Pattern(regexp = "^[a-z0-9]{3,50}$", message = "{validation.subdomain.pattern}")
-        String subdomain,
+        @Pattern(regexp = "^[a-z0-9]{3,50}$", message = "{validation.slug.pattern}")
+        String slug,
         @NotBlank
         String phoneNumber,
         @NotBlank

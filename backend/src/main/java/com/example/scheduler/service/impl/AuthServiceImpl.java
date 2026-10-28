@@ -35,12 +35,12 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
         var username = request.username().toLowerCase(Locale.ROOT);
         var at = username.lastIndexOf('@');
-        if (at < 0)
+        if (at < 0 || !username.endsWith(".com"))
             throw new BadRequestException("auth.invalidCredentials");
-        var clinic = clinicRepository.findBySubdomain(username.substring(at))
+        var clinic = clinicRepository.findBySlug(username.substring(at + 1, username.length() - ".com".length()))
                 .orElseThrow(() -> new UnauthorizedException("auth.invalidCredentials"));
         try {
-            TenantContext.setCurrentTenant("clinic_" + clinic.getId());
+            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
             var personal = personalRepository.findByUsername(username)
                     .orElseThrow(() -> new UnauthorizedException("auth.invalidCredentials"));
             if (!personal.isActive())

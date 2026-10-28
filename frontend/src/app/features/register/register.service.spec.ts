@@ -8,7 +8,7 @@ import { RegisterService } from './register.service';
 
 const REQUEST: ClinicRequest = {
   name: 'Clínica Central',
-  subdomain: 'central',
+  slug: 'central',
   phoneNumber: '70000000',
   adminName: 'Ana Pérez',
   adminUsername: 'ana',
@@ -56,7 +56,7 @@ describe('RegisterService', () => {
       id: 1,
       name: REQUEST.name,
       phoneNumber: REQUEST.phoneNumber,
-      subdomain: REQUEST.subdomain,
+      slug: REQUEST.slug,
       adminUsername: 'ana@central.com',
       adminEmail: REQUEST.adminEmail,
     });

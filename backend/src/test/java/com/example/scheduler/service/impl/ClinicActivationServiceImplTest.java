@@ -74,6 +74,8 @@ class ClinicActivationServiceImplTest {
 
         clinic = Clinic.builder().id(5L).name("Clínica Sur").status(ClinicStatus.PENDING_ACTIVATION).build();
         when(clinicRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(clinic));
+        when(clinicRepository.findSlugById(5L)).thenReturn(Optional.of("clinicasur"));
+        when(clinicRepository.findSlugById(4L)).thenReturn(Optional.of("clinicanorte"));
         when(personalRepository.findFirstByRoleOrderByIdAsc(ERole.ADMINISTRATOR)).thenReturn(Optional.of(
                 Personal.builder().id(1L).name("Ana").username("ana@clinicasur.com").role(ERole.ADMINISTRATOR).build()));
     }
@@ -105,19 +107,19 @@ class ClinicActivationServiceImplTest {
         assertThat(clinic.getActivatedAt()).isEqualTo(NOW);
         verify(tokenRepository).markUnusedAsUsedByClinicId(5L, NOW);
         assertThat(captureEvent(ClinicActivatedEvent.class).adminEmail()).isEqualTo("ana@mail.com");
-        assertThat(tenantsAtTransactionStart).containsExactly("clinic_5");
+        assertThat(tenantsAtTransactionStart).containsExactly("clinic_clinicasur");
         assertThat(TenantContext.getCurrentTenant()).isNull();
     }
 
     @Test
     void activationRestoresPreviouslyBoundTenant() {
-        TenantContext.setCurrentTenant("clinic_99");
+        TenantContext.setCurrentTenant(99L, "otra");
         givenToken(token(null, NOW.plusHours(1)));
 
         service.activateClinic(new ActivateClinicRequest(TOKEN));
 
-        assertThat(tenantsAtTransactionStart).containsExactly("clinic_5");
-        assertThat(TenantContext.getCurrentTenant()).isEqualTo("clinic_99");
+        assertThat(tenantsAtTransactionStart).containsExactly("clinic_clinicasur");
+        assertThat(TenantContext.getCurrentTenant()).isEqualTo("clinic_otra");
     }
 
     @Test
@@ -130,7 +132,7 @@ class ClinicActivationServiceImplTest {
 
         service.resendActivation(new ResendActivationRequest("ana@mail.com"));
 
-        assertThat(tenantsAtTransactionStart).containsExactly("clinic_4", "clinic_5");
+        assertThat(tenantsAtTransactionStart).containsExactly("clinic_clinicanorte", "clinic_clinicasur");
         verify(tokenRepository).save(any(ClinicActivationToken.class));
         assertThat(captureEvent(ClinicActivationEvent.class).clinicId()).isEqualTo(5L);
         assertThat(TenantContext.getCurrentTenant()).isNull();

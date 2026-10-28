@@ -22,11 +22,9 @@ public class ClinicActivationToken {
     @JoinColumn(name = "clinic_id", updatable = false)
     private Clinic clinic;
 
-    /** SHA-256 hex of the token sent by email; the plain token is never stored. */
     @Column(nullable = false, unique = true, updatable = false, length = 64)
     private String tokenHash;
 
-    /** Administrator email, kept here because the administrator lives in the tenant schema. */
     @Column(nullable = false, updatable = false)
     private String email;
 

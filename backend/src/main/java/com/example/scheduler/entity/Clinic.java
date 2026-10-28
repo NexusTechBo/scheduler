@@ -26,9 +26,8 @@ public class Clinic {
     private String phoneNumber;
 
     @Column(nullable = false, unique = true, updatable = false)
-    private String subdomain;
+    private String slug;
 
-    /** Defaults to ACTIVE (seeded/legacy clinics); self-registered clinics are set to PENDING_ACTIVATION explicitly. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default

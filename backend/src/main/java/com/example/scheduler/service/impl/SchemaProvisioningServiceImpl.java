@@ -1,5 +1,6 @@
 package com.example.scheduler.service.impl;
 
+import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.service.SchemaProvisioningService;
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.Flyway;
@@ -21,8 +22,8 @@ public class SchemaProvisioningServiceImpl implements SchemaProvisioningService,
 
     @Override
     public void run(@NonNull ApplicationArguments args) {
-        jdbcTemplate.queryForList("SELECT id FROM clinics", Long.class)
-                .forEach(id -> createTenantSchema("clinic_" + id));
+        jdbcTemplate.queryForList("SELECT slug FROM clinics", String.class)
+                .forEach(slug -> createTenantSchema(TenantContext.schemaName(slug)));
     }
 
     @Override
@@ -44,7 +45,7 @@ public class SchemaProvisioningServiceImpl implements SchemaProvisioningService,
     }
 
     private void validateSchemaName(String schemaName) {
-        if (schemaName == null || !schemaName.matches("^clinic_\\d+$"))
+        if (schemaName == null || !schemaName.matches("^clinic_[a-z0-9]{3,50}$"))
             throw new IllegalArgumentException("Invalid tenant schema name: " + schemaName);
     }
 }

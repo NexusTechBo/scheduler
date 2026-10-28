@@ -28,7 +28,7 @@ public class JwtUtil {
                 .claim("role", role)
                 .claim("clinicId", clinic.getId())
                 .claim("clinicName", clinic.getName())
-                .claim("clinicSubdomain", clinic.getSubdomain())
+                .claim("clinicSlug", clinic.getSlug())
                 .claim("username", userName)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 86_400_000L))

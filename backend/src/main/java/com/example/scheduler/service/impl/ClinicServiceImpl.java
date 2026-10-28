@@ -14,6 +14,7 @@ import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.service.ClinicActivationService;
 import com.example.scheduler.service.ClinicService;
 import com.example.scheduler.service.SchemaProvisioningService;
+import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,28 +41,28 @@ public class ClinicServiceImpl implements ClinicService {
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
-        var subdomain = "@" + request.subdomain() + ".com";
+        var slug = request.slug();
         var tx = new TransactionTemplate(transactionManager);
-        removeAbandonedClinics(request.name().strip(), subdomain, tx);
+        removeAbandonedClinics(request.name().strip(), slug, tx);
         if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
             throw new BusinessException("clinic.alreadyExists");
-        if (clinicRepository.existsBySubdomain(subdomain))
-            throw new BusinessException("clinic.subdomainTaken", subdomain);
+        if (clinicRepository.existsBySlug(slug))
+            throw new BusinessException("clinic.slugTaken", slug);
         var clinic = tx.execute(_ ->
             clinicRepository.save(Clinic.builder()
                     .name(request.name())
                     .phoneNumber(request.phoneNumber())
-                    .subdomain(subdomain)
+                    .slug(slug)
                     .status(ClinicStatus.PENDING_ACTIVATION)
                     .build())
         );
-        var schemaName = "clinic_" + clinic.getId();
+        var schemaName = TenantContext.schemaName(clinic.getSlug());
         schemaProvisioningService.createTenantSchema(schemaName);
         try {
-            TenantContext.setCurrentTenant(schemaName);
+            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
             return tx.execute(_ -> {
                 var admin = personalRepository.save(Personal.builder()
-                        .username(request.adminUsername() + subdomain)
+                        .username(request.adminUsername() + Utils.usernameSuffix(clinic.getSlug()))
                         .name(request.adminName())
                         .password(passwordEncoder.encode(request.adminPassword()))
                         .email(request.adminEmail())
@@ -73,7 +74,7 @@ public class ClinicServiceImpl implements ClinicService {
                         clinic.getId(),
                         clinic.getName(),
                         clinic.getPhoneNumber(),
-                        clinic.getSubdomain(),
+                        clinic.getSlug(),
                         admin.getId(),
                         admin.getUsername(),
                         admin.getEmail());
@@ -83,15 +84,15 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    private void removeAbandonedClinics(String name, String subdomain, TransactionTemplate tx) {
-        for (var clinicId : clinicRepository.findPendingIdsByNameOrSubdomain(name, subdomain)) {
+    private void removeAbandonedClinics(String name, String slug, TransactionTemplate tx) {
+        for (var clinicId : clinicRepository.findPendingIdsByNameOrSlug(name, slug)) {
             try {
                 var removed = tx.execute(_ -> clinicRepository.findByIdForUpdate(clinicId)
                         .filter(this::isAbandoned)
                         .map(this::removeAbandonedClinic)
                         .orElse(false));
                 if (Boolean.TRUE.equals(removed))
-                    log.info("Abandoned pending clinic {} removed to free name/subdomain", clinicId);
+                    log.info("Abandoned pending clinic {} removed to free name/slug", clinicId);
             } catch (RuntimeException e) {
                 log.warn("Could not remove abandoned clinic {}", clinicId, e);
             }
@@ -108,7 +109,7 @@ public class ClinicServiceImpl implements ClinicService {
     private boolean removeAbandonedClinic(Clinic clinic) {
         clinicRepository.delete(clinic);
         clinicRepository.flush();
-        schemaProvisioningService.dropTenantSchema("clinic_" + clinic.getId());
+        schemaProvisioningService.dropTenantSchema(TenantContext.schemaName(clinic.getSlug()));
         return true;
     }
 }

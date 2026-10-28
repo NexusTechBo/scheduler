@@ -4,7 +4,7 @@ public record ClinicCreatedResponse(
         Long id,
         String name,
         String phoneNumber,
-        String subdomain,
+        String slug,
         Long adminPersonalId,
         String adminUsername,
         String adminEmail
