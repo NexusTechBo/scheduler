@@ -59,11 +59,15 @@ export class PatientsPageComponent {
   }
 
   protected openForm(patient?: Patient): void {
-    this.dialog.open<void, PatientFormData>(PatientFormDialogComponent, {
-      ...labelledByFrame(),
-      data: { patient },
-      injector: this.injector,
-    });
+    this.dialog
+      .open<Patient, PatientFormData>(PatientFormDialogComponent, {
+        ...labelledByFrame(),
+        data: { patient },
+        injector: this.injector,
+      })
+      .closed.subscribe((saved) => {
+        if (saved) this.patients.reload();
+      });
   }
 
   protected manageDoctors(patient: Patient): void {

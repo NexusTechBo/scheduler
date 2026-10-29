@@ -13,7 +13,7 @@ import {
   notBlank,
   phoneValidator,
 } from '../../../../shared/utils/validation-messages.util';
-import { PatientsService } from '../../patients.service';
+import { PatientSaveService } from '../../patient-save.service';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 export interface PatientFormData {
@@ -27,8 +27,8 @@ export interface PatientFormData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PatientFormDialogComponent {
-  private readonly patients = inject(PatientsService);
-  protected readonly ref = inject(DialogRef);
+  private readonly patients = inject(PatientSaveService);
+  protected readonly ref = inject<DialogRef<Patient>>(DialogRef);
   protected readonly patient = inject<PatientFormData>(DIALOG_DATA).patient;
 
   protected readonly ciErrors = CI_ERRORS;
@@ -61,7 +61,7 @@ export class PatientFormDialogComponent {
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
-        next: () => this.ref.close(),
+        next: (saved) => this.ref.close(saved),
         error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo guardar el paciente')),
       });
   }
