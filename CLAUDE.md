@@ -9,7 +9,7 @@ scheduler/
 ├── backend/        Spring Boot REST API (Gradle)
 ├── frontend/       Angular SPA (npm)
 ├── render.yaml     Render deployment (both services as Docker)
-├── .githooks/      git hooks (pre-commit: Prettier check); enable with `git config core.hooksPath .githooks`
+├── .githooks/      git hooks (pre-commit.js: Prettier check); enable with `git config core.hooksPath .githooks`
 └── .claude/        project skills, agents and hooks (settings.json + hooks/*.js)
 ```
 

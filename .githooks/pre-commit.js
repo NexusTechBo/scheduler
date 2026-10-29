@@ -1,6 +1,3 @@
-#!/usr/bin/env node
-// Git pre-commit hook: rejects the commit when staged frontend files are not Prettier-formatted.
-// Enable it once per clone with: git config core.hooksPath .githooks
 const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
@@ -19,7 +16,7 @@ const staged = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-f
 if (staged.length === 0) process.exit(0);
 
 if (!fs.existsSync(prettier)) {
-  console.error('pre-commit: Prettier is not installed. Run "npm install" in frontend/ first.');
+  console.error('pre-commit.js: Prettier is not installed. Run "npm install" in frontend/ first.');
   process.exit(1);
 }
 
@@ -30,7 +27,7 @@ const result = spawnSync(
 );
 
 if (result.status !== 0) {
-  console.error('\npre-commit: some staged frontend files are not formatted.');
+  console.error('\npre-commit.js: some staged frontend files are not formatted.');
   console.error('Run "npm run format" in frontend/, review the changes, stage them and commit again.');
   process.exit(1);
 }
