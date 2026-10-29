@@ -1,9 +1,7 @@
 package com.example.scheduler.config;
 
-import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ErrorResponse;
 import com.example.scheduler.middleware.JwtAuthFilter;
-import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
