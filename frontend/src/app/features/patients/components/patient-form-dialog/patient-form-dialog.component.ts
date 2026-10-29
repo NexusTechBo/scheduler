@@ -1,10 +1,9 @@
-import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { Patient } from '../../../../core/models/api.models';
-import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import {
@@ -14,7 +13,8 @@ import {
   notBlank,
   phoneValidator,
 } from '../../../../shared/utils/validation-messages.util';
-import { PatientsService } from '../../patients.service';
+import { PatientSaveService } from '../../../../shared/services/patient-save.service';
+import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 export interface PatientFormData {
   patient?: Patient;
@@ -27,8 +27,8 @@ export interface PatientFormData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PatientFormDialogComponent {
-  private readonly patients = inject(PatientsService);
-  protected readonly ref = inject(DialogRef);
+  private readonly patients = inject(PatientSaveService);
+  protected readonly ref = inject<DialogRef<Patient>>(DialogRef);
   protected readonly patient = inject<PatientFormData>(DIALOG_DATA).patient;
 
   protected readonly ciErrors = CI_ERRORS;
@@ -61,7 +61,7 @@ export class PatientFormDialogComponent {
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
-        next: () => this.ref.close(),
+        next: (saved) => this.ref.close(saved),
         error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo guardar el paciente')),
       });
   }

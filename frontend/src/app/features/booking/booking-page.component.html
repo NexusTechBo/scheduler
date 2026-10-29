@@ -35,18 +35,24 @@
           </button>
         </div>
       } @else {
-        <div class="relative mb-3">
-          <app-ui-icon
-            name="search"
-            class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            class="field-input pl-10"
-            placeholder="Buscar por nombre o email"
-            aria-label="Buscar paciente"
-            [ngModel]="booking.patientSearch()"
-            (ngModelChange)="booking.setPatientSearch($event)"
-          />
+        <div class="mb-3 flex flex-col gap-2 sm:flex-row">
+          <div class="relative flex-1">
+            <app-ui-icon
+              name="search"
+              class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              class="field-input pl-10"
+              placeholder="Buscar por nombre o email"
+              aria-label="Buscar paciente"
+              [ngModel]="booking.patientSearch()"
+              (ngModelChange)="booking.setPatientSearch($event)"
+            />
+          </div>
+          <button type="button" class="btn btn-primary shrink-0" (click)="registerPatient()">
+            <app-ui-icon name="plus" class="h-4 w-4" />
+            Registrar paciente
+          </button>
         </div>
         <div class="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
           @if (booking.patientsLoading()) {
@@ -84,8 +90,7 @@
                     ? 'No hay pacientes que coincidan.'
                     : 'Aún no hay pacientes registrados.'
                 }}
-                Puedes registrarlos en
-                <a routerLink="/patients" class="font-semibold text-primary">Pacientes</a>.
+                Usa «Registrar paciente» para añadir uno nuevo.
               </p>
             }
           }

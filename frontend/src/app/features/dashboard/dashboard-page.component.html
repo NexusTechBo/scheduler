@@ -25,7 +25,7 @@
   </div>
 
   <div class="grid grid-cols-1 gap-5 xl:grid-cols-[1.4fr_1fr]">
-    <section class="glass-panel flex min-w-0 min-h-88 flex-col rounded-3xl p-6">
+    <section class="glass-panel flex min-w-0 min-h-72 flex-col rounded-3xl p-6">
       <div class="mb-4 flex items-center justify-between gap-3">
         <div>
           <h2 class="text-xl font-extrabold text-gray-900">Agenda de hoy</h2>
@@ -59,27 +59,92 @@
       }
     </section>
 
-    <section class="glass-panel min-w-0 rounded-3xl p-6">
-      <h2 class="mb-4 text-xl font-extrabold text-gray-900">Accesos rápidos</h2>
-      <div class="space-y-2.5">
-        @for (link of dashboard.quickLinks; track link.route) {
-          <a
-            [routerLink]="link.route"
-            class="flex items-center gap-3.5 rounded-2xl bg-white/50 px-4 py-3.5 transition-all hover:-translate-y-px hover:bg-white/85 hover:shadow-md"
-          >
-            <span
-              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
-            >
-              <app-ui-icon [name]="link.icon" class="h-5 w-5" />
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="block text-[15px] font-bold text-gray-900">{{ link.label }}</span>
-              <span class="block truncate text-sm text-gray-500">{{ link.description }}</span>
-            </span>
-            <app-ui-icon name="chevronRight" class="h-4 w-4 text-gray-400" />
-          </a>
+    <section class="glass-panel flex min-w-0 flex-col rounded-3xl p-6">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-extrabold text-gray-900">Por confirmar</h2>
+          <p class="text-sm font-medium text-gray-500">
+            @if (dashboard.pendingCount(); as count) {
+              {{ count }}
+              {{ count === 1 ? 'próxima cita sin confirmar' : 'próximas citas sin confirmar' }}
+            } @else {
+              Próximas citas pendientes de la semana
+            }
+          </p>
+        </div>
+        @if (dashboard.pendingCount() > dashboard.pendingToConfirm().length) {
+          <a routerLink="/board" class="btn btn-secondary btn-sm">Ver todas</a>
         }
       </div>
+
+      @if (dashboard.isWeekLoading()) {
+        <div class="flex flex-col gap-2.5">
+          <app-skeleton [rows]="3" heightClass="h-16" />
+        </div>
+      } @else if (dashboard.weekErrorMessage()) {
+        <app-load-error [message]="dashboard.weekErrorMessage()!" (retry)="dashboard.reload()" />
+      } @else {
+        <ul class="flex flex-1 flex-col gap-2.5">
+          @for (item of dashboard.pendingToConfirm(); track item.appointment.id) {
+            @let appointment = item.appointment;
+            <li class="flex items-center gap-3 rounded-2xl bg-white/50 px-4 py-3">
+              <button
+                type="button"
+                class="min-w-0 flex-1 cursor-pointer text-left"
+                (click)="dashboard.open(appointment)"
+              >
+                <span class="block truncate text-[15px] font-bold text-gray-900">{{
+                  appointment.clientName
+                }}</span>
+                <span class="block truncate text-[13px] font-medium text-gray-500">
+                  {{ item.dayLabel }} · {{ appointment | timeRange }} · {{ appointment.doctorName }}
+                </span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-icon btn-ghost text-primary"
+                [attr.aria-label]="'Confirmar cita de ' + appointment.clientName"
+                title="Confirmar"
+                (click)="dashboard.confirm(appointment)"
+              >
+                <app-ui-icon name="check" class="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                class="btn btn-icon btn-ghost text-gray-500"
+                [attr.aria-label]="'Cancelar cita de ' + appointment.clientName"
+                title="Cancelar"
+                (click)="dashboard.cancel(appointment)"
+              >
+                <app-ui-icon name="block" class="h-4 w-4" />
+              </button>
+            </li>
+          } @empty {
+            <app-empty-state
+              class="flex-1"
+              icon="check"
+              title="Todo confirmado"
+              message="No hay citas pendientes de confirmar esta semana."
+            />
+          }
+        </ul>
+      }
     </section>
   </div>
+
+  <section class="glass-panel mt-5 min-w-0 rounded-3xl p-6">
+    <div class="mb-4">
+      <h2 class="text-xl font-extrabold text-gray-900">Citas de la semana</h2>
+      <p class="text-sm font-medium text-gray-500">
+        {{ dashboard.weekTotal() }} {{ dashboard.weekTotal() === 1 ? 'cita' : 'citas' }} por día y
+        estado
+      </p>
+    </div>
+
+    @if (dashboard.isWeekLoading()) {
+      <app-skeleton heightClass="h-48" />
+    } @else if (!dashboard.weekErrorMessage()) {
+      <app-week-chart class="h-48" [days]="dashboard.weekDays()" />
+    }
+  </section>
 </div>

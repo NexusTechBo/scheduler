@@ -6,8 +6,14 @@ import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentSummaryItem, Role } from '../../core/models/api.models';
-import { HOME_URL, navItemsFor } from '../../core/navigation/navigation';
-import { addDays, startOfWeek, toIso } from '../../core/utils/calendar.util';
+import {
+  addDays,
+  formatShortDate,
+  formatWeekdayShort,
+  startOfWeek,
+  toIso,
+  toLocalDateTime,
+} from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
 import { UiIconName } from '../../shared/ui/ui-icon/ui-icon.component';
 
@@ -18,6 +24,19 @@ interface Kpi {
   tone: string;
 }
 
+export interface WeekDayStats {
+  iso: string;
+  weekday: string;
+  day: number;
+  isToday: boolean;
+  confirmed: number;
+  pending: number;
+  cancelled: number;
+  total: number;
+}
+
+const PENDING_LIMIT = 6;
+
 @Injectable()
 export class DashboardService {
   private readonly appointmentsApi = inject(AppointmentsApi);
@@ -26,8 +45,6 @@ export class DashboardService {
   private readonly role = inject(AuthService).role();
   private readonly today = toIso(new Date());
   private readonly weekStart = startOfWeek(new Date());
-
-  readonly quickLinks = navItemsFor(this.role).filter((item) => item.route !== HOME_URL);
 
   private readonly weekResource = rxResource({
     loader: () =>
@@ -56,6 +73,53 @@ export class DashboardService {
       .filter((appointment) => appointment.appointmentDate === this.today)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   });
+
+  /** Upcoming appointments of the week still waiting for confirmation, soonest first. */
+  private readonly upcomingPending = computed<AppointmentSummaryItem[]>(() => {
+    const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
+    if (!board) return [];
+    return board.PENDING.filter((appointment) => appointment.appointmentDate >= this.today).sort(
+      (a, b) =>
+        a.appointmentDate.localeCompare(b.appointmentDate) ||
+        a.startTime.localeCompare(b.startTime),
+    );
+  });
+  readonly pendingCount = computed(() => this.upcomingPending().length);
+  readonly pendingToConfirm = computed(() =>
+    this.upcomingPending()
+      .slice(0, PENDING_LIMIT)
+      .map((appointment) => ({
+        appointment,
+        dayLabel:
+          appointment.appointmentDate === this.today
+            ? 'Hoy'
+            : formatShortDate(appointment.appointmentDate),
+      })),
+  );
+
+  readonly weekDays = computed<WeekDayStats[]>(() => {
+    const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(this.weekStart, i);
+      const iso = toIso(date);
+      const count = (items: AppointmentSummaryItem[] | undefined) =>
+        items?.filter((appointment) => appointment.appointmentDate === iso).length ?? 0;
+      const confirmed = count(board?.CONFIRMED);
+      const pending = count(board?.PENDING);
+      const cancelled = count(board?.CANCELLED);
+      return {
+        iso,
+        weekday: formatWeekdayShort(date),
+        day: date.getDate(),
+        isToday: iso === this.today,
+        confirmed,
+        pending,
+        cancelled,
+        total: confirmed + pending + cancelled,
+      };
+    });
+  });
+  readonly weekTotal = computed(() => this.weekDays().reduce((sum, day) => sum + day.total, 0));
 
   readonly kpis = computed<Kpi[]>(() => {
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
@@ -86,22 +150,6 @@ export class DashboardService {
         tone: 'bg-gray-900/[0.06] text-gray-500',
       },
     ];
-    if (staff) {
-      kpis.push(
-        {
-          label: 'Doctores activos',
-          value: staff.doctors,
-          icon: 'stethoscope',
-          tone: 'bg-primary/10 text-primary',
-        },
-        {
-          label: 'Asistentes activos',
-          value: staff.assistants,
-          icon: 'staff',
-          tone: 'bg-secondary/10 text-secondary',
-        },
-      );
-    }
     return kpis;
   });
 
@@ -113,9 +161,25 @@ export class DashboardService {
     this.actions.openDetail(appointment.id).subscribe(() => this.reload());
   }
 
+  confirm(appointment: AppointmentSummaryItem): void {
+    this.actions
+      .confirm(appointment.id, appointment.clientName, startOf(appointment))
+      .subscribe(() => this.reload());
+  }
+
+  cancel(appointment: AppointmentSummaryItem): void {
+    this.actions
+      .cancel(appointment.id, appointment.clientName, startOf(appointment))
+      .subscribe(() => this.reload());
+  }
+
   private countActive(role: Role) {
     return this.staffApi
       .list({ role, isActive: true, size: 1 })
       .pipe(map((page) => page.page.totalElements));
   }
+}
+
+function startOf(appointment: AppointmentSummaryItem): string {
+  return toLocalDateTime(appointment.appointmentDate, appointment.startTime);
 }
