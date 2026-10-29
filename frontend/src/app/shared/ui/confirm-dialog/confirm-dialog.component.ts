@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DialogFrameComponent } from '../dialog-frame/dialog-frame.component';
 
 export interface ConfirmOptions {

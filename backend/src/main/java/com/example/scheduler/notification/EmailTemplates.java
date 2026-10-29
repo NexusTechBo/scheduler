@@ -152,7 +152,6 @@ public final class EmailTemplates {
                 """.formatted(body);
     }
 
-    /** Control characters are stripped so user-provided names can't inject line breaks into headers (subject). */
     private static String clinicLabel(String clinicName) {
         var name = clinicName == null ? null : CONTROL_CHARS.matcher(clinicName).replaceAll("").strip();
         return StringUtils.hasText(name) ? name : "la clínica";
@@ -164,6 +163,7 @@ public final class EmailTemplates {
             case ADMINISTRATOR -> "Administrador";
             case DOCTOR -> "Doctor";
             case ASSISTANT -> "Asistente";
+            case GUEST -> "Invitado";
         };
     }
 

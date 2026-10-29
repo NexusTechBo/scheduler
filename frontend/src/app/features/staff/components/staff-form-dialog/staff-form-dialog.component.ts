@@ -1,12 +1,13 @@
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable, filter, finalize, map, startWith, take } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { Role, Staff } from '../../../../core/models/api.models';
 import { ROLE_LABEL } from '../../../../core/utils/labels.util';
+import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
@@ -21,7 +22,6 @@ import {
   usernameValidator,
 } from '../../../../shared/utils/validation-messages.util';
 import { StaffService } from '../../staff.service';
-import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 export interface StaffFormData {
   staff?: Staff;

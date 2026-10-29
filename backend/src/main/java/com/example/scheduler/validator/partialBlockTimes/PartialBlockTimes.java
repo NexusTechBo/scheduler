@@ -22,7 +22,6 @@ public @interface PartialBlockTimes {
 
         @Override
         public boolean isValid(ScheduleExceptionRequest value, ConstraintValidatorContext context) {
-            // A null isFullDayBlock is reported by @NotNull; only an explicit partial block requires times
             if (value == null || !Boolean.FALSE.equals(value.isFullDayBlock())) return true;
             context.disableDefaultConstraintViolation();
             var valid = true;

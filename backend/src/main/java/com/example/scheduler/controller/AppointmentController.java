@@ -99,7 +99,6 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getCalendar(month, year, scopedDoctorId(doctorId, auth), patientId));
     }
 
-    /** A DOCTOR only sees its own appointments, so the doctorId filter is forced to the caller. */
     private static Long scopedDoctorId(Long doctorId, Authentication auth) {
         return ERole.DOCTOR.name().equals(SecurityUtils.extractRole(auth)) ? Long.valueOf(auth.getName()) : doctorId;
     }

@@ -24,7 +24,6 @@ public interface ClinicActivationTokenRepository extends JpaRepository<ClinicAct
 
     boolean existsByClinicId(Long clinicId);
 
-    /** Same rule as {@link ClinicActivationToken#isUsable}: not used and {@code now < expiresAt}. */
     boolean existsByClinicIdAndUsedAtIsNullAndExpiresAtAfter(Long clinicId, LocalDateTime now);
 
     @Query("SELECT DISTINCT t.clinic.id FROM ClinicActivationToken t " +

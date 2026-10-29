@@ -1,22 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import {
-  EMPTY,
-  Observable,
-  catchError,
-  debounceTime,
-  distinctUntilChanged,
-  finalize,
-  map,
-  of,
-  switchMap,
-  tap,
-} from 'rxjs';
+import { EMPTY, Observable, catchError, debounceTime, distinctUntilChanged, map, tap } from 'rxjs';
 import { PatientsApi } from '../../core/api/patients.api';
 import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
-import { Patient, PatientRequest } from '../../core/models/api.models';
+import { Patient } from '../../core/models/api.models';
 import { NotificationService } from '../../shared/services/notification.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
 
@@ -138,29 +127,6 @@ export class PatientsService {
 
   isMine(patient: Patient): boolean {
     return this.mineIds().has(patient.id);
-  }
-
-  save(patient: Patient | undefined, request: PatientRequest): Observable<Patient> {
-    const save$ = patient
-      ? this.patientsApi.update(patient.id, request)
-      : this.patientsApi.create(request);
-    return save$.pipe(
-      switchMap((saved) =>
-        !patient && this.isDoctor
-          ? this.staffApi.assignPatient({ patientId: saved.id, doctorId: this.userId }).pipe(
-              map(() => saved),
-              catchError((error) => {
-                this.notifications.error(
-                  'Paciente creado, pero no se pudo asignar: ' + apiErrorMessage(error),
-                );
-                return of(saved);
-              }),
-            )
-          : of(saved),
-      ),
-      tap(() => this.notifications.success(patient ? 'Paciente actualizado' : 'Paciente creado')),
-      finalize(() => this.reload()),
-    );
   }
 
   deactivate(patient: Patient): Observable<unknown> {

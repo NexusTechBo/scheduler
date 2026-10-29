@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import {
   CI_ERRORS,

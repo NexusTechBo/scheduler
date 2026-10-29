@@ -7,6 +7,7 @@ import com.example.scheduler.entity.Patient;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.*;
 import com.example.scheduler.repository.*;
+import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
@@ -23,8 +24,7 @@ public class FlowScheduleTool {
     private final PatientRepository patientRepository;
     private final PatientMapper patientMapper;
 
-
-    @Tool(description = "Step 1: Return the patient information by its phone number", name = "getPatientByPhoneNumber")
+@Tool(description = "Step 1: Return the patient information by its phone number", name = "getPatientByPhoneNumber")
     public PatientResponse getPatientByPhoneNumber(String phoneNumber){
         return patientMapper.toResponse(getPatientOrThrowByPhoneNumber(phoneNumber));
     }
@@ -47,7 +47,7 @@ public class FlowScheduleTool {
     }
 
     private Patient getPatientOrThrowByPhoneNumber(String phoneNumber) {
-        return patientRepository.findByPhoneNumber(phoneNumber)
+        return patientRepository.findByPhoneNumber(Utils.normalizePhoneNumber(phoneNumber))
                 .orElseThrow(() -> new ResourceNotFoundException("patient.notFoundPhone", phoneNumber));
     }
 }

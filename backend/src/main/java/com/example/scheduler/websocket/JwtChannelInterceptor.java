@@ -1,6 +1,7 @@
 package com.example.scheduler.websocket;
 
 import com.example.scheduler.config.tenant.TenantContext;
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.ActiveUserChecker;
 import com.example.scheduler.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,8 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
             throw new MessageDeliveryException("Missing bearer token");
         var claims = jwtUtil.parse(header.substring(7))
                 .orElseThrow(() -> new MessageDeliveryException("Invalid token"));
+        if (ERole.GUEST.name().equals(claims.get("role", String.class)))
+            throw new MessageDeliveryException("Guests cannot connect");
         var clinicId = claims.get("clinicId", Long.class);
         TenantContext.setCurrentTenant(clinicId, claims.get("clinicSlug", String.class));
         try {

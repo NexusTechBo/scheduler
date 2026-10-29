@@ -1,13 +1,13 @@
-import { Injectable, inject } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
-import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
+import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, catchError, filter, map, switchMap, tap } from 'rxjs';
 import { apiErrorMessage } from '../../core/http/api-error';
-import { NotificationService } from './notification.service';
 import {
   ConfirmDialogComponent,
   ConfirmOptions,
 } from '../ui/confirm-dialog/confirm-dialog.component';
+import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
+import { NotificationService } from './notification.service';
 
 @Injectable({ providedIn: 'root' })
 export class ConfirmService {

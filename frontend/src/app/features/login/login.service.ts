@@ -16,7 +16,6 @@ export class LoginService {
   private readonly _submitting = signal(false);
   private readonly _pendingActivation = signal(false);
   readonly submitting = this._submitting.asReadonly();
-  /** True when the credentials are right but the clinic has not been activated yet. */
   readonly pendingActivation = this._pendingActivation.asReadonly();
 
   login(username: string, password: string): void {
@@ -29,7 +28,6 @@ export class LoginService {
       .subscribe({
         next: () => this.router.navigateByUrl(HOME_URL).finally(),
         error: (error) => {
-          // auth/login only answers 403 for a clinic pending activation.
           if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.Forbidden) {
             this._pendingActivation.set(true);
             return;

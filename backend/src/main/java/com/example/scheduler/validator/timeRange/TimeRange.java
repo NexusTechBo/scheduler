@@ -18,7 +18,6 @@ public @interface TimeRange {
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    // Implemented by the requests annotated with @TimeRange; record accessors satisfy it
     interface Request {
         LocalTime startTime();
         LocalTime endTime();

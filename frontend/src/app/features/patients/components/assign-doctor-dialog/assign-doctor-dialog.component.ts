@@ -1,3 +1,4 @@
+import { DialogRef } from '@angular/cdk/dialog';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,18 +8,17 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import { DialogRef } from '@angular/cdk/dialog';
 import { FormsModule } from '@angular/forms';
 import { Patient } from '../../../../core/models/api.models';
 import { initials } from '../../../../core/utils/labels.util';
 import { SpecialtyLabelPipe, specialtyLabel } from '../../../../shared/pipes/specialty-label.pipe';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
-import { focusAfterLoad } from '../../../../shared/utils/focus-after-load.util';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
 import { LoadErrorComponent } from '../../../../shared/ui/load-error/load-error.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
+import { focusAfterLoad } from '../../../../shared/utils/focus-after-load.util';
 import { AssignDoctorService } from './assign-doctor.service';
 
 export interface AssignDoctorData {

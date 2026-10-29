@@ -25,7 +25,9 @@
             >
             <div class="min-w-0">
               <p class="truncate font-bold text-gray-900">{{ patient.name }}</p>
-              <p class="truncate text-sm text-gray-500">{{ patient.email }}</p>
+              <p class="truncate text-sm text-gray-500">
+                {{ patient.email ?? patient.phoneNumber }}
+              </p>
             </div>
           </div>
           <button type="button" class="btn btn-ghost btn-sm" (click)="booking.selectPatient(null)">
@@ -33,18 +35,24 @@
           </button>
         </div>
       } @else {
-        <div class="relative mb-3">
-          <app-ui-icon
-            name="search"
-            class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            class="field-input pl-10"
-            placeholder="Buscar por nombre o email"
-            aria-label="Buscar paciente"
-            [ngModel]="booking.patientSearch()"
-            (ngModelChange)="booking.setPatientSearch($event)"
-          />
+        <div class="mb-3 flex flex-col gap-2 sm:flex-row">
+          <div class="relative flex-1">
+            <app-ui-icon
+              name="search"
+              class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              class="field-input pl-10"
+              placeholder="Buscar por nombre o email"
+              aria-label="Buscar paciente"
+              [ngModel]="booking.patientSearch()"
+              (ngModelChange)="booking.setPatientSearch($event)"
+            />
+          </div>
+          <button type="button" class="btn btn-primary shrink-0" (click)="registerPatient()">
+            <app-ui-icon name="plus" class="h-4 w-4" />
+            Registrar paciente
+          </button>
         </div>
         <div class="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
           @if (booking.patientsLoading()) {
@@ -69,7 +77,9 @@
                 <span class="block truncate text-sm font-bold text-gray-900">{{
                   patient.name
                 }}</span>
-                <span class="block truncate text-xs text-gray-500">{{ patient.email }}</span>
+                <span class="block truncate text-xs text-gray-500">{{
+                  patient.email ?? patient.phoneNumber
+                }}</span>
               </span>
             </button>
           } @empty {
@@ -80,8 +90,7 @@
                     ? 'No hay pacientes que coincidan.'
                     : 'Aún no hay pacientes registrados.'
                 }}
-                Puedes registrarlos en
-                <a routerLink="/patients" class="font-semibold text-primary">Pacientes</a>.
+                Usa «Registrar paciente» para añadir uno nuevo.
               </p>
             }
           }
@@ -199,25 +208,11 @@
         />
       </div>
 
-      <div class="-mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-2">
-        @for (day of dateStrip(); track day.iso) {
-          <button
-            type="button"
-            class="flex w-16 shrink-0 cursor-pointer flex-col items-center rounded-2xl py-2.5 transition-all"
-            [class]="
-              booking.selectedDate() === day.iso
-                ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                : 'bg-white/50 text-gray-600 hover:bg-white/80'
-            "
-            [attr.aria-pressed]="booking.selectedDate() === day.iso"
-            (click)="booking.selectDate(day.iso)"
-          >
-            <span class="text-[11px] font-bold uppercase">{{ day.weekday }}</span>
-            <span class="text-lg font-extrabold leading-tight">{{ day.day }}</span>
-            <span class="text-[11px] font-semibold opacity-80">{{ day.month }}</span>
-          </button>
-        }
-      </div>
+      <app-date-strip
+        class="mb-5"
+        [selected]="booking.selectedDate()"
+        (select)="booking.selectDate($event)"
+      />
 
       @if (!booking.selectedDoctor()) {
         <app-empty-state
@@ -225,37 +220,16 @@
           title="Elige un doctor"
           message="Te mostraremos sus horarios libres."
         />
-      } @else if (booking.slotsLoading()) {
-        <div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
-          <app-skeleton [rows]="6" heightClass="h-11" />
-        </div>
-      } @else if (booking.slotsErrorMessage()) {
-        <app-load-error [message]="booking.slotsErrorMessage()!" (retry)="booking.reloadSlots()" />
       } @else {
-        <div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
-          @for (slot of booking.slots(); track slot.startTime) {
-            <button
-              type="button"
-              class="cursor-pointer rounded-2xl py-2.5 text-sm font-bold transition-all"
-              [class]="
-                booking.selectedSlot()?.startTime === slot.startTime
-                  ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                  : 'bg-white/60 text-gray-700 hover:bg-white'
-              "
-              [attr.aria-pressed]="booking.selectedSlot()?.startTime === slot.startTime"
-              (click)="booking.selectSlot(slot)"
-            >
-              {{ slot.startTime }}
-            </button>
-          } @empty {
-            <app-empty-state
-              class="col-span-full"
-              icon="clock"
-              title="Sin horarios libres"
-              message="El doctor no atiende o ya no tiene espacios este día. Prueba otra fecha."
-            />
-          }
-        </div>
+        <app-slot-grid
+          [slots]="booking.slots()"
+          [selected]="booking.selectedSlot()"
+          [loading]="booking.slotsLoading()"
+          [errorMessage]="booking.slotsErrorMessage()"
+          emptyMessage="El doctor no atiende o ya no tiene espacios este día. Prueba otra fecha."
+          (select)="booking.selectSlot($event)"
+          (retry)="booking.reloadSlots()"
+        />
       }
     </section>
   </div>

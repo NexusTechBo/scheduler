@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface PatientRepository extends JpaRepository<Patient, Long> {
-    /** An empty {@code search} matches every patient. */
     @Query("SELECT p FROM Patient p WHERE (:isActive IS NULL OR p.active = :isActive) AND (" +
             "LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "p.ci LIKE CONCAT('%', :search, '%') OR " +
@@ -26,7 +25,13 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     boolean existsByCi(String ci);
 
-    boolean existsByEmail(String email);
+    boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
+
+    @Query("SELECT COUNT(p) > 0 FROM Patient p " +
+            "WHERE p.ci = :ci OR p.phoneNumber = :phoneNumber OR LOWER(p.email) = LOWER(:email)")
+    boolean existsByCiOrPhoneNumberOrEmailIgnoreCase(@Param("ci") String ci, @Param("phoneNumber") String phoneNumber, @Param("email") String email);
+
+    Optional<Patient> findByCiAndPhoneNumberAndActiveIsTrue(String ci, String phoneNumber);
 }
