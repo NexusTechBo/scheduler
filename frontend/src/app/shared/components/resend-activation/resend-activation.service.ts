@@ -2,8 +2,8 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription, finalize, interval, take } from 'rxjs';
-import { ClinicsApi } from '../../../../core/api/clinics.api';
-import { apiErrorMessage } from '../../../../core/http/api-error';
+import { ClinicsApi } from '../../../core/api/clinics.api';
+import { apiErrorMessage } from '../../../core/http/api-error';
 
 export const RESEND_COOLDOWN_SECONDS = 60;
 

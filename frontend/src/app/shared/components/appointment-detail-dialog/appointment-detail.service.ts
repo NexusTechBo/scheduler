@@ -2,12 +2,12 @@ import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, finalize, tap } from 'rxjs';
-import { AppointmentsApi } from '../../../../core/api/appointments.api';
-import { canCancelAppointment, canConfirmAppointment } from '../../../../core/auth/permissions';
-import { resourceError } from '../../../../core/http/api-error';
-import { AppointmentResponse } from '../../../../core/models/api.models';
-import { datePart, formatLongDate } from '../../../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../appointment-actions.service';
+import { AppointmentsApi } from '../../../core/api/appointments.api';
+import { canCancelAppointment, canConfirmAppointment } from '../../../core/auth/permissions';
+import { resourceError } from '../../../core/http/api-error';
+import { AppointmentResponse } from '../../../core/models/api.models';
+import { datePart, formatLongDate } from '../../../core/utils/calendar.util';
+import { AppointmentActionsService } from '../../services/appointment-actions.service';
 import type { AppointmentDetailData } from './appointment-detail-dialog.component';
 
 @Injectable()

@@ -8,6 +8,7 @@ import {
   GuestAppointmentResponse,
   GuestClinic,
   GuestDoctor,
+  GuestSessionRequest,
   GuestSessionResponse,
   Specialty,
 } from '../models/api.models';
@@ -16,8 +17,8 @@ import {
 export class GuestApi {
   private readonly http = inject(HttpClient);
 
-  createSession(slug: string): Observable<GuestSessionResponse> {
-    return this.http.post<GuestSessionResponse>('public/guest/session', { slug });
+  createSession(request: GuestSessionRequest): Observable<GuestSessionResponse> {
+    return this.http.post<GuestSessionResponse>('public/guest/session', { request });
   }
 
   clinic(): Observable<GuestClinic> {

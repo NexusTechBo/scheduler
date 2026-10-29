@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { AppointmentSummaryItem } from '../../../../core/models/api.models';
-import { AppointmentListItemComponent } from '../../../../shared/appointments/components/appointment-list-item/appointment-list-item.component';
+import { AppointmentListItemComponent } from '../../../../shared/components/appointment-list-item/appointment-list-item.component';
 import { LoadErrorComponent } from '../../../../shared/ui/load-error/load-error.component';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';

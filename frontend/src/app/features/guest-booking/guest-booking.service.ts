@@ -12,7 +12,10 @@ import {
   TimeSlot,
 } from '../../core/models/api.models';
 import { formatTime, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
-import { GUEST_BOOKING_STEPS, GuestBookingStep } from './guest-booking.model';
+
+const GUEST_BOOKING_STEPS = ['doctor', 'slot', 'patient', 'summary', 'done'] as const;
+
+export type GuestBookingStep = (typeof GUEST_BOOKING_STEPS)[number];
 
 @Injectable()
 export class GuestBookingService {

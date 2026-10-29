@@ -11,10 +11,16 @@ import {
   STATUS_PLURAL_LABEL,
   STATUS_STYLE,
 } from '../../core/utils/labels.util';
-import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
+import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { DateRange } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
-import { BoardColumn } from './board.model';
+
+export interface BoardColumn {
+  id: AppointmentStatus;
+  title: string;
+  accentClass: string;
+  appointments: AppointmentSummaryItem[];
+}
 
 @Injectable()
 export class BoardService {

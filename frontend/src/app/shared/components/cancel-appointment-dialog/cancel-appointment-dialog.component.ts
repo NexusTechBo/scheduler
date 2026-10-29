@@ -1,7 +1,7 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DialogFrameComponent } from '../../../ui/dialog-frame/dialog-frame.component';
-import { UiIconComponent } from '../../../ui/ui-icon/ui-icon.component';
+import { DialogFrameComponent } from '../../ui/dialog-frame/dialog-frame.component';
+import { UiIconComponent } from '../../ui/ui-icon/ui-icon.component';
 
 export interface CancelAppointmentData {
   patientName: string;

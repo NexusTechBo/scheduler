@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppointmentListItemComponent } from '../../shared/appointments/components/appointment-list-item/appointment-list-item.component';
+import { AppointmentListItemComponent } from '../../shared/components/appointment-list-item/appointment-list-item.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';

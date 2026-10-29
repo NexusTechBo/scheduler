@@ -88,7 +88,7 @@ export class GuestSessionService {
     const slug = this.slug;
     if (!slug) return throwError(() => new Error('No guest session'));
     if (this._status() !== 'ready') this.setStatus('loading');
-    this.pending ??= this.guestApi.createSession(slug).pipe(
+    this.pending ??= this.guestApi.createSession({ slug: slug }).pipe(
       map(({ token }) => {
         const session = decodeGuestSession(token, slug);
         if (!session) throw new Error('Invalid guest token');

@@ -5,18 +5,18 @@ import { AppointmentsApi } from '../../core/api/appointments.api';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { AppointmentResponse } from '../../core/models/api.models';
 import { datePart, formatDayLabel, formatTime } from '../../core/utils/calendar.util';
-import { ConfirmService } from '../services/confirm.service';
-import { NotificationService } from '../services/notification.service';
+import { ConfirmService } from './confirm.service';
+import { NotificationService } from './notification.service';
 import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
 import {
   AppointmentDetailData,
   AppointmentDetailDialogComponent,
-} from './components/appointment-detail-dialog/appointment-detail-dialog.component';
+} from '../components/appointment-detail-dialog/appointment-detail-dialog.component';
 import {
   CancelAppointmentData,
   CancelAppointmentDialogComponent,
   CancelAppointmentResult,
-} from './components/cancel-appointment-dialog/cancel-appointment-dialog.component';
+} from '../components/cancel-appointment-dialog/cancel-appointment-dialog.component';
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentActionsService {

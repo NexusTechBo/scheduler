@@ -8,7 +8,7 @@ import {
   input,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { FormFieldComponent } from '../../../ui/forms/form-field/form-field.component';
+import { FormFieldComponent } from '../../ui/forms/form-field/form-field.component';
 import { ResendActivationService } from './resend-activation.service';
 
 @Component({

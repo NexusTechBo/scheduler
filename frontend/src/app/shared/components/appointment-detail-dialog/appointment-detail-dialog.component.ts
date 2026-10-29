@@ -9,13 +9,13 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, filter, merge } from 'rxjs';
-import { SpecialtyLabelPipe } from '../../../pipes/specialty-label.pipe';
-import { TimeRangePipe } from '../../../pipes/time-range.pipe';
-import { DialogFrameComponent } from '../../../ui/dialog-frame/dialog-frame.component';
-import { LoadErrorComponent } from '../../../ui/load-error/load-error.component';
-import { SkeletonComponent } from '../../../ui/skeleton/skeleton.component';
-import { StatusBadgeComponent } from '../../../ui/status-badge/status-badge.component';
-import { UiIconComponent } from '../../../ui/ui-icon/ui-icon.component';
+import { SpecialtyLabelPipe } from '../../pipes/specialty-label.pipe';
+import { TimeRangePipe } from '../../pipes/time-range.pipe';
+import { DialogFrameComponent } from '../../ui/dialog-frame/dialog-frame.component';
+import { LoadErrorComponent } from '../../ui/load-error/load-error.component';
+import { SkeletonComponent } from '../../ui/skeleton/skeleton.component';
+import { StatusBadgeComponent } from '../../ui/status-badge/status-badge.component';
+import { UiIconComponent } from '../../ui/ui-icon/ui-icon.component';
 import { AppointmentDetailService } from './appointment-detail.service';
 
 export interface AppointmentDetailData {

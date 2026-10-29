@@ -2,14 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { Dialog } from '@angular/cdk/dialog';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import {
-  addDays,
-  formatLongDate,
-  formatMonthShort,
-  formatWeekdayShort,
-  parseIso,
-  toIso,
-} from '../../core/utils/calendar.util';
+import { formatLongDate } from '../../core/utils/calendar.util';
 import { initials } from '../../core/utils/labels.util';
 import { Patient } from '../../core/models/api.models';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
@@ -28,8 +21,6 @@ import {
   PatientFormDialogComponent,
 } from '../patients/components/patient-form-dialog/patient-form-dialog.component';
 import { BookingService } from './booking.service';
-
-const DATE_STRIP_DAYS = 14;
 
 @Component({
   selector: 'app-booking-page',
@@ -58,15 +49,6 @@ export class BookingPageComponent {
 
   protected readonly initials = initials;
   protected readonly dateLabel = computed(() => formatLongDate(this.booking.selectedDate()));
-  private readonly nextDays = Array.from({ length: DATE_STRIP_DAYS }, (_, i) =>
-    dayChip(addDays(new Date(), i)),
-  );
-  protected readonly dateStrip = computed(() => {
-    const selected = this.booking.selectedDate();
-    return this.nextDays.some((day) => day.iso === selected)
-      ? this.nextDays
-      : [...this.nextDays, dayChip(parseIso(selected))];
-  });
 
   protected registerPatient(): void {
     this.dialog
@@ -80,13 +62,4 @@ export class BookingPageComponent {
         this.booking.reloadPatients();
       });
   }
-}
-
-function dayChip(date: Date) {
-  return {
-    iso: toIso(date),
-    weekday: formatWeekdayShort(date),
-    day: date.getDate(),
-    month: formatMonthShort(date),
-  };
 }
