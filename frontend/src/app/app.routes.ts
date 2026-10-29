@@ -1,14 +1,21 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
-import { GUEST_BOOKING_PATH, HOME_URL, ROLES } from './core/navigation/navigation';
+import { GUEST_BOOKING_PATH, ROLES } from './core/navigation/navigation';
 
 export const routes: Routes = [
+  // Public landing page: no guards, reachable with or without a session.
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'ClinicFlow',
+    loadComponent: () =>
+      import('./features/landing/landing-page.component').then((m) => m.LandingPageComponent),
+  },
   {
     path: '',
     loadComponent: () => import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: HOME_URL },
       {
         path: 'dashboard',
         title: 'Inicio',

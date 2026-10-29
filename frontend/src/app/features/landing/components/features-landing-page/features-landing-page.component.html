@@ -1,0 +1,29 @@
+<section id="funciones" class="scroll-mt-20 py-24">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <div appReveal class="mx-auto max-w-2xl text-center">
+        <p class="text-sm font-bold uppercase tracking-wider text-primary">Funciones</p>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+          Todo lo que tu clínica necesita
+        </h2>
+        <p class="mt-3 text-gray-600">
+          Herramientas pensadas para administradores, doctores y asistentes.
+        </p>
+      </div>
+      <ul class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        @for (feature of features; track feature.title) {
+          <li
+            appReveal
+            class="group rounded-3xl border border-white/80 bg-white/70 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
+          >
+            <span
+              class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary transition group-hover:scale-110"
+            >
+              <app-ui-icon [name]="feature.icon" class="h-6 w-6" />
+            </span>
+            <h3 class="text-lg font-bold">{{ feature.title }}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-gray-600">{{ feature.description }}</p>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
