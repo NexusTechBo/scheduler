@@ -18,7 +18,7 @@ export class GuestApi {
   private readonly http = inject(HttpClient);
 
   createSession(request: GuestSessionRequest): Observable<GuestSessionResponse> {
-    return this.http.post<GuestSessionResponse>('public/guest/session', { request });
+    return this.http.post<GuestSessionResponse>('public/guest/session', request);
   }
 
   clinic(): Observable<GuestClinic> {
