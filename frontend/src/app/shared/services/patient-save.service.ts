@@ -5,7 +5,7 @@ import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { Patient, PatientRequest } from '../../core/models/api.models';
-import { NotificationService } from '../../shared/services/notification.service';
+import { NotificationService } from './notification.service';
 
 /**
  * Creates or updates a patient; a patient created by a doctor is also assigned to them.

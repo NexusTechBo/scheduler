@@ -13,7 +13,7 @@ import {
   notBlank,
   phoneValidator,
 } from '../../../../shared/utils/validation-messages.util';
-import { PatientSaveService } from '../../patient-save.service';
+import { PatientSaveService } from '../../../../shared/services/patient-save.service';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 export interface PatientFormData {
