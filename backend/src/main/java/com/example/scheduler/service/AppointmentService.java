@@ -10,11 +10,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 public interface AppointmentService {
     AppointmentResponse bookAppointment(AppointmentRequest request);
+    void verifySlotBookable(Long doctorId, LocalDateTime startTime);
     AppointmentResponse findAppointmentById(Long appointmentId, Long userId, String role);
     Page<AppointmentResponse> findAllAppointments(Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable);
     AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, String role);

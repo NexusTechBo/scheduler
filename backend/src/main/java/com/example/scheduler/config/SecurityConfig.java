@@ -1,7 +1,9 @@
 package com.example.scheduler.config;
 
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ErrorResponse;
 import com.example.scheduler.middleware.JwtAuthFilter;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -61,7 +63,6 @@ public class SecurityConfig {
     }
 
     private void writeError(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String messageKey) throws IOException {
-        // Runs before the DispatcherServlet, so the locale is resolved here instead of using LocaleContextHolder
         var message = messageSource.getMessage(messageKey, null, localeResolver.resolveLocale(request));
         var body = ErrorResponse.of(status, message, request.getRequestURI());
         response.setStatus(status.value());

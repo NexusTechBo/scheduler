@@ -1,13 +1,13 @@
-import { Injectable, inject } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
-import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
+import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, catchError, filter, map, switchMap, tap } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { AppointmentResponse } from '../../core/models/api.models';
 import { datePart, formatDayLabel, formatTime } from '../../core/utils/calendar.util';
-import { NotificationService } from '../services/notification.service';
 import { ConfirmService } from '../services/confirm.service';
+import { NotificationService } from '../services/notification.service';
+import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
 import {
   AppointmentDetailData,
   AppointmentDetailDialogComponent,

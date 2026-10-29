@@ -1,3 +1,4 @@
+import { DialogRef } from '@angular/cdk/dialog';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,7 +7,6 @@ import {
   afterNextRender,
   inject,
 } from '@angular/core';
-import { DialogRef } from '@angular/cdk/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, filter, merge } from 'rxjs';
 import { SpecialtyLabelPipe } from '../../../pipes/specialty-label.pipe';

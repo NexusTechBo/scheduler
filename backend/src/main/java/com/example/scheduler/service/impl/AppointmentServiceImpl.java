@@ -7,6 +7,7 @@ import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.Clinic;
+import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
@@ -58,19 +59,37 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public AppointmentResponse bookAppointment(AppointmentRequest request) {
         var patientId = request.patientId();
-        var doctorId = request.doctorId();
-        var startTime = request.startTime();
-        var endTime = findSlotEnd(request.doctorId(), startTime)
+        var slot = lockBookableSlot(request.doctorId(), request.startTime());
+        var patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
+        if (!patient.isActive())
+            throw new BusinessException("auth.userNotActive");
+        var appointment = Appointment.builder()
+                .doctor(slot.doctor())
+                .patient(patient)
+                .startTime(request.startTime())
+                .endTime(slot.endTime())
+                .status(AppointmentStatus.PENDING)
+                .build();
+        return appointmentMapper.toResponse(saveAndNotify(appointment));
+    }
+
+    @Override
+    @Transactional
+    public void verifySlotBookable(Long doctorId, LocalDateTime startTime) {
+        lockBookableSlot(doctorId, startTime);
+    }
+
+    private record BookableSlot(Personal doctor, LocalDateTime endTime) {}
+
+    private BookableSlot lockBookableSlot(Long doctorId, LocalDateTime startTime) {
+        var endTime = findSlotEnd(doctorId, startTime)
                 .orElseThrow(() -> new BusinessException("appointment.outOfJourney"));
         var doctor = personalRepository.findByIdForUpdate(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", doctorId));
-        var patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
         if (doctor.getRole() != ERole.DOCTOR)
             throw new BadRequestException("personal.doctorNotFound", doctorId);
         if (!doctor.isActive())
-            throw new BusinessException("auth.userNotActive");
-        if (!patient.isActive())
             throw new BusinessException("auth.userNotActive");
         if (startTime.isBefore(LocalDateTime.now(clock)))
             throw new BadRequestException("appointment.pastDate");
@@ -78,14 +97,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BusinessException("appointment.scheduleBlocked");
         if (isSlotTaken(doctorId, startTime, endTime))
             throw new BusinessException("appointment.slotTaken");
-        var appointment = Appointment.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .startTime(startTime)
-                .endTime(endTime)
-                .status(AppointmentStatus.PENDING)
-                .build();
-        return appointmentMapper.toResponse(saveAndNotify(appointment));
+        return new BookableSlot(doctor, endTime);
     }
 
     @Override

@@ -6,6 +6,7 @@
       [selectedId]="appointments.status()"
       (select)="setStatus($event)"
     />
+    <app-guest-link-button />
     <a routerLink="/appointments/new" class="btn btn-primary">
       <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
       Agendar cita

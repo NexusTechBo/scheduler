@@ -18,7 +18,6 @@ public @interface SpecialtyRoleMatch {
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    // Implemented by the requests annotated with @SpecialtyRoleMatch; record accessors satisfy it
     interface Request {
         ERole role();
         Long specialtyId();

@@ -1,0 +1,40 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+  <app-form-field label="CI" fieldId="guest-ci" [errorMessages]="ciErrors">
+    <input
+      id="guest-ci"
+      class="field-input"
+      formControlName="ci"
+      inputmode="numeric"
+      autocomplete="off"
+    />
+  </app-form-field>
+
+  <app-form-field label="Nombre completo" fieldId="guest-name">
+    <input id="guest-name" class="field-input" formControlName="name" autocomplete="name" />
+  </app-form-field>
+
+  <app-form-field label="Email" fieldId="guest-email">
+    <input
+      id="guest-email"
+      type="email"
+      class="field-input"
+      formControlName="email"
+      autocomplete="email"
+    />
+  </app-form-field>
+
+  <app-form-field label="Teléfono (opcional)" fieldId="guest-phone" [errorMessages]="phoneErrors">
+    <input
+      id="guest-phone"
+      type="tel"
+      class="field-input"
+      formControlName="phoneNumber"
+      autocomplete="tel"
+    />
+  </app-form-field>
+
+  <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-between">
+    <button type="button" class="btn btn-secondary" (click)="back.emit()">Atrás</button>
+    <button type="submit" class="btn btn-primary">Continuar</button>
+  </div>
+</form>

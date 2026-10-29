@@ -23,8 +23,7 @@ public class FlowScheduleTool {
     private final PatientRepository patientRepository;
     private final PatientMapper patientMapper;
 
-
-    @Tool(description = "Step 1: Return the patient information by its phone number", name = "getPatientByPhoneNumber")
+@Tool(description = "Step 1: Return the patient information by its phone number", name = "getPatientByPhoneNumber")
     public PatientResponse getPatientByPhoneNumber(String phoneNumber){
         return patientMapper.toResponse(getPatientOrThrowByPhoneNumber(phoneNumber));
     }

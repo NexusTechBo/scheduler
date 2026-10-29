@@ -1,0 +1,318 @@
+<app-glass-background class="block min-h-screen w-full">
+  <div class="relative z-10 mx-auto flex min-h-screen w-full max-w-2xl flex-col px-4 py-6 sm:py-10">
+    @if (!session.ready()) {
+      <section
+        class="glass-panel mx-auto mt-10 w-full max-w-sm rounded-3xl p-6 sm:p-8"
+        aria-labelledby="guest-booking-title"
+        [attr.aria-busy]="session.status() === 'loading'"
+      >
+        @switch (session.status()) {
+          @case ('unavailable') {
+            <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+              <app-ui-icon name="alert" class="h-6 w-6 text-amber-700" />
+            </div>
+            <h1
+              #heading
+              id="guest-booking-title"
+              tabindex="-1"
+              class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
+            >
+              Reservas no disponibles
+            </h1>
+            <p class="mt-2 text-sm font-medium text-gray-600">{{ session.message() }}</p>
+          }
+          @case ('error') {
+            <h1
+              #heading
+              id="guest-booking-title"
+              tabindex="-1"
+              class="mb-4 text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
+            >
+              No pudimos iniciar tu reserva
+            </h1>
+            <app-load-error
+              [message]="session.message() ?? 'Ocurrió un error inesperado'"
+              (retry)="session.retry()"
+            />
+          }
+          @default {
+            <h1
+              #heading
+              id="guest-booking-title"
+              tabindex="-1"
+              class="mb-4 text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
+            >
+              Preparando tu reserva…
+            </h1>
+            <app-skeleton [rows]="3" heightClass="h-12" />
+          }
+        }
+      </section>
+    } @else {
+      <header class="mb-5">
+        <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Reserva tu cita en</p>
+        <p class="text-2xl font-extrabold tracking-tight text-gray-900">
+          @if (booking.clinicName(); as clinicName) {
+            {{ clinicName }}
+          } @else {
+            <span class="inline-block h-7 w-48 animate-pulse rounded-lg bg-gray-900/10"></span>
+            <span class="sr-only">Cargando clínica…</span>
+          }
+        </p>
+      </header>
+
+      <section
+        class="glass-panel rounded-3xl p-5 sm:p-6"
+        aria-labelledby="guest-booking-title"
+        [attr.aria-busy]="booking.submitting()"
+      >
+        @if (booking.step() !== 'done') {
+          <p class="text-xs font-bold uppercase tracking-wide text-primary" aria-hidden="true">
+            Paso {{ booking.stepNumber() }} de {{ booking.totalSteps }}
+          </p>
+        } @else {
+          <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <app-ui-icon name="check" class="h-6 w-6 text-primary" />
+          </div>
+        }
+        <h1
+          #heading
+          id="guest-booking-title"
+          tabindex="-1"
+          class="mb-4 text-xl font-extrabold text-gray-900 outline-none"
+        >
+          @if (booking.step() !== 'done') {
+            <span class="sr-only"
+              >Paso {{ booking.stepNumber() }} de {{ booking.totalSteps }}:
+            </span>
+          }
+          {{ stepTitle() }}
+        </h1>
+
+        @if (booking.error(); as error) {
+          <app-alert class="mb-4">{{ error }}</app-alert>
+        }
+
+        @switch (booking.step()) {
+          @case ('doctor') {
+            @if (booking.specialtiesErrorMessage(); as error) {
+              <app-load-error
+                class="mb-4"
+                [message]="error"
+                (retry)="booking.reloadSpecialties()"
+              />
+            }
+            <div class="mb-4 flex flex-wrap gap-2" role="group" aria-label="Especialidad">
+              <button
+                type="button"
+                class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
+                [class]="
+                  booking.specialtyId() === null
+                    ? 'bg-primary text-white'
+                    : 'bg-white/60 text-gray-600 hover:bg-white'
+                "
+                [attr.aria-pressed]="booking.specialtyId() === null"
+                (click)="booking.selectSpecialty(null)"
+              >
+                Todas
+              </button>
+              @for (specialty of booking.specialties(); track specialty.id) {
+                <button
+                  type="button"
+                  class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
+                  [class]="
+                    booking.specialtyId() === specialty.id
+                      ? 'bg-primary text-white'
+                      : 'bg-white/60 text-gray-600 hover:bg-white'
+                  "
+                  [attr.aria-pressed]="booking.specialtyId() === specialty.id"
+                  (click)="booking.selectSpecialty(specialty.id)"
+                >
+                  {{ specialty.name }}
+                </button>
+              }
+            </div>
+
+            <div class="grid gap-2.5 sm:grid-cols-2">
+              @if (booking.doctorsLoading()) {
+                <app-skeleton [rows]="3" heightClass="h-17" />
+              } @else {
+                @if (booking.doctorsErrorMessage(); as error) {
+                  <app-load-error
+                    class="col-span-full"
+                    [message]="error"
+                    (retry)="booking.reloadDoctors()"
+                  />
+                } @else {
+                  @for (doctor of booking.doctors(); track doctor.id) {
+                    <button
+                      type="button"
+                      class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 px-3.5 py-3 text-left transition-all"
+                      [class]="
+                        booking.selectedDoctor()?.id === doctor.id
+                          ? 'border-primary bg-white shadow-md'
+                          : 'border-transparent bg-white/50 hover:bg-white/80'
+                      "
+                      [attr.aria-label]="
+                        'Elegir ' + doctor.name + ', ' + (doctor.specialtyName | specialtyLabel)
+                      "
+                      (click)="booking.selectDoctor(doctor)"
+                    >
+                      <span
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary"
+                        aria-hidden="true"
+                        >{{ initials(doctor.name) }}</span
+                      >
+                      <span class="min-w-0">
+                        <span class="line-clamp-2 text-sm font-bold text-gray-900">{{
+                          doctor.name
+                        }}</span>
+                        <span class="block truncate text-xs font-medium text-gray-500">{{
+                          doctor.specialtyName | specialtyLabel
+                        }}</span>
+                      </span>
+                    </button>
+                  } @empty {
+                    <p class="col-span-full text-sm text-gray-500">
+                      {{
+                        booking.specialtyId() === null
+                          ? 'No hay doctores disponibles.'
+                          : 'No hay doctores disponibles para esta especialidad.'
+                      }}
+                    </p>
+                  }
+                }
+              }
+            </div>
+          }
+
+          @case ('slot') {
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p class="text-sm font-semibold text-gray-700">
+                {{ booking.selectedDoctor()?.name }}
+              </p>
+              <app-date-picker
+                ariaLabel="Fecha"
+                [min]="booking.today"
+                [ngModel]="booking.selectedDate()"
+                (ngModelChange)="booking.selectDate($event)"
+              />
+            </div>
+            <app-date-strip
+              class="mb-5"
+              [selected]="booking.selectedDate()"
+              (select)="booking.selectDate($event)"
+            />
+            <app-slot-grid
+              [slots]="booking.slots()"
+              [selected]="booking.selectedSlot()"
+              [loading]="booking.slotsLoading()"
+              [errorMessage]="booking.slotsErrorMessage()"
+              emptyTitle="Este doctor no tiene horarios libres ese día"
+              emptyMessage="Prueba con otra fecha."
+              (select)="booking.selectSlot($event)"
+              (retry)="booking.reloadSlots()"
+            />
+            <button type="button" class="btn btn-secondary mt-5" (click)="booking.back()">
+              Atrás
+            </button>
+          }
+
+          @case ('patient') {
+            <app-guest-patient-form
+              [initial]="booking.patient()"
+              (submitted)="booking.setPatient($event)"
+              (back)="booking.back()"
+            />
+          }
+
+          @case ('summary') {
+            <dl class="space-y-4 text-sm">
+              <div>
+                <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Doctor</dt>
+                <dd class="mt-0.5 font-bold text-gray-900">
+                  {{ booking.selectedDoctor()?.name }}
+                </dd>
+                <dd class="text-gray-500">
+                  {{ booking.selectedDoctor()?.specialtyName | specialtyLabel }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">
+                  Fecha y horario
+                </dt>
+                <dd class="mt-0.5 font-bold text-gray-900">{{ dateLabel() }}</dd>
+                @if (booking.selectedSlot(); as slot) {
+                  <dd class="text-gray-500">{{ slot | timeRange }}</dd>
+                }
+              </div>
+              @if (booking.patient(); as patient) {
+                <div>
+                  <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Paciente</dt>
+                  <dd class="mt-0.5 font-bold text-gray-900">{{ patient.name }}</dd>
+                  <dd class="text-gray-500">CI {{ patient.ci }} · {{ patient.email }}</dd>
+                  @if (patient.phoneNumber) {
+                    <dd class="text-gray-500">{{ patient.phoneNumber }}</dd>
+                  }
+                </div>
+              }
+            </dl>
+            <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="booking.submitting()"
+                (click)="booking.back()"
+              >
+                Atrás
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="booking.submitting()"
+                (click)="booking.book()"
+              >
+                @if (booking.submitting()) {
+                  <span
+                    class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+                    aria-hidden="true"
+                  ></span>
+                }
+                Confirmar reserva
+              </button>
+            </div>
+          }
+
+          @case ('done') {
+            @if (booking.result(); as result) {
+              <p class="mb-4 rounded-2xl bg-amber-50 p-3 text-sm font-medium text-amber-800">
+                Tu cita quedó pendiente de confirmación por la clínica.
+              </p>
+              <dl class="space-y-4 text-sm">
+                <div>
+                  <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Doctor</dt>
+                  <dd class="mt-0.5 font-bold text-gray-900">{{ result.doctorName }}</dd>
+                  <dd class="text-gray-500">{{ result.specialtyName | specialtyLabel }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">
+                    Fecha y horario
+                  </dt>
+                  <dd class="mt-0.5 font-bold text-gray-900">{{ resultDateLabel() }}</dd>
+                  <dd class="text-gray-500">{{ result | timeRange }}</dd>
+                </div>
+              </dl>
+            }
+            <button
+              type="button"
+              class="btn btn-primary mt-6 w-full"
+              (click)="booking.bookAnother()"
+            >
+              Reservar otra cita
+            </button>
+          }
+        }
+      </section>
+    }
+  </div>
+</app-glass-background>

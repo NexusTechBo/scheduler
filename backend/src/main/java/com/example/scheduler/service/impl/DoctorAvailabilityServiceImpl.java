@@ -1,7 +1,7 @@
 package com.example.scheduler.service.impl;
 
 import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilitySlotsResponse;
-import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilitySlotsResponse.Slot;
+import com.example.scheduler.dto.DoctorAvailability.SlotResponse;
 import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityRequest;
 import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityResponse;
 import com.example.scheduler.entity.DoctorAvailability;
@@ -106,7 +106,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
                                 slot.startTime().isBefore(a.getEndTime().toLocalTime()) && slot.endTime().isAfter(a.getStartTime().toLocalTime())
                         )
                 )
-                .sorted(Comparator.comparing(Slot::startTime))
+                .sorted(Comparator.comparing(SlotResponse::startTime))
                 .toList();
         return new DoctorAvailabilitySlotsResponse(date, doctorId, availableSlots);
     }
@@ -121,14 +121,14 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
         availability.setActive(false);
     }
 
-    private List<Slot> createGeneratedSlots(List<DoctorAvailability> availabilities) {
-        var generatedSlots = new ArrayList<Slot>();
+    private List<SlotResponse> createGeneratedSlots(List<DoctorAvailability> availabilities) {
+        var generatedSlots = new ArrayList<SlotResponse>();
         for (var availability : availabilities) {
             var duration = availability.getSlotDurationMinutes();
             if (duration == null || duration <= 0) continue;
             var end = availability.getEndTime().toSecondOfDay() / 60;
             for (int m = availability.getStartTime().toSecondOfDay() / 60; m + duration <= end; m += duration)
-                generatedSlots.add(new Slot(LocalTime.ofSecondOfDay(m * 60L), LocalTime.ofSecondOfDay((m + duration) * 60L)));
+                generatedSlots.add(new SlotResponse(LocalTime.ofSecondOfDay(m * 60L), LocalTime.ofSecondOfDay((m + duration) * 60L)));
         }
         return generatedSlots;
     }

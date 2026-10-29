@@ -1,6 +1,6 @@
 # Scheduler
 
-Multi-tenant medical appointment scheduler. Each **clinic** is a tenant; its staff (administrators, doctors, assistants) manage patients, doctor availability, schedule exceptions and appointments. Appointment changes are pushed live to a board over WebSocket, and patients can book through a WhatsApp chatbot (Twilio + Spring AI / Gemini).
+Multi-tenant medical appointment scheduler. Each **clinic** is a tenant; its staff (administrators, doctors, assistants) manage patients, doctor availability, schedule exceptions and appointments. Appointment changes are pushed live to a board over WebSocket, and patients can book from a public guest page (shareable link) or a chatbot (Spring AI / Gemini).
 
 ## Repository layout
 
@@ -17,12 +17,13 @@ Claude Code hooks: Prettier runs on every edited `frontend/src` file; editing an
 
 ## Backend — `backend/`
 
-- **Stack:** Java 26, Spring Boot 4, Spring Data JPA / Hibernate, PostgreSQL, Flyway, Spring Security + jjwt (JWT), Spring WebSocket (STOMP), springdoc OpenAPI, MapStruct, Lombok, Spring AI (Google GenAI), Twilio, Spring Mail.
+- **Stack:** Java 26, Spring Boot 4, Spring Data JPA / Hibernate, PostgreSQL, Flyway, Spring Security + jjwt (JWT), Spring WebSocket (STOMP), springdoc OpenAPI, MapStruct, Lombok, Spring AI (Google GenAI), Spring Mail.
 - **Package:** `com.example.scheduler` → `config`, `config/tenant`, `controller`, `dto/<feature>`, `entity`, `enums`, `exception`, `mapper`, `middleware`, `notification`, `repository`, `security`, `service` + `service/impl`, `tool`, `util`, `validator`, `websocket`.
 - **Domain:** `Clinic` (public schema, `PENDING_ACTIVATION | ACTIVE`; activated by an emailed link, tokens in `ClinicActivationToken`) · `Personal` (staff, roles `ADMINISTRATOR | DOCTOR | ASSISTANT`, optional `Specialty`) · `Patient` (many-to-many with doctors via `doctor_patient`) · `DoctorAvailability` · `ScheduleException` · `Appointment` (`PENDING | CONFIRMED | CANCELLED`).
 - **Multi-tenancy (schema per clinic):** the `public` schema holds `clinics`; each clinic has its own schema `clinic_<slug>`. `TenantContext` (ThreadLocal, clinic id + schema) is set from the JWT `clinicId` + `clinicSlug` claims in `JwtAuthFilter` / `JwtChannelInterceptor` and always cleared in `finally`; `CustomTenantResolver` falls back to `public`. New tenant schemas are created by `SchemaProvisioningService`. Any code that runs outside a request (seeders, schedulers, async) must set and clear the tenant itself.
 - **Migrations:** `src/main/resources/db/migration/public` (public schema) and `.../tenant` (applied to every clinic schema). `ddl-auto: none`; never edit an applied migration, add `V{n}__description.sql`.
 - **Auth:** login `POST /api/auth/login` with username `<user>@<clinic-slug>.com`; the token carries `sub` (user id), `role`, `clinicId`, `clinicName`, `clinicSlug`, `username`. Every request re-checks the user is active with the same role (`ActiveUserChecker`). Public paths come from `security.public-paths`.
+- **Guest booking:** role `GUEST` (never stored in `personal`) is a 30 min JWT (`sub` `"0"`, `clinicId`, `clinicName`, `clinicSlug`) issued to anyone by the public `POST /api/public/guest/session {slug}` for an ACTIVE clinic. `SecurityConfig` allows GUEST only on `/api/guest/**` and staff roles everywhere else; GUEST is refused on STOMP CONNECT. No rate limiting yet.
 - **WebSocket:** STOMP endpoint `/ws`, topic `/topic/clinic/{clinicId}/board`; events are published with `@TransactionalEventListener(AFTER_COMMIT)`.
 - **Email:** `notification` events (staff credentials, clinic activation/welcome, appointment confirmed/cancelled to the patient) are sent after commit, `@Async` on the `mailTaskExecutor` pool, via `EmailService`; sender from `app.mail.from` / `app.mail.from-name` (`MAIL_FROM`, `MAIL_FROM_NAME`); links point to `app.frontend-url` (`APP_FRONTEND_URL`). Send failures are logged and never fail the request.
 - **Errors:** services throw `ApiException` subclasses; `GlobalExceptionHandler` returns the `ErrorResponse` JSON.
@@ -36,6 +37,7 @@ Claude Code hooks: Prettier runs on every edited `frontend/src` file; editing an
 - **Structure:** `src/app/core` · `features/<feature>` (page + `<feature>.service.ts` + `<feature>.model.ts` + `components/`) · `layout/shell` · `shared`.
 - **API access:** relative URLs (`'patients'`) prefixed by `apiUrlInterceptor` with `environment.apiUrl` (`/api/`); `authInterceptor` adds the bearer token and logs out on 401. Types mirroring backend DTOs live in `core/models/api.models.ts`.
 - **Auth & roles:** `AuthService` keeps the session (decoded JWT) in a signal + `localStorage`; routes use `authGuard`, `guestGuard`, `roleGuard(...ROLES.x)`; menu items per role in `core/navigation/navigation.ts`.
+- **Guest page:** public route `clinic/guest/appointment/clinic?slug=<slug>` (outside the shell, `features/guest-booking`, shareable link); `GuestSessionService` gets/renews the guest token and keeps it in `sessionStorage`, never in `AuthService`; `authInterceptor` sends it only to `guest/*` URLs (none to `public/guest/session`). Only ADMINISTRATOR sees the "Enlace de reserva" button that copies the link.
 - **UI language:** Spanish (texts, `LOCALE_ID = 'es'`). Code, identifiers and comments in English.
 - **Dev proxy:** `proxy.conf.js` forwards `/api` and `/ws` to `BACKEND_URL` (default `http://localhost:8080`).
 - **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npx ng test --watch=false` · `npm run format` / `npm run format:check`.

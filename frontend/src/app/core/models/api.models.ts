@@ -261,3 +261,48 @@ export interface ScheduleExceptionRequest {
 export interface ScheduleException extends Omit<ScheduleExceptionRequest, 'cancelAppointments'> {
   id: number;
 }
+
+export interface GuestTokenPayload {
+  sub: string;
+  role: string;
+  clinicId: number;
+  clinicName: string;
+  clinicSlug: string;
+  exp: number;
+}
+
+export interface GuestSessionRequest {
+  slug: string;
+}
+
+export interface GuestSessionResponse {
+  token: string;
+  expiresAt: string;
+}
+
+export interface GuestClinic {
+  name: string;
+  slug: string;
+}
+
+export interface GuestDoctor {
+  id: number;
+  name: string;
+  specialtyId: number | null;
+  specialtyName: string | null;
+}
+
+export interface GuestAppointmentRequest {
+  doctorId: number;
+  startTime: string;
+  patient: PatientRequest;
+}
+
+export interface GuestAppointmentResponse {
+  appointmentId: number;
+  doctorName: string;
+  specialtyName: string | null;
+  startTime: string;
+  endTime: string;
+  status: AppointmentStatus;
+}

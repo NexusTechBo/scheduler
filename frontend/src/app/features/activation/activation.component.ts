@@ -36,16 +36,12 @@ export class ActivationComponent implements OnInit {
   private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 
   constructor() {
-    // Each state replaces the content (and the "Reintentar" button that held the focus), so
-    // move the focus to the new heading whenever loading ends.
     afterRenderEffect(() => {
       if (this.activation.status() !== 'loading') this.heading()?.nativeElement.focus();
     });
   }
 
   ngOnInit(): void {
-    // Drop the single-use token from the address bar and history before using it, so it
-    // is neither kept in history nor leaked through the Referer header.
     if (this.token !== null) {
       this.router
         .navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true })

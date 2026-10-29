@@ -33,7 +33,6 @@ export class LoginFormComponent {
   }
 }
 
-/** The activation page passes the admin username through the navigation state. */
 function usernameFromState(state: unknown): string {
   if (state && typeof state === 'object' && 'username' in state) {
     return typeof state.username === 'string' ? state.username : '';
