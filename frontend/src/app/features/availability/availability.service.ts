@@ -30,8 +30,8 @@ import {
 } from '../../core/models/api.models';
 import { formatLongDate, formatTime, toIso } from '../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
-import { NotificationService } from '../../shared/services/notification.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 type AvailabilityBlock = Omit<AvailabilityRequest, 'dayOfWeek'>;
 

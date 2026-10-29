@@ -1,0 +1,34 @@
+@if (loading()) {
+  <div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
+    <app-skeleton [rows]="6" heightClass="h-11" />
+  </div>
+} @else {
+  @if (errorMessage(); as error) {
+    <app-load-error [message]="error" (retry)="retry.emit()" />
+  } @else {
+    <div class="grid grid-cols-4 gap-2 sm:grid-cols-6">
+      @for (slot of slots(); track slot.startTime) {
+        <button
+          type="button"
+          class="cursor-pointer rounded-2xl py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+          [class]="
+            selected()?.startTime === slot.startTime
+              ? 'bg-primary text-white shadow-lg shadow-primary/30'
+              : 'bg-white/60 text-gray-700 hover:bg-white'
+          "
+          [attr.aria-pressed]="selected()?.startTime === slot.startTime"
+          (click)="select.emit(slot)"
+        >
+          {{ slot.startTime }}
+        </button>
+      } @empty {
+        <app-empty-state
+          class="col-span-full"
+          icon="clock"
+          [title]="emptyTitle()"
+          [message]="emptyMessage()"
+        />
+      }
+    </div>
+  }
+}

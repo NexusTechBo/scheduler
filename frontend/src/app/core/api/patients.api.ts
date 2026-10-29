@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Page, Patient, PatientFilters, PatientRequest, Staff } from '../models/api.models';
 import { toHttpParams } from '../http/http-params.util';
+import { Page, Patient, PatientFilters, PatientRequest, Staff } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class PatientsApi {

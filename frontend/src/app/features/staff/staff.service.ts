@@ -11,8 +11,8 @@ import {
   StaffRegisterRequest,
   StaffUpdateRequest,
 } from '../../core/models/api.models';
-import { NotificationService } from '../../shared/services/notification.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
+import { NotificationService } from '../../shared/services/notification.service';
 
 const PAGE_SIZE = 12;
 

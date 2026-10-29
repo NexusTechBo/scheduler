@@ -1,4 +1,4 @@
-try { process.loadEnvFile(); } catch {} // .env es opcional
+try { process.loadEnvFile(); } catch {}
 
 module.exports = {
   "/api": {

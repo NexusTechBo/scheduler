@@ -65,7 +65,8 @@
           <h2 class="text-xl font-extrabold text-gray-900">Por confirmar</h2>
           <p class="text-sm font-medium text-gray-500">
             @if (dashboard.pendingCount(); as count) {
-              {{ count }} {{ count === 1 ? 'próxima cita sin confirmar' : 'próximas citas sin confirmar' }}
+              {{ count }}
+              {{ count === 1 ? 'próxima cita sin confirmar' : 'próximas citas sin confirmar' }}
             } @else {
               Próximas citas pendientes de la semana
             }

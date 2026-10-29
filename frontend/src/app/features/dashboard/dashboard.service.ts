@@ -1,11 +1,8 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin, map } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
-import { StaffApi } from '../../core/api/staff.api';
-import { AuthService } from '../../core/auth/auth.service';
 import { resourceError } from '../../core/http/api-error';
-import { AppointmentSummaryItem, Role } from '../../core/models/api.models';
+import { AppointmentSummaryItem } from '../../core/models/api.models';
 import {
   addDays,
   formatShortDate,
@@ -14,7 +11,7 @@ import {
   toIso,
   toLocalDateTime,
 } from '../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
+import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { UiIconName } from '../../shared/ui/ui-icon/ui-icon.component';
 
 interface Kpi {
@@ -40,9 +37,7 @@ const PENDING_LIMIT = 6;
 @Injectable()
 export class DashboardService {
   private readonly appointmentsApi = inject(AppointmentsApi);
-  private readonly staffApi = inject(StaffApi);
   private readonly actions = inject(AppointmentActionsService);
-  private readonly role = inject(AuthService).role();
   private readonly today = toIso(new Date());
   private readonly weekStart = startOfWeek(new Date());
 
@@ -51,15 +46,6 @@ export class DashboardService {
       this.appointmentsApi.board({
         from: toIso(this.weekStart),
         to: toIso(addDays(this.weekStart, 6)),
-      }),
-  });
-
-  private readonly staffResource = rxResource({
-    request: () => (this.role === 'ADMINISTRATOR' ? true : undefined),
-    loader: () =>
-      forkJoin({
-        doctors: this.countActive('DOCTOR'),
-        assistants: this.countActive('ASSISTANT'),
       }),
   });
 
@@ -74,13 +60,13 @@ export class DashboardService {
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   });
 
-  /** Upcoming appointments of the week still waiting for confirmation, soonest first. */
   private readonly upcomingPending = computed<AppointmentSummaryItem[]>(() => {
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
     if (!board) return [];
     return board.PENDING.filter((appointment) => appointment.appointmentDate >= this.today).sort(
       (a, b) =>
-        a.appointmentDate.localeCompare(b.appointmentDate) || a.startTime.localeCompare(b.startTime),
+        a.appointmentDate.localeCompare(b.appointmentDate) ||
+        a.startTime.localeCompare(b.startTime),
     );
   });
   readonly pendingCount = computed(() => this.upcomingPending().length);
@@ -122,7 +108,6 @@ export class DashboardService {
 
   readonly kpis = computed<Kpi[]>(() => {
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
-    const staff = this.staffResource.hasValue() ? this.staffResource.value() : null;
     const kpis: Kpi[] = [
       {
         label: 'Citas hoy',
@@ -170,12 +155,6 @@ export class DashboardService {
     this.actions
       .cancel(appointment.id, appointment.clientName, startOf(appointment))
       .subscribe(() => this.reload());
-  }
-
-  private countActive(role: Role) {
-    return this.staffApi
-      .list({ role, isActive: true, size: 1 })
-      .pipe(map((page) => page.page.totalElements));
   }
 }
 

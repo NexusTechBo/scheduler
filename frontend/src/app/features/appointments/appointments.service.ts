@@ -9,7 +9,7 @@ import {
   AppointmentStatus,
 } from '../../core/models/api.models';
 import { datePart, formatDayLabel, formatTimeRange } from '../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
+import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 
 const PAGE_SIZE = 12;
 

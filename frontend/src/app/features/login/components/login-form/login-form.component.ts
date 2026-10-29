@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ResendActivationComponent } from '../../../../shared/clinic-activation/components/resend-activation/resend-activation.component';
+import { ResendActivationComponent } from '../../../../shared/components/resend-activation/resend-activation.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { LoginService } from '../../login.service';
 
@@ -33,7 +33,6 @@ export class LoginFormComponent {
   }
 }
 
-/** The activation page passes the admin username through the navigation state. */
 function usernameFromState(state: unknown): string {
   if (state && typeof state === 'object' && 'username' in state) {
     return typeof state.username === 'string' ? state.username : '';

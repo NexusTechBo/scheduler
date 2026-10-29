@@ -1,3 +1,4 @@
+import { DialogRef } from '@angular/cdk/dialog';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,7 +10,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { DialogRef } from '@angular/cdk/dialog';
 import {
   AbstractControl,
   FormBuilder,
@@ -20,12 +20,12 @@ import {
 import { finalize, map, merge } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { toIso } from '../../../../core/utils/calendar.util';
+import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { DatePickerComponent } from '../../../../shared/ui/forms/date-picker/date-picker.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { AvailabilityService } from '../../availability.service';
-import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 function endAfterStart(control: AbstractControl): ValidationErrors | null {
   const group = control.parent;

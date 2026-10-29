@@ -2,6 +2,8 @@ import { Role } from '../models/api.models';
 
 export const HOME_URL = '/dashboard';
 
+export const GUEST_BOOKING_PATH = 'clinic/guest/appointment/clinic';
+
 type NavIcon = 'home' | 'board' | 'calendar' | 'list' | 'patients' | 'clock' | 'staff' | 'tag';
 
 export interface NavItem {
@@ -16,6 +18,7 @@ export const ROLES = {
   staff: ['ADMINISTRATOR', 'DOCTOR', 'ASSISTANT'],
   doctor: ['DOCTOR'],
   admin: ['ADMINISTRATOR'],
+  guestLink: ['ADMINISTRATOR'],
 } as const satisfies Record<string, readonly Role[]>;
 
 const NAV_ITEMS: NavItem[] = [

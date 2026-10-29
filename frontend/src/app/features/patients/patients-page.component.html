@@ -91,7 +91,9 @@
                   >
                   <div class="min-w-0">
                     <p class="font-bold wrap-break-word text-gray-900">{{ patient.name }}</p>
-                    <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
+                    @if (patient.email) {
+                      <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
+                    }
                     @if (!patient.active) {
                       <p class="text-xs font-bold text-gray-500 sm:hidden">Inactivo</p>
                     }
@@ -99,7 +101,7 @@
                 </div>
               </td>
               <td class="hidden whitespace-nowrap md:table-cell">
-                {{ patient.phoneNumber ?? '—' }}
+                {{ patient.phoneNumber }}
               </td>
               <td class="hidden sm:table-cell">
                 <span

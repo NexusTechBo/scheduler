@@ -23,7 +23,6 @@ import {
 } from 'chart.js';
 import { WeekDayStats } from '../../dashboard.service';
 
-// Register only what the bar chart needs so the rest of Chart.js is tree-shaken.
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const GRAY = '#9ca3af';

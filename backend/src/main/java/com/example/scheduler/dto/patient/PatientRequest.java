@@ -8,8 +8,8 @@ public record PatientRequest(
         String ci,
         @NotBlank
         String name,
-        @NotBlank
         @Email
         String email,
+        @NotBlank
         String phoneNumber
 ) {}

@@ -7,7 +7,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ResendActivationComponent } from '../../../../shared/clinic-activation/components/resend-activation/resend-activation.component';
+import { ResendActivationComponent } from '../../../../shared/components/resend-activation/resend-activation.component';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 
 @Component({

@@ -1,12 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { LowerCasePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { canCancelAppointment, canConfirmAppointment } from '../../core/auth/permissions';
 import { APPOINTMENT_STATUSES, STATUS_PLURAL_LABEL } from '../../core/utils/labels.util';
 import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
-import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { PaginationComponent } from '../../shared/ui/pagination/pagination.component';
@@ -17,11 +16,13 @@ import {
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
+import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import {
   AppointmentRow,
   AppointmentStatusFilter,
   AppointmentsService,
 } from './appointments.service';
+import { GuestLinkButtonComponent } from './components/guest-link-button/guest-link-button.component';
 
 @Component({
   selector: 'app-appointments-page',
@@ -37,6 +38,7 @@ import {
     PaginationComponent,
     EmptyStateComponent,
     UiIconComponent,
+    GuestLinkButtonComponent,
   ],
   providers: [AppointmentsService],
   templateUrl: './appointments-page.component.html',

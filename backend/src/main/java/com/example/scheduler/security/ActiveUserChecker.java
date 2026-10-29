@@ -12,15 +12,8 @@ import java.util.Arrays;
 public class ActiveUserChecker {
     private final PersonalRepository personalRepository;
 
-    /**
-     * Checks that the token's user is still active and still has the role the token claims,
-     * so a token issued before an admin changed the role stops working.
-     *
-     * @param userId the JWT subject
-     * @param role   the JWT role claim
-     * @return {@code true} if the user is active with that role; {@code false} for unknown roles
-     */
     public boolean isActive(Long userId, String role) {
+        if (ERole.GUEST.name().equals(role)) return true;
         return Arrays.stream(ERole.values())
                 .filter(r -> r.name().equals(role))
                 .findFirst()
