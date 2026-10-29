@@ -8,7 +8,7 @@ import { apiErrorMessage, resourceError } from '../../core/http/api-error';
 import {
   GuestAppointmentResponse,
   GuestDoctor,
-  PatientRequest,
+  GuestBookingPatient,
   TimeSlot,
 } from '../../core/models/api.models';
 import { formatTime, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
@@ -87,7 +87,7 @@ export class GuestBookingService {
     'No se pudieron cargar los horarios',
   );
 
-  private readonly _patient = signal<PatientRequest | null>(null);
+  private readonly _patient = signal<GuestBookingPatient | null>(null);
   readonly patient = this._patient.asReadonly();
 
   private readonly _submitting = signal(false);
@@ -127,7 +127,7 @@ export class GuestBookingService {
     this.goTo('patient');
   }
 
-  setPatient(patient: PatientRequest): void {
+  setPatient(patient: GuestBookingPatient): void {
     this._patient.set(patient);
     this.goTo('summary');
   }

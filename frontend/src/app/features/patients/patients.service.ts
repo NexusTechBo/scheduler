@@ -76,7 +76,7 @@ export class PatientsService {
       .filter(
         (patient) =>
           !term ||
-          `${patient.name} ${patient.ci} ${patient.email} ${patient.phoneNumber ?? ''}`
+          `${patient.name} ${patient.ci} ${patient.email ?? ''} ${patient.phoneNumber}`
             .toLowerCase()
             .includes(term),
       );

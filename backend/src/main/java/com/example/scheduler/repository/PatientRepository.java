@@ -23,11 +23,15 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     Optional<Patient> findByPhoneNumber(String phoneNumber);
 
-    Optional<Patient> findByCi(String ci);
-
     boolean existsByCi(String ci);
 
     boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
+
+    @Query("SELECT COUNT(p) > 0 FROM Patient p " +
+            "WHERE p.ci = :ci OR p.phoneNumber = :phoneNumber OR LOWER(p.email) = LOWER(:email)")
+    boolean existsByCiOrPhoneNumberOrEmailIgnoreCase(@Param("ci") String ci, @Param("phoneNumber") String phoneNumber, @Param("email") String email);
+
+    Optional<Patient> findByCiAndPhoneNumberAndActiveIsTrue(String ci, String phoneNumber);
 }

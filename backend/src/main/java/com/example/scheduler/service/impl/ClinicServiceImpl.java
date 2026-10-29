@@ -51,7 +51,7 @@ public class ClinicServiceImpl implements ClinicService {
         var clinic = tx.execute(_ ->
             clinicRepository.save(Clinic.builder()
                     .name(request.name())
-                    .phoneNumber(request.phoneNumber())
+                    .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
                     .slug(slug)
                     .status(ClinicStatus.PENDING_ACTIVATION)
                     .build())

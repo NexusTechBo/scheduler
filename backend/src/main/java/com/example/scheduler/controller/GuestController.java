@@ -5,6 +5,8 @@ import com.example.scheduler.dto.guest.GuestAppointmentRequest;
 import com.example.scheduler.dto.guest.GuestAppointmentResponse;
 import com.example.scheduler.dto.guest.GuestClinicResponse;
 import com.example.scheduler.dto.guest.GuestDoctorResponse;
+import com.example.scheduler.dto.guest.GuestNewPatientRequest;
+import com.example.scheduler.dto.guest.GuestPatientRequest;
 import com.example.scheduler.dto.specialty.SpecialtyResponse;
 import com.example.scheduler.service.GuestService;
 import com.example.scheduler.service.SpecialtyService;
@@ -61,8 +63,15 @@ public class GuestController {
 
     @PostMapping("/appointments")
     @PreAuthorize("hasRole('GUEST')")
-    @Operation(summary = "POST /api/guest/appointments — book a PENDING appointment, reusing the patient by CI or creating it")
-    public ResponseEntity<GuestAppointmentResponse> bookAppointment(@Valid @RequestBody GuestAppointmentRequest request) {
+    @Operation(summary = "POST /api/guest/appointments — book a PENDING appointment for a registered patient (CI + phone)")
+    public ResponseEntity<GuestAppointmentResponse> bookAppointment(@Valid @RequestBody GuestAppointmentRequest<GuestPatientRequest> request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(guestService.bookAppointment(request));
+    }
+
+    @PostMapping("/appointments/new-patient")
+    @PreAuthorize("hasRole('GUEST')")
+    @Operation(summary = "POST /api/guest/appointments/new-patient — register the patient and book a PENDING appointment")
+    public ResponseEntity<GuestAppointmentResponse> bookAppointmentForNewPatient(@Valid @RequestBody GuestAppointmentRequest<GuestNewPatientRequest> request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(guestService.bookAppointmentForNewPatient(request));
     }
 }

@@ -25,7 +25,9 @@
             >
             <div class="min-w-0">
               <p class="truncate font-bold text-gray-900">{{ patient.name }}</p>
-              <p class="truncate text-sm text-gray-500">{{ patient.email }}</p>
+              <p class="truncate text-sm text-gray-500">
+                {{ patient.email ?? patient.phoneNumber }}
+              </p>
             </div>
           </div>
           <button type="button" class="btn btn-ghost btn-sm" (click)="booking.selectPatient(null)">
@@ -69,7 +71,9 @@
                 <span class="block truncate text-sm font-bold text-gray-900">{{
                   patient.name
                 }}</span>
-                <span class="block truncate text-xs text-gray-500">{{ patient.email }}</span>
+                <span class="block truncate text-xs text-gray-500">{{
+                  patient.email ?? patient.phoneNumber
+                }}</span>
               </span>
             </button>
           } @empty {

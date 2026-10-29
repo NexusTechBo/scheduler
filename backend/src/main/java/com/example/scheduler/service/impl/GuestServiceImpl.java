@@ -7,7 +7,11 @@ import com.example.scheduler.dto.guest.GuestAppointmentRequest;
 import com.example.scheduler.dto.guest.GuestAppointmentResponse;
 import com.example.scheduler.dto.guest.GuestClinicResponse;
 import com.example.scheduler.dto.guest.GuestDoctorResponse;
+import com.example.scheduler.dto.guest.GuestNewPatientRequest;
+import com.example.scheduler.dto.guest.GuestPatientRequest;
 import com.example.scheduler.dto.patient.PatientRequest;
+import com.example.scheduler.entity.Patient;
+import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ApiException;
 import com.example.scheduler.exception.BusinessException;
@@ -29,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -60,43 +65,55 @@ public class GuestServiceImpl implements GuestService {
 
     @Override
     public DoctorAvailabilitySlotsResponse getDoctorAvailableSlots(Long doctorId, LocalDate date) {
-        verifyActiveDoctor(doctorId);
+        getDoctorOrThrowById(doctorId);
         return doctorAvailabilityService.getDoctorAvailableSlots(doctorId, date);
     }
 
     @Override
     @Transactional
-    public GuestAppointmentResponse bookAppointment(GuestAppointmentRequest request) {
-        verifyActiveDoctor(request.doctorId());
-        appointmentService.verifySlotBookable(request.doctorId(), request.startTime());
-        var patientId = resolvePatientId(request.patient());
+    public GuestAppointmentResponse bookAppointment(GuestAppointmentRequest<GuestPatientRequest> request) {
+        return book(request, () -> resolvePatientId(request.patient()));
+    }
+
+    @Override
+    @Transactional
+    public GuestAppointmentResponse bookAppointmentForNewPatient(GuestAppointmentRequest<GuestNewPatientRequest> request) {
+        return book(request, () -> resolveNewPatientId(request.patient()));
+    }
+
+    private GuestAppointmentResponse book(GuestAppointmentRequest<?> request, Supplier<Long> patientId) {
+        var doctor = getDoctorOrThrowById(request.doctorId());
+        appointmentService.verifySlotBookable(doctor, request.startTime());
         var appointment = appointmentService.bookAppointment(
-                new AppointmentRequest(request.doctorId(), patientId, request.startTime()));
+                new AppointmentRequest(request.doctorId(), patientId.get(), request.startTime()));
         return guestMapper.toAppointmentResponse(appointment);
     }
 
-    private Long resolvePatientId(PatientRequest patient) {
-        var existing = patientRepository.findByCi(patient.ci());
-        if (existing.isPresent()) {
-            var stored = existing.get();
-            if (!stored.isActive() || !stored.getEmail().strip().equalsIgnoreCase(patient.email()))
-                throw new BusinessException(ERR_CANNOT_BOOK);
-            return stored.getId();
-        }
+    private Long resolvePatientId(GuestPatientRequest patient) {
+        return getActivePatientByCiAndPhoneNumberOrThrow(patient.ci(), Utils.normalizePhoneNumber(patient.phoneNumber())).getId();
+    }
+
+    private Long resolveNewPatientId(GuestNewPatientRequest patient) {
         var phoneNumber = Utils.normalizePhoneNumber(patient.phoneNumber());
-        if (patientRepository.existsByEmailIgnoreCase(patient.email())
-                || (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber)))
+        var email = Utils.blankToNull(patient.email());
+        var ci = patient.ci();
+        if (patientRepository.existsByCiOrPhoneNumberOrEmailIgnoreCase(ci, phoneNumber, email))
             throw new BusinessException(ERR_CANNOT_BOOK);
         try {
-            return patientService.createPatient(patient).id();
+            return patientService.createPatient(new PatientRequest(ci, patient.name(), email, phoneNumber)).id();
         } catch (ApiException | DataIntegrityViolationException e) {
             log.info("Guest patient creation rejected: {}", e.getMessage());
             throw new BusinessException(ERR_CANNOT_BOOK);
         }
     }
 
-    private void verifyActiveDoctor(Long doctorId) {
-        if (personalRepository.findByIdAndRoleAndActiveIsTrue(doctorId, ERole.DOCTOR).isEmpty())
-            throw new ResourceNotFoundException("personal.doctorNotFound", doctorId);
+    private Personal getDoctorOrThrowById(Long doctorId) {
+        return personalRepository.findByIdAndRoleAndActiveIsTrue(doctorId, ERole.DOCTOR)
+                .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", doctorId));
+    }
+
+    private Patient getActivePatientByCiAndPhoneNumberOrThrow(String ci, String phoneNumber){
+        return patientRepository.findByCiAndPhoneNumberAndActiveIsTrue(ci, phoneNumber)
+                .orElseThrow(() -> new BusinessException(ERR_CANNOT_BOOK));
     }
 }

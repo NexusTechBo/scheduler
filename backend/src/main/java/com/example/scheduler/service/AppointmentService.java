@@ -5,6 +5,7 @@ import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
 import com.example.scheduler.entity.Appointment;
+import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.AppointmentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +17,7 @@ import java.util.Map;
 
 public interface AppointmentService {
     AppointmentResponse bookAppointment(AppointmentRequest request);
-    void verifySlotBookable(Long doctorId, LocalDateTime startTime);
+    LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime);
     AppointmentResponse findAppointmentById(Long appointmentId, Long userId, String role);
     Page<AppointmentResponse> findAllAppointments(Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable);
     AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, String role);

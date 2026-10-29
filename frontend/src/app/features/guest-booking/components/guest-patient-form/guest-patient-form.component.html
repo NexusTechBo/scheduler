@@ -1,37 +1,75 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
-  <app-form-field label="CI" fieldId="guest-ci" [errorMessages]="ciErrors">
-    <input
-      id="guest-ci"
-      class="field-input"
-      formControlName="ci"
-      inputmode="numeric"
-      autocomplete="off"
-    />
-  </app-form-field>
+  <fieldset
+    [attr.aria-describedby]="
+      form.controls.kind.touched && form.controls.kind.invalid ? 'guest-kind-error' : null
+    "
+  >
+    <legend class="field-label">¿Ya te atendiste en esta clínica?</legend>
+    <div class="grid gap-2 sm:grid-cols-2">
+      @for (option of kinds; track option.id) {
+        <label
+          class="flex cursor-pointer items-center justify-center rounded-2xl border-2 px-3 py-2.5 text-center text-sm font-bold transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-gray-900"
+          [class]="
+            kind() === option.id
+              ? 'border-primary bg-white text-primary'
+              : 'border-transparent bg-white/50 text-gray-600'
+          "
+        >
+          <input type="radio" class="sr-only" formControlName="kind" [value]="option.id" />
+          {{ option.label }}
+        </label>
+      }
+    </div>
+    @if (form.controls.kind.touched && form.controls.kind.invalid) {
+      <p id="guest-kind-error" class="field-error">Elige una opción</p>
+    }
+  </fieldset>
 
-  <app-form-field label="Nombre completo" fieldId="guest-name">
-    <input id="guest-name" class="field-input" formControlName="name" autocomplete="name" />
-  </app-form-field>
+  @if (kind(); as selected) {
+    @if (selected === 'returning') {
+      <p class="text-sm font-medium text-gray-600">
+        Ingresa el CI y el teléfono con los que te registraste.
+      </p>
+    }
 
-  <app-form-field label="Email" fieldId="guest-email">
-    <input
-      id="guest-email"
-      type="email"
-      class="field-input"
-      formControlName="email"
-      autocomplete="email"
-    />
-  </app-form-field>
+    <app-form-field label="CI" fieldId="guest-ci" [errorMessages]="ciErrors">
+      <input
+        id="guest-ci"
+        class="field-input"
+        formControlName="ci"
+        inputmode="numeric"
+        autocomplete="off"
+      />
+    </app-form-field>
 
-  <app-form-field label="Teléfono (opcional)" fieldId="guest-phone" [errorMessages]="phoneErrors">
-    <input
-      id="guest-phone"
-      type="tel"
-      class="field-input"
-      formControlName="phoneNumber"
-      autocomplete="tel"
-    />
-  </app-form-field>
+    @if (selected === 'new') {
+      <app-form-field label="Nombre completo" fieldId="guest-name">
+        <input id="guest-name" class="field-input" formControlName="name" autocomplete="name" />
+      </app-form-field>
+    }
+
+    <app-form-field label="Teléfono" fieldId="guest-phone" [errorMessages]="phoneErrors">
+      <input
+        id="guest-phone"
+        type="tel"
+        class="field-input"
+        formControlName="phoneNumber"
+        autocomplete="tel"
+      />
+    </app-form-field>
+
+    @if (selected === 'new') {
+      <app-form-field label="Email (opcional)" fieldId="guest-email">
+        <input
+          id="guest-email"
+          type="email"
+          class="field-input"
+          formControlName="email"
+          autocomplete="email"
+        />
+      </app-form-field>
+    }
+  }
 
   <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-between">
     <button type="button" class="btn btn-secondary" (click)="back.emit()">Atrás</button>

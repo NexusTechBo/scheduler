@@ -53,7 +53,9 @@
         <div class="min-w-0">
           <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Paciente</p>
           <p class="truncate text-[15px] font-bold text-gray-900">{{ appt.patientName }}</p>
-          <p class="truncate text-sm text-gray-500">{{ appt.patientEmail }}</p>
+          @if (appt.patientEmail) {
+            <p class="truncate text-sm text-gray-500">{{ appt.patientEmail }}</p>
+          }
         </div>
       </div>
 

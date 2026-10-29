@@ -41,6 +41,7 @@ export class GuestApi {
   }
 
   book(request: GuestAppointmentRequest): Observable<GuestAppointmentResponse> {
-    return this.http.post<GuestAppointmentResponse>('guest/appointments', request);
+    const url = request.patient.name ? 'guest/appointments/new-patient' : 'guest/appointments';
+    return this.http.post<GuestAppointmentResponse>(url, request);
   }
 }

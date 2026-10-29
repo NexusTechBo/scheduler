@@ -249,10 +249,12 @@
               @if (booking.patient(); as patient) {
                 <div>
                   <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Paciente</dt>
-                  <dd class="mt-0.5 font-bold text-gray-900">{{ patient.name }}</dd>
-                  <dd class="text-gray-500">CI {{ patient.ci }} · {{ patient.email }}</dd>
-                  @if (patient.phoneNumber) {
-                    <dd class="text-gray-500">{{ patient.phoneNumber }}</dd>
+                  <dd class="mt-0.5 font-bold text-gray-900">
+                    {{ patient.name ?? 'Paciente registrado' }}
+                  </dd>
+                  <dd class="text-gray-500">CI {{ patient.ci }} · {{ patient.phoneNumber }}</dd>
+                  @if (patient.email) {
+                    <dd class="text-gray-500">{{ patient.email }}</dd>
                   }
                 </div>
               }

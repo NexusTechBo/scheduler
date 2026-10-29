@@ -107,7 +107,7 @@ export interface AppointmentResponse {
   doctorEmail: string;
   patientId: number;
   patientName: string;
-  patientEmail: string;
+  patientEmail: string | null;
   status: AppointmentStatus;
   cancellationReason: string | null;
 }
@@ -152,16 +152,16 @@ export interface Patient {
   id: number;
   ci: string;
   name: string;
-  email: string;
-  phoneNumber: string | null;
+  email: string | null;
+  phoneNumber: string;
   active: boolean;
 }
 
 export interface PatientRequest {
   ci: string;
   name: string;
-  email: string;
-  phoneNumber?: string | null;
+  phoneNumber: string;
+  email?: string | null;
 }
 
 export interface Staff {
@@ -292,10 +292,23 @@ export interface GuestDoctor {
   specialtyName: string | null;
 }
 
-export interface GuestAppointmentRequest {
+export interface GuestPatientRequest {
+  ci: string;
+  phoneNumber: string;
+}
+
+export interface GuestNewPatientRequest extends GuestPatientRequest {
+  name: string;
+  email?: string | null;
+}
+
+export type GuestBookingPatient = GuestPatientRequest &
+  Partial<Pick<GuestNewPatientRequest, 'name' | 'email'>>;
+
+export interface GuestAppointmentRequest<P extends GuestBookingPatient = GuestBookingPatient> {
   doctorId: number;
   startTime: string;
-  patient: PatientRequest;
+  patient: P;
 }
 
 export interface GuestAppointmentResponse {

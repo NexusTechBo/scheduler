@@ -45,7 +45,7 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
     @EntityGraph(attributePaths = {"specialty"})
     Optional<Personal> findById(Long id);
 
-Optional<Personal> findByIdAndRoleAndActiveIsTrue(Long id, ERole role);
+    Optional<Personal> findByIdAndRoleAndActiveIsTrue(Long id, ERole role);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Personal p WHERE p.id = :id")

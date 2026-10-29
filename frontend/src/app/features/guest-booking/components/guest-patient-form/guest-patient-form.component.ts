@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { PatientRequest } from '../../../../core/models/api.models';
+import { GuestBookingPatient } from '../../../../core/models/api.models';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import {
   CI_ERRORS,
@@ -10,6 +11,8 @@ import {
   phoneValidator,
 } from '../../../../shared/utils/validation-messages.util';
 
+type PatientKind = 'returning' | 'new';
+
 @Component({
   selector: 'app-guest-patient-form',
   imports: [FormFieldComponent, ReactiveFormsModule],
@@ -18,23 +21,47 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuestPatientFormComponent implements OnInit {
-  readonly initial = input<PatientRequest | null>(null);
-  readonly submitted = output<PatientRequest>();
+  readonly initial = input<GuestBookingPatient | null>(null);
+  readonly submitted = output<GuestBookingPatient>();
   readonly back = output<void>();
 
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
+  protected readonly kinds: { id: PatientKind; label: string }[] = [
+    { id: 'returning', label: 'Ya me atendí en esta clínica' },
+    { id: 'new', label: 'Es mi primera vez' },
+  ];
 
-  protected readonly form = inject(FormBuilder).nonNullable.group({
-    ci: ['', [notBlank, ciValidator]],
-    name: ['', notBlank],
-    email: ['', [Validators.required, Validators.email]],
-    phoneNumber: ['', phoneValidator],
+  private readonly fb = inject(FormBuilder);
+  protected readonly form = this.fb.group({
+    kind: this.fb.control<PatientKind | null>(null, Validators.required),
+    ci: this.fb.nonNullable.control('', [notBlank, ciValidator]),
+    phoneNumber: this.fb.nonNullable.control('', [notBlank, phoneValidator]),
+    name: this.fb.nonNullable.control({ value: '', disabled: true }, notBlank),
+    email: this.fb.nonNullable.control({ value: '', disabled: true }, Validators.email),
   });
+  protected readonly kind = toSignal(this.form.controls.kind.valueChanges, { initialValue: null });
+
+  constructor() {
+    this.form.controls.kind.valueChanges.pipe(takeUntilDestroyed()).subscribe((kind) => {
+      const { name, email } = this.form.controls;
+      for (const control of [name, email]) {
+        if (kind === 'new') control.enable();
+        else control.disable();
+      }
+    });
+  }
 
   ngOnInit(): void {
     const initial = this.initial();
-    if (initial) this.form.setValue({ ...initial, phoneNumber: initial.phoneNumber ?? '' });
+    if (!initial) return;
+    this.form.patchValue({
+      kind: initial.name ? 'new' : 'returning',
+      ci: initial.ci,
+      phoneNumber: initial.phoneNumber,
+      name: initial.name ?? '',
+      email: initial.email ?? '',
+    });
   }
 
   protected submit(): void {
@@ -42,12 +69,17 @@ export class GuestPatientFormComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    const { ci, name, email, phoneNumber } = this.form.getRawValue();
+    const ci = this.form.controls.ci.value.trim();
+    const phoneNumber = this.form.controls.phoneNumber.value.trim();
+    if (this.kind() === 'returning') {
+      this.submitted.emit({ ci, phoneNumber });
+      return;
+    }
     this.submitted.emit({
-      ci: ci.trim(),
-      name: name.trim(),
-      email: email.trim(),
-      phoneNumber: phoneNumber.trim() || null,
+      ci,
+      phoneNumber,
+      name: this.form.controls.name.value.trim(),
+      email: this.form.controls.email.value.trim() || null,
     });
   }
 }

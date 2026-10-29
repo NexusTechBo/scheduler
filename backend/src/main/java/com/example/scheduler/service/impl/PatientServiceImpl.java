@@ -39,15 +39,16 @@ public class PatientServiceImpl implements PatientService {
     public PatientResponse createPatient(PatientRequest request) {
         if (patientRepository.existsByCi(request.ci()))
             throw new BusinessException("patient.alreadyExists");
-        if (patientRepository.existsByEmailIgnoreCase(request.email()))
-            throw new BadRequestException("patient.emailAlreadyExists", request.email());
+        var email = Utils.blankToNull(request.email());
+        if (email != null && patientRepository.existsByEmailIgnoreCase(email))
+            throw new BadRequestException("patient.emailAlreadyExists", email);
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException("patient.phoneAlreadyExists", phoneNumber);
         var patient = Patient.builder()
                 .ci(request.ci())
                 .name(request.name())
-                .email(request.email())
+                .email(email)
                 .phoneNumber(phoneNumber)
                 .build();
         return patientMapper.toResponse(patientRepository.save(patient));
@@ -64,14 +65,15 @@ public class PatientServiceImpl implements PatientService {
         var patient = getPatientOrThrowById(patientId);
         if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
             throw new BusinessException("patient.alreadyExists");
-        if (!patient.getEmail().equalsIgnoreCase(request.email()) && patientRepository.existsByEmailIgnoreCase(request.email()))
-            throw new BadRequestException("patient.emailAlreadyExists", request.email());
+        var email = Utils.blankToNull(request.email());
+        if (email != null && !email.equalsIgnoreCase(patient.getEmail()) && patientRepository.existsByEmailIgnoreCase(email))
+            throw new BadRequestException("patient.emailAlreadyExists", email);
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null && !Objects.equals(patient.getPhoneNumber(), phoneNumber) && patientRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException("patient.phoneAlreadyExists", phoneNumber);
         patient.setCi(request.ci());
         patient.setName(request.name());
-        patient.setEmail(request.email());
+        patient.setEmail(email);
         patient.setPhoneNumber(phoneNumber);
         return patientMapper.toResponse(patientRepository.save(patient));
     }

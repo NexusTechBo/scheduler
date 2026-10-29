@@ -21,11 +21,13 @@ import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.websocket.AppointmentChangedEvent;
 import com.example.scheduler.websocket.BoardEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -59,16 +62,18 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public AppointmentResponse bookAppointment(AppointmentRequest request) {
         var patientId = request.patientId();
-        var slot = lockBookableSlot(request.doctorId(), request.startTime());
+        var doctor = personalRepository.findByIdForUpdate(request.doctorId())
+                .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", request.doctorId()));
+        var endTime = verifySlotBookable(doctor, request.startTime());
         var patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
         if (!patient.isActive())
             throw new BusinessException("auth.userNotActive");
         var appointment = Appointment.builder()
-                .doctor(slot.doctor())
+                .doctor(doctor)
                 .patient(patient)
                 .startTime(request.startTime())
-                .endTime(slot.endTime())
+                .endTime(endTime)
                 .status(AppointmentStatus.PENDING)
                 .build();
         return appointmentMapper.toResponse(saveAndNotify(appointment));
@@ -76,28 +81,20 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional
-    public void verifySlotBookable(Long doctorId, LocalDateTime startTime) {
-        lockBookableSlot(doctorId, startTime);
-    }
-
-    private record BookableSlot(Personal doctor, LocalDateTime endTime) {}
-
-    private BookableSlot lockBookableSlot(Long doctorId, LocalDateTime startTime) {
-        var endTime = findSlotEnd(doctorId, startTime)
+    public LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime) {
+        var endTime = findSlotEnd(doctor.getId(), startTime)
                 .orElseThrow(() -> new BusinessException("appointment.outOfJourney"));
-        var doctor = personalRepository.findByIdForUpdate(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", doctorId));
         if (doctor.getRole() != ERole.DOCTOR)
-            throw new BadRequestException("personal.doctorNotFound", doctorId);
+            throw new BadRequestException("personal.doctorNotFound", doctor.getId());
         if (!doctor.isActive())
             throw new BusinessException("auth.userNotActive");
         if (startTime.isBefore(LocalDateTime.now(clock)))
             throw new BadRequestException("appointment.pastDate");
-        if (isBlocked(doctorId, startTime, endTime))
+        if (isBlocked(doctor.getId(), startTime, endTime))
             throw new BusinessException("appointment.scheduleBlocked");
-        if (isSlotTaken(doctorId, startTime, endTime))
+        if (isSlotTaken(doctor.getId(), startTime, endTime))
             throw new BusinessException("appointment.slotTaken");
-        return new BookableSlot(doctor, endTime);
+        return endTime;
     }
 
     @Override
@@ -207,6 +204,10 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void publishEmailNotification(Appointment appointment, String clinicName) {
         var doctor = appointment.getDoctor();
         var patient = appointment.getPatient();
+        if (!StringUtils.hasText(patient.getEmail())) {
+            log.info("Appointment {} email notification skipped: patient {} has no email", appointment.getId(), patient.getId());
+            return;
+        }
         var specialty = doctor.getSpecialty();
         eventPublisher.publishEvent(new AppointmentNotificationEvent(
                 appointment.getStatus(),

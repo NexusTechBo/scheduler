@@ -38,8 +38,8 @@ export class PatientFormDialogComponent {
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: [this.patient?.name ?? '', notBlank],
-    email: [this.patient?.email ?? '', [Validators.required, Validators.email]],
-    phoneNumber: [this.patient?.phoneNumber ?? '', phoneValidator],
+    phoneNumber: [this.patient?.phoneNumber ?? '', [notBlank, phoneValidator]],
+    email: [this.patient?.email ?? '', Validators.email],
     ci: [this.patient?.ci ?? '', [notBlank, ciValidator]],
   });
 
@@ -55,9 +55,9 @@ export class PatientFormDialogComponent {
     this.patients
       .save(this.patient, {
         name: name.trim(),
-        email: email.trim(),
         ci: ci.trim(),
-        phoneNumber: phoneNumber.trim() || null,
+        phoneNumber: phoneNumber.trim(),
+        email: email.trim() || null,
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
