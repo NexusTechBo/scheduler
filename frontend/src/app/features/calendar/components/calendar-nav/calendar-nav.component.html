@@ -1,7 +1,7 @@
 <button
   type="button"
   (click)="previous.emit()"
-  class="glass-panel flex h-11 w-11 items-center justify-center rounded-2xl text-gray-700 transition-colors hover:bg-white/70"
+  class="glass-panel cursor-pointer flex h-11 w-11 items-center justify-center rounded-2xl text-gray-700 transition-colors hover:bg-white/70"
   aria-label="Mes anterior"
 >
   <app-ui-icon name="chevronLeft" class="h-4.5 w-4.5" [strokeWidth]="2" />
@@ -9,7 +9,7 @@
 <button
   type="button"
   (click)="next.emit()"
-  class="glass-panel flex h-11 w-11 items-center justify-center rounded-2xl text-gray-700 transition-colors hover:bg-white/70"
+  class="glass-panel cursor-pointer flex h-11 w-11 items-center justify-center rounded-2xl text-gray-700 transition-colors hover:bg-white/70"
   aria-label="Mes siguiente"
 >
   <app-ui-icon name="chevronRight" class="h-4.5 w-4.5" [strokeWidth]="2" />
@@ -17,7 +17,7 @@
 <button
   type="button"
   (click)="today.emit()"
-  class="glass-panel rounded-2xl px-5 py-2.5 text-sm font-bold text-gray-700 transition-colors hover:bg-white/70"
+  class="glass-panel cursor-pointer rounded-2xl px-5 py-2.5 text-sm font-bold text-gray-700 transition-colors hover:bg-white/70"
 >
   Hoy
 </button>
