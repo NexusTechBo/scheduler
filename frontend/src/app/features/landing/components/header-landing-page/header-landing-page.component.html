@@ -1,0 +1,28 @@
+<!-- Header -->
+ <header class="sticky shadow-2xl top-0 z-20 border-b border-gray-900/5 bg-primary backdrop-blur">
+  <nav class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <a routerLink="/" class="flex items-center gap-2 text-lg font-extrabold text-white">
+      <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+        <app-ui-icon name="calendar" class="h-5 w-5" />
+      </span>
+      ClinicFlow
+    </a>
+
+    <ul class="hidden items-center gap-6 text-sm font-semibold text-gray-600 md:flex">
+      @for (item of nav; track item.anchor) {
+        <li>
+          <a [href]="'#' + item.anchor" class="hover:text-gray-300 text-white">{{ item.label }}</a>
+        </li>
+      }
+    </ul>
+
+    <div class="flex items-center gap-2">
+      @if (isLoggedIn()) {
+        <a [routerLink]="homeUrl" class="btn btn-primary btn-sm hover:text-gray-300 text-white">Ir al panel</a>
+      } @else {
+        <a routerLink="/login" class="btn btn-ghost bg-blue-500 btn-sm hover:text-gray-300 text-white">Iniciar sesión</a>
+        <a routerLink="/register" class="btn btn-primary btn-sm hover:text-gray-300 text-white">Registrar clínica</a>
+      }
+    </div>
+  </nav>
+</header>

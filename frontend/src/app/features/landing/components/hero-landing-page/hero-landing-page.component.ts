@@ -1,0 +1,18 @@
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
+import { BrowserFrameComponent } from '../browser-frame/browser-frame.component';
+import { RevealDirective } from '../../directives/reveal.directive';
+import { HERO_MOBILE_SHOT, HERO_SHOT } from '../../constants/landing.content';
+
+@Component({
+  selector: 'app-hero-landing-page',
+  imports: [RouterLink, UiIconComponent, BrowserFrameComponent, RevealDirective],
+  templateUrl: './hero-landing-page.component.html',
+  host: { class: 'block' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class HeroLandingPageComponent {
+  protected readonly heroShot = HERO_SHOT;
+  protected readonly heroMobileShot = HERO_MOBILE_SHOT;
+}

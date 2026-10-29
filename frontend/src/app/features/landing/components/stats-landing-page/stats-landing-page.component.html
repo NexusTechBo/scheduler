@@ -1,0 +1,13 @@
+<section class="mx-auto max-w-6xl px-4 pt-24 sm:px-6">
+    <ul
+      appReveal
+      class="grid grid-cols-2 gap-6 rounded-3xl border border-white/70 bg-white/60 p-6 text-center backdrop-blur md:grid-cols-4"
+    >
+      @for (stat of stats; track stat.label) {
+        <li>
+          <p class="landing-text-gradient text-3xl font-extrabold">{{ stat.value }}</p>
+          <p class="mt-1 text-sm font-medium text-gray-500">{{ stat.label }}</p>
+        </li>
+      }
+    </ul>
+  </section>
