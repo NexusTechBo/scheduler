@@ -7,10 +7,14 @@ import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { DashboardService } from './dashboard.service';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
+import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
+import { WeekChartComponent } from './components/week-chart/week-chart.component';
 
 @Component({
   selector: 'app-dashboard-page',
   imports: [
+    WeekChartComponent,
+    TimeRangePipe,
     LoadErrorComponent,
     SkeletonComponent,
     RouterLink,
