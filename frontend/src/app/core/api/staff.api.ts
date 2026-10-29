@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { toHttpParams } from '../http/http-params.util';
 import {
   AssignPatientRequest,
   DoctorFilters,
@@ -12,7 +13,6 @@ import {
   StaffRegisterRequest,
   StaffUpdateRequest,
 } from '../models/api.models';
-import { toHttpParams } from '../http/http-params.util';
 
 @Injectable({ providedIn: 'root' })
 export class StaffApi {

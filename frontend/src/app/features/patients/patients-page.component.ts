@@ -1,29 +1,29 @@
-import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
-import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
+import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Patient } from '../../core/models/api.models';
 import { initials } from '../../core/utils/labels.util';
+import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { PaginationComponent } from '../../shared/ui/pagination/pagination.component';
 import {
   SegmentedTabItem,
   SegmentedTabsComponent,
 } from '../../shared/ui/segmented-tabs/segmented-tabs.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
-import {
-  PatientFormData,
-  PatientFormDialogComponent,
-} from './components/patient-form-dialog/patient-form-dialog.component';
+import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import {
   AssignDoctorData,
   AssignDoctorDialogComponent,
 } from './components/assign-doctor-dialog/assign-doctor-dialog.component';
+import {
+  PatientFormData,
+  PatientFormDialogComponent,
+} from './components/patient-form-dialog/patient-form-dialog.component';
 import { PatientScope, PatientsService } from './patients.service';
-import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
-import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 
 @Component({
   selector: 'app-patients-page',

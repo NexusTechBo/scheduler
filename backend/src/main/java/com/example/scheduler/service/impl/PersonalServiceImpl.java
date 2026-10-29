@@ -102,14 +102,15 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     public PersonalResponse findPersonalById(Long personalId) {
-        return personalMapper.toResponse(getPersonalOrThrowById(personalId));
+        var personal = personalRepository.findById(personalId)
+                .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", personalId));
+        return personalMapper.toResponse(personal);
     }
 
     @Override
     @Transactional
     public PersonalResponse updatePersonalByAdmin(Long personalId, PersonalUpdateRequest request) {
-        var personal = personalRepository.findByIdForUpdate(personalId)
-                .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", personalId));
+        var personal = getPersonalOrThrowById(personalId);
         if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT) {
             var now = LocalDateTime.now(clock);
             if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(personalId, AppointmentStatus.CANCELLED, now))
@@ -206,7 +207,7 @@ public class PersonalServiceImpl implements PersonalService {
     }
 
     private Personal getPersonalOrThrowById(Long personalId) {
-        return personalRepository.findById(personalId)
+        return personalRepository.findByIdForUpdate(personalId)
                 .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", personalId));
     }
 

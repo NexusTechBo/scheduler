@@ -7,11 +7,6 @@ import { apiErrorMessage } from '../../core/http/api-error';
 import { Patient, PatientRequest } from '../../core/models/api.models';
 import { NotificationService } from './notification.service';
 
-/**
- * Creates or updates a patient; a patient created by a doctor is also assigned to them.
- * Root-provided so the patient form can be opened from any page (patients, booking)
- * without loading the patients list state.
- */
 @Injectable({ providedIn: 'root' })
 export class PatientSaveService {
   private readonly patientsApi = inject(PatientsApi);

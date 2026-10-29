@@ -14,7 +14,7 @@ import {
   parseIso,
   toIso,
 } from '../../core/utils/calendar.util';
-import { AppointmentActionsService } from '../../shared/appointments/appointment-actions.service';
+import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 
 @Injectable()
 export class CalendarService {

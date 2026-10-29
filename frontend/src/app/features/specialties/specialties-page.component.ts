@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
-import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { SpecialtiesService } from './specialties.service';
-import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-specialties-page',

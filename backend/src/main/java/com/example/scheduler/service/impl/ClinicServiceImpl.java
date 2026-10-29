@@ -43,15 +43,15 @@ public class ClinicServiceImpl implements ClinicService {
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
         var slug = request.slug();
         var tx = new TransactionTemplate(transactionManager);
-        removeAbandonedClinics(request.name().strip(), slug, tx);
-        if (clinicRepository.existsByNameIgnoreCase(request.name().strip()))
+        removeAbandonedClinics(request.name(), slug, tx);
+        if (clinicRepository.existsByNameIgnoreCase(request.name()))
             throw new BusinessException("clinic.alreadyExists");
         if (clinicRepository.existsBySlug(slug))
             throw new BusinessException("clinic.slugTaken", slug);
         var clinic = tx.execute(_ ->
             clinicRepository.save(Clinic.builder()
                     .name(request.name())
-                    .phoneNumber(request.phoneNumber())
+                    .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
                     .slug(slug)
                     .status(ClinicStatus.PENDING_ACTIVATION)
                     .build())

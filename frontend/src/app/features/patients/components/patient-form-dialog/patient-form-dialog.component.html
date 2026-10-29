@@ -9,25 +9,21 @@
     </app-form-field>
 
     <div class="grid gap-4 sm:grid-cols-2">
-      <app-form-field label="Email" fieldId="patient-email">
-        <input
-          id="patient-email"
-          type="email"
-          class="field-input"
-          formControlName="email"
-          autocomplete="off"
-        />
-      </app-form-field>
-      <app-form-field
-        label="Teléfono (opcional)"
-        fieldId="patient-phone"
-        [errorMessages]="phoneErrors"
-      >
+      <app-form-field label="Teléfono" fieldId="patient-phone" [errorMessages]="phoneErrors">
         <input
           id="patient-phone"
           type="tel"
           class="field-input"
           formControlName="phoneNumber"
+          autocomplete="off"
+        />
+      </app-form-field>
+      <app-form-field label="Email (opcional)" fieldId="patient-email">
+        <input
+          id="patient-email"
+          type="email"
+          class="field-input"
+          formControlName="email"
           autocomplete="off"
         />
       </app-form-field>

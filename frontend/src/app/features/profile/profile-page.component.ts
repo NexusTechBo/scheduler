@@ -5,9 +5,11 @@ import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { ROLE_LABEL, initials } from '../../core/utils/labels.util';
-import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
+import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import {
   PHONE_ERRORS,
   currentPasswordWhenChanging,
@@ -15,8 +17,6 @@ import {
   phoneValidator,
 } from '../../shared/utils/validation-messages.util';
 import { ProfileService } from './profile.service';
-import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { AlertComponent } from '../../shared/ui/alert/alert.component';
 
 @Component({
   selector: 'app-profile-page',

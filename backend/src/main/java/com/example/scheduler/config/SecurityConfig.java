@@ -61,7 +61,6 @@ public class SecurityConfig {
     }
 
     private void writeError(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String messageKey) throws IOException {
-        // Runs before the DispatcherServlet, so the locale is resolved here instead of using LocaleContextHolder
         var message = messageSource.getMessage(messageKey, null, localeResolver.resolveLocale(request));
         var body = ErrorResponse.of(status, message, request.getRequestURI());
         response.setStatus(status.value());

@@ -28,7 +28,6 @@ export class ActivationService {
     return state.status === 'error' ? state.message : null;
   });
 
-  /** A session of another clinic/user is open; login would redirect home instead. */
   readonly hasSession = computed(() => {
     const session = this.auth.session();
     return session !== null && session.expiresAt > Date.now();
@@ -37,14 +36,12 @@ export class ActivationService {
   private token: string | null = null;
   private started = false;
 
-  /** Closes any open session so the new admin reaches the login form with the username. */
   continueToLogin(): void {
     const username = this.result()?.adminUsername;
     if (!username) return;
     this.auth.logout({ state: { username } });
   }
 
-  /** Runs once per page: the token is single use, so repeated calls are ignored. */
   activate(token: string | null): void {
     if (this.started) return;
     this.started = true;
@@ -52,7 +49,6 @@ export class ActivationService {
     this.send();
   }
 
-  /** Only meaningful after a network/server error, where the token was not consumed. */
   retry(): void {
     if (this._state().status !== 'error') return;
     this.send();
@@ -65,8 +61,6 @@ export class ActivationService {
       return;
     }
     this._state.set({ status: 'loading' });
-    // Intentionally not tied to the component lifecycle: the token is single use, so the POST
-    // must complete even if the user navigates away, instead of being cancelled halfway.
     this.clinicsApi.activate(token).subscribe({
       next: (result) => {
         this.token = null;

@@ -1,5 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { finalize, map } from 'rxjs';
 import { PatientsApi } from '../../../../core/api/patients.api';

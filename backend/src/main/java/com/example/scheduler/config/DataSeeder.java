@@ -31,8 +31,8 @@ public class DataSeeder implements ApplicationRunner {
     public void run(@NonNull ApplicationArguments args) {
         if (clinicRepository.count() > 0) return;
 
-        Clinic downtown = clinicRepository.save(Clinic.builder().name("Downtown Clinic").phoneNumber("+1-555-2001").slug("downtownclinic").build());
-        Clinic uptown = clinicRepository.save(Clinic.builder().name("Uptown Clinic").phoneNumber("+1-555-2002").slug("uptownclinic").build());
+        Clinic downtown = clinicRepository.save(Clinic.builder().name("Downtown Clinic").phoneNumber("+59122441200").slug("downtownclinic").build());
+        Clinic uptown = clinicRepository.save(Clinic.builder().name("Uptown Clinic").phoneNumber("+59122441201").slug("uptownclinic").build());
 
         String pwd = passwordEncoder.encode("password123");
 
@@ -69,8 +69,8 @@ public class DataSeeder implements ApplicationRunner {
         personalRepository.save(seedPersonal("Dr. Laura Torres", "laura.torres@clinic.com", usernameSuffix, pwd, "123123124", ERole.DOCTOR, peds));
         personalRepository.save(seedPersonal("Maria Ramos", "maria.ramos@clinic.com", usernameSuffix, pwd, "123123125", ERole.ASSISTANT, null));
 
-        Patient john = patientRepository.save(seedPatient("John Smith", "john.smith@email.com", "+1-555-1001", "123123126"));
-        Patient maria = patientRepository.save(seedPatient("María López", "maria.lopez@email.com", "+1-555-1002", "123123127"));
+        Patient john = patientRepository.save(seedPatient("John Smith", "john.smith@email.com", "+59171000001", "123123126"));
+        Patient maria = patientRepository.save(seedPatient("María López", "maria.lopez@email.com", "+59171000002", "123123127"));
 
         ana.getPatients().add(john);
         ana.getPatients().add(maria);
@@ -90,7 +90,7 @@ public class DataSeeder implements ApplicationRunner {
         personalRepository.save(seedPersonal("Dr. Valentina Cruz", "valentina.cruz@clinic.com", usernameSuffix, pwd, "123123111", ERole.DOCTOR, trauma));
         personalRepository.save(seedPersonal("Pedro Álvarez", "pedro.alvarez@clinic.com", usernameSuffix, pwd, "123123112", ERole.ASSISTANT, null));
 
-        Patient james = patientRepository.save(seedPatient("James Wilson", "james.wilson@email.com", "+1-555-1003", "123123113"));
+        Patient james = patientRepository.save(seedPatient("James Wilson", "james.wilson@email.com", "+59171000003", "123123113"));
 
         sofia.getPatients().add(james);
         personalRepository.save(sofia);

@@ -1,6 +1,6 @@
+import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { DialogRef } from '@angular/cdk/dialog';
 import {
   AbstractControl,
   FormBuilder,
@@ -12,12 +12,12 @@ import { finalize, map } from 'rxjs';
 import { DayOfWeek } from '../../../../core/models/api.models';
 import { addMinutesToTime } from '../../../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../../../core/utils/labels.util';
+import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { AvailabilityService } from '../../availability.service';
-import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 function endAfterStart(control: AbstractControl): ValidationErrors | null {
   const startTime = control.parent?.get('startTime')?.value as string | undefined;

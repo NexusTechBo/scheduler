@@ -6,6 +6,7 @@
       [selectedId]="appointments.status()"
       (select)="setStatus($event)"
     />
+    <app-guest-link-button />
     <a routerLink="/appointments/new" class="btn btn-primary">
       <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
       Agendar cita
@@ -63,9 +64,11 @@
               <td class="hidden whitespace-nowrap 2xl:table-cell">{{ row.timeLabel }}</td>
               <td class="w-full max-w-0 max-sm:px-2">
                 <p class="font-bold wrap-break-word text-gray-900">{{ row.patientName }}</p>
-                <p class="truncate text-xs text-gray-500" [title]="row.patientEmail">
-                  {{ row.patientEmail }}
-                </p>
+                @if (row.patientEmail) {
+                  <p class="truncate text-xs text-gray-500" [title]="row.patientEmail">
+                    {{ row.patientEmail }}
+                  </p>
+                }
                 <app-status-badge class="mt-1 inline-block xl:hidden" [status]="row.status" />
               </td>
               @if (showDoctor) {

@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
-import { ROLES } from './core/navigation/navigation';
+import { GUEST_BOOKING_PATH, ROLES } from './core/navigation/navigation';
 
 export const routes: Routes = [
   // Public landing page: no guards, reachable with or without a session.
@@ -111,6 +111,14 @@ export const routes: Routes = [
     title: 'Activar clínica',
     loadComponent: () =>
       import('./features/activation/activation.component').then((m) => m.ActivationComponent),
+  },
+  {
+    path: GUEST_BOOKING_PATH,
+    title: 'Reservar cita',
+    loadComponent: () =>
+      import('./features/guest-booking/guest-booking.component').then(
+        (m) => m.GuestBookingComponent,
+      ),
   },
   { path: '**', redirectTo: '' },
 ];

@@ -25,8 +25,9 @@ public class LocaleConfig {
     @Bean
     public MessageSource messageSource() {
         ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-        source.setBasename("messages");
+        source.setBasenames("messages", "org.hibernate.validator.ValidationMessages");
         source.setDefaultEncoding("UTF-8");
+        source.setFallbackToSystemLocale(false);
         source.setUseCodeAsDefaultMessage(true);
         return source;
     }

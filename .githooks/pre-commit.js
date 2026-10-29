@@ -1,0 +1,33 @@
+const fs = require('fs');
+const path = require('path');
+const { execFileSync, spawnSync } = require('child_process');
+
+const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+const frontendDir = path.join(root, 'frontend');
+const prettier = path.join(frontendDir, 'node_modules', 'prettier', 'bin', 'prettier.cjs');
+
+const staged = execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], {
+  cwd: root,
+  encoding: 'utf8',
+})
+  .split('\n')
+  .filter((file) => /^frontend\/src\/.+\.(ts|html|css|json)$/.test(file));
+
+if (staged.length === 0) process.exit(0);
+
+if (!fs.existsSync(prettier)) {
+  console.error('pre-commit.js: Prettier is not installed. Run "npm install" in frontend/ first.');
+  process.exit(1);
+}
+
+const result = spawnSync(
+  process.execPath,
+  [prettier, '--check', ...staged.map((file) => path.join(root, file))],
+  { cwd: frontendDir, stdio: 'inherit' },
+);
+
+if (result.status !== 0) {
+  console.error('\npre-commit.js: some staged frontend files are not formatted.');
+  console.error('Run "npm run format" in frontend/, review the changes, stage them and commit again.');
+  process.exit(1);
+}
