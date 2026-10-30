@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApi(ApiException ex, HttpServletRequest req) {
-        log.debug("Controlled error {}: {}", ex.getStatus().value(), ex.getMessageKey());
+        log.warn("Business error {} {} on {} {}", ex.getStatus().value(), ex.getMessageKey(), req.getMethod(), req.getRequestURI());
         String resolvedMessage = msg(ex.getMessageKey(), ex.getArgs());
         return ResponseEntity.status(ex.getStatus())
                 .body(ErrorResponse.of(ex.getStatus(), resolvedMessage, req.getRequestURI()));
@@ -75,7 +75,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex, HttpServletRequest req) {
-        log.debug("Malformed request body on {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
         return build(HttpStatus.BAD_REQUEST, msg("error.http.malformedBody"), req);
     }
 
@@ -91,7 +90,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex, HttpServletRequest req) {
-        log.debug("No resource found: {}", ex.getResourcePath());
         return build(HttpStatus.NOT_FOUND, msg("error.http.resourceNotFound"), req);
     }
 
@@ -102,13 +100,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleMediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
-        log.debug("Unsupported content type {} on {}", ex.getContentType(), req.getRequestURI());
         return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, msg("error.http.mediaTypeNotSupported"), req);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
-        log.warn("Data integrity violation on {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        log.warn("Data integrity violation on {}: constraint {}", req.getRequestURI(), constraintName(ex));
         return build(HttpStatus.CONFLICT, msg("error.data.conflict"), req);
     }
 
@@ -126,7 +123,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidDataAccessApiUsageException.class)
     public ResponseEntity<ErrorResponse> handleInvalidApiUsage(InvalidDataAccessApiUsageException ex, HttpServletRequest req) {
         if (ex.contains(SemanticException.class)) {
-            log.debug("Invalid query input on {}: {}", req.getRequestURI(), ex.getMostSpecificCause().getMessage());
             return build(HttpStatus.BAD_REQUEST, msg("error.param.invalidSort"), req);
         }
         return handleUnexpected(ex, req);
@@ -134,7 +130,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
-        log.warn("Access denied on {} {}: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
         return build(HttpStatus.FORBIDDEN, msg("security.accessDenied"), req);
     }
 
@@ -151,5 +146,11 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, HttpServletRequest req) {
         return ResponseEntity.status(status).body(ErrorResponse.of(status, message, req.getRequestURI()));
+    }
+
+    private static String constraintName(DataIntegrityViolationException ex) {
+        return ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve && cve.getConstraintName() != null
+                ? cve.getConstraintName()
+                : ex.getClass().getSimpleName();
     }
 }

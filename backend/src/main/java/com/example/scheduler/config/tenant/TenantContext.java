@@ -1,5 +1,8 @@
 package com.example.scheduler.config.tenant;
 
+import com.example.scheduler.util.LogKeys;
+import org.slf4j.MDC;
+
 public class TenantContext {
     private static final String CLINIC_SCHEMA_PREFIX = "clinic_";
     private static final ThreadLocal<Tenant> CURRENT_TENANT = new ThreadLocal<>();
@@ -12,6 +15,8 @@ public class TenantContext {
 
     public static void setCurrentTenant(Long clinicId, String clinicSlug) {
         CURRENT_TENANT.set(new Tenant(clinicId, clinicSlug));
+        putOrRemove(LogKeys.CLINIC_ID, clinicId.toString());
+        putOrRemove(LogKeys.CLINIC_SLUG, clinicSlug);
     }
 
     public static Tenant current() {
@@ -32,5 +37,12 @@ public class TenantContext {
 
     public static void clear() {
         CURRENT_TENANT.remove();
+        MDC.remove(LogKeys.CLINIC_ID);
+        MDC.remove(LogKeys.CLINIC_SLUG);
+    }
+
+    private static void putOrRemove(String key, String value) {
+        if (value == null) MDC.remove(key);
+        else MDC.put(key, value);
     }
 }

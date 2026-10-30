@@ -1,6 +1,8 @@
 package com.example.scheduler.exception;
 
+import com.example.scheduler.util.LogKeys;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
@@ -13,7 +15,8 @@ public record ErrorResponse(
         String error,
         String message,
         String path,
-        List<FieldErrorItem> errors
+        List<FieldErrorItem> errors,
+        String traceId
 ) {
     public record FieldErrorItem(String field, String message) {}
 
@@ -28,7 +31,8 @@ public record ErrorResponse(
                 status.getReasonPhrase(),
                 message,
                 path,
-                errors
+                errors,
+                MDC.get(LogKeys.TRACE_ID)
         );
     }
 }

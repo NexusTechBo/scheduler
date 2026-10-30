@@ -1,5 +1,6 @@
 package com.example.scheduler.config;
 
+import com.example.scheduler.util.LogKeys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +27,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
+                .exposedHeaders(LogKeys.REQUEST_ID_HEADER)
                 .allowCredentials(false)
                 .maxAge(3600);
     }

@@ -1,7 +1,9 @@
 package com.example.scheduler.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+@Getter
 public abstract class ApiException extends RuntimeException {
     private final HttpStatus status;
     private final String messageKey;
@@ -14,15 +16,4 @@ public abstract class ApiException extends RuntimeException {
         this.args = args != null ? args : new Object[0];
     }
 
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    public String getMessageKey() {
-        return messageKey;
-    }
-
-    public Object[] getArgs() {
-        return args;
-    }
 }

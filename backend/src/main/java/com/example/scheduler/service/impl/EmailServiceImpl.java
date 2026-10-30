@@ -108,7 +108,6 @@ public class EmailServiceImpl implements EmailService {
 
     private void logFailure(String type, String maskedTo, String ref, Exception e) {
         log.error("Email {} to {} failed [{}]: {}: {}", type, maskedTo, ref, e.getClass().getSimpleName(), sanitizeForLog(e.getMessage()));
-        log.debug("Email {} to {} failure stack trace [{}]", type, maskedTo, ref, e);
     }
 
     static String maskEmail(String email) {

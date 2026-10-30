@@ -57,7 +57,7 @@ public class JwtUtil {
     public Optional<Claims> parse(String token) {
         try {
             return Optional.of(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException _) {
             return Optional.empty();
         }
     }

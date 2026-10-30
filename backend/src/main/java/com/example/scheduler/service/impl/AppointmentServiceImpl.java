@@ -47,6 +47,8 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class AppointmentServiceImpl implements AppointmentService {
     private static final DateTimeFormatter CALENDAR_KEY_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+    private static final String CHANNEL_STAFF = "staff";
+    private static final String CHANNEL_GUEST = "guest";
 
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
@@ -61,6 +63,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional
     public AppointmentResponse bookAppointment(AppointmentRequest request) {
+        return book(request, CHANNEL_STAFF);
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse bookGuestAppointment(AppointmentRequest request) {
+        return book(request, CHANNEL_GUEST);
+    }
+
+    private AppointmentResponse book(AppointmentRequest request, String channel) {
         var patientId = request.patientId();
         var doctor = personalRepository.findByIdForUpdate(request.doctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", request.doctorId()));
@@ -76,7 +88,18 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .endTime(endTime)
                 .status(AppointmentStatus.PENDING)
                 .build();
-        return appointmentMapper.toResponse(saveAndNotify(appointment));
+        var saved = saveAndNotify(appointment);
+        log.atInfo()
+                .addKeyValue("channel", channel)
+                .log(
+                        "Appointment {} created via {} for doctor {} and patient {} with status {}",
+                        saved.getId(),
+                        channel,
+                        doctor.getId(),
+                        patientId,
+                        saved.getStatus()
+                );
+        return appointmentMapper.toResponse(saved);
     }
 
     @Override
@@ -118,6 +141,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BusinessException("appointment.confirmOnlyPending");
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         var saved = saveAndNotify(appointment);
+        logStatusChange(saved, AppointmentStatus.PENDING);
         publishEmailNotification(saved, getCurrentClinicName());
         return appointmentMapper.toResponse(saved);
     }
@@ -129,9 +153,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         verifyPermission(appointment, userId, role);
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
             throw new BusinessException("appointment.alreadyCancelled");
+        var previousStatus = appointment.getStatus();
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancellationReason(request.reason());
         var saved = saveAndNotify(appointment);
+        logStatusChange(saved, previousStatus);
         publishEmailNotification(saved, getCurrentClinicName());
         return appointmentMapper.toResponse(saved);
     }
@@ -142,10 +168,17 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (appointments.isEmpty()) return;
         var clinicName = getCurrentClinicName();
         for (Appointment appointment : appointments) {
+            var previousStatus = appointment.getStatus();
             appointment.setStatus(AppointmentStatus.CANCELLED);
             appointment.setCancellationReason(reason);
-            publishEmailNotification(saveAndNotify(appointment), clinicName);
+            var saved = saveAndNotify(appointment);
+            logStatusChange(saved, previousStatus);
+            publishEmailNotification(saved, clinicName);
         }
+    }
+
+    private static void logStatusChange(Appointment appointment, AppointmentStatus from) {
+        log.info("Appointment {} of doctor {} changed {} -> {}", appointment.getId(), appointment.getDoctor().getId(), from, appointment.getStatus());
     }
 
     @Override

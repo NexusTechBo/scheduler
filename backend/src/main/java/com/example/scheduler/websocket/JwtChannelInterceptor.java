@@ -5,6 +5,7 @@ import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.ActiveUserChecker;
 import com.example.scheduler.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
@@ -48,17 +50,20 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         if (ERole.GUEST.name().equals(claims.get("role", String.class)))
             throw new MessageDeliveryException("Guests cannot connect");
         var clinicId = claims.get("clinicId", Long.class);
+        var role = claims.get("role", String.class);
         TenantContext.setCurrentTenant(clinicId, claims.get("clinicSlug", String.class));
         try {
-            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), claims.get("role", String.class)))
+            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role)) {
+                log.warn("STOMP CONNECT rejected: user {} with role {} in clinic {} is inactive or its role changed", claims.getSubject(), role, clinicId);
                 throw new MessageDeliveryException("Invalid token");
+            }
         } finally {
             TenantContext.clear();
         }
         if (attrs == null)
             throw new MessageDeliveryException("Invalid token");
         attrs.put("clinicId", clinicId);
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class)));
+        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
         accessor.setUser(
                 new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities)
         );

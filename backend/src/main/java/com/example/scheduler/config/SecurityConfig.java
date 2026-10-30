@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> {
                     if (publicPaths.length > 0)
                         a.requestMatchers(publicPaths).permitAll();
-                    a.requestMatchers("/ws/**").permitAll();
+                    a.requestMatchers("/actuator/**").denyAll();
                     a.anyRequest().authenticated();
                 })
                 .exceptionHandling(e -> e

@@ -19,6 +19,7 @@ public class AsyncConfig {
         executor.setMaxPoolSize(4);
         executor.setQueueCapacity(500);
         executor.setThreadNamePrefix("mail-");
+        executor.setTaskDecorator(new MdcTaskDecorator());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
         executor.setRejectedExecutionHandler((_, pool) ->
