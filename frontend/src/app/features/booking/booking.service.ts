@@ -11,11 +11,11 @@ import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
 import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
 import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import { LOAD_ERROR } from '../../core/utils/messages.util';
 import { NotificationService } from '../../shared/services/notification.service';
+import { DoctorOption } from './booking.model';
 
 const PATIENT_RESULTS = 20;
-
-type DoctorOption = Pick<Staff, 'id' | 'name' | 'specialtyName'>;
 
 @Injectable()
 export class BookingService {
@@ -52,10 +52,7 @@ export class BookingService {
   });
   readonly patientsLoading = this.patientsResource.isLoading;
   readonly filteredPatients = computed(() => this.patientsResource.value() ?? []);
-  readonly patientsErrorMessage = resourceError(
-    this.patientsResource,
-    'No se pudieron cargar los pacientes',
-  );
+  readonly patientsErrorMessage = resourceError(this.patientsResource, LOAD_ERROR.patients);
 
   private readonly _specialtyId = signal<number | null>(null);
   readonly specialtyId = this._specialtyId.asReadonly();
@@ -82,12 +79,9 @@ export class BookingService {
   readonly doctorsLoading = this.doctorsResource.isLoading;
   readonly specialtiesErrorMessage = resourceError(
     this.specialtiesResource,
-    'No se pudieron cargar las especialidades',
+    LOAD_ERROR.specialties,
   );
-  readonly doctorsErrorMessage = resourceError(
-    this.doctorsResource,
-    'No se pudieron cargar los doctores',
-  );
+  readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
 
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
@@ -119,10 +113,7 @@ export class BookingService {
   });
   readonly slots = computed(() => this.slotsResource.value() ?? []);
   readonly slotsLoading = this.slotsResource.isLoading;
-  readonly slotsErrorMessage = resourceError(
-    this.slotsResource,
-    'No se pudieron cargar los horarios',
-  );
+  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
 
   private readonly _submitting = signal(false);
   readonly submitting = this._submitting.asReadonly();

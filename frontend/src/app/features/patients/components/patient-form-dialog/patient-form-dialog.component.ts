@@ -13,7 +13,7 @@ import {
   notBlank,
   phoneValidator,
 } from '../../../../shared/utils/validation-messages.util';
-import { PatientSaveService } from '../../../../shared/services/patient-save.service';
+import { PatientFormService } from './patient-form.service';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 export interface PatientFormData {
@@ -27,7 +27,7 @@ export interface PatientFormData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PatientFormDialogComponent {
-  private readonly patients = inject(PatientSaveService);
+  private readonly patients = inject(PatientFormService);
   protected readonly ref = inject<DialogRef<Patient>>(DialogRef);
   protected readonly patient = inject<PatientFormData>(DIALOG_DATA).patient;
 

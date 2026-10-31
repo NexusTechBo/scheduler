@@ -25,6 +25,7 @@ import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-
 import { DatePickerComponent } from '../../../../shared/ui/forms/date-picker/date-picker.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
+import { TIME_RANGE_ERRORS } from '../../../../shared/utils/validation-messages.util';
 import { AvailabilityService } from '../../availability.service';
 
 function endAfterStart(control: AbstractControl): ValidationErrors | null {
@@ -66,7 +67,7 @@ export class ExceptionFormDialogComponent {
     reason: [''],
   });
   protected readonly endErrors = {
-    endBeforeStart: 'La hora de fin debe ser posterior a la de inicio',
+    ...TIME_RANGE_ERRORS,
     rangeRequired: 'Indica el rango de horas',
   };
 

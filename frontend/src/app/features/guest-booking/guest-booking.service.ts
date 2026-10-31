@@ -13,10 +13,8 @@ import {
 } from '../../core/models/api.models';
 import { formatTime, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
 import { createCooldown } from '../../core/utils/cooldown.util';
-
-const GUEST_BOOKING_STEPS = ['doctor', 'slot', 'patient', 'summary', 'done'] as const;
-
-export type GuestBookingStep = (typeof GUEST_BOOKING_STEPS)[number];
+import { LOAD_ERROR } from '../../core/utils/messages.util';
+import { GUEST_BOOKING_STEPS, GuestBookingStep } from './guest-booking.model';
 
 @Injectable()
 export class GuestBookingService {
@@ -60,7 +58,7 @@ export class GuestBookingService {
   readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
   readonly specialtiesErrorMessage = resourceError(
     this.specialtiesResource,
-    'No se pudieron cargar las especialidades',
+    LOAD_ERROR.specialties,
   );
 
   private readonly doctorsResource = rxResource({
@@ -69,10 +67,7 @@ export class GuestBookingService {
   });
   readonly doctors = computed(() => this.doctorsResource.value() ?? []);
   readonly doctorsLoading = this.doctorsResource.isLoading;
-  readonly doctorsErrorMessage = resourceError(
-    this.doctorsResource,
-    'No se pudieron cargar los doctores',
-  );
+  readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
 
   private readonly _selectedDoctor = signal<GuestDoctor | null>(null);
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
@@ -93,10 +88,7 @@ export class GuestBookingService {
   });
   readonly slots = computed(() => this.slotsResource.value() ?? []);
   readonly slotsLoading = this.slotsResource.isLoading;
-  readonly slotsErrorMessage = resourceError(
-    this.slotsResource,
-    'No se pudieron cargar los horarios',
-  );
+  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
 
   private readonly _patient = signal<GuestBookingPatient | null>(null);
   readonly patient = this._patient.asReadonly();

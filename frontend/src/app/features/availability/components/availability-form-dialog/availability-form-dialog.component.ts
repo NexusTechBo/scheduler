@@ -17,6 +17,7 @@ import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
+import { TIME_RANGE_ERRORS } from '../../../../shared/utils/validation-messages.util';
 import { AvailabilityService } from '../../availability.service';
 
 function endAfterStart(control: AbstractControl): ValidationErrors | null {
@@ -54,9 +55,7 @@ export class AvailabilityFormDialogComponent {
     endTime: ['12:00', [Validators.required, endAfterStart]],
     slotDurationMinutes: [30, [Validators.required, Validators.min(5)]],
   });
-  protected readonly endErrors = {
-    endBeforeStart: 'La hora de fin debe ser posterior a la de inicio',
-  };
+  protected readonly endErrors = TIME_RANGE_ERRORS;
 
   private readonly startTime = toSignal(this.form.controls.startTime.valueChanges, {
     initialValue: this.form.controls.startTime.value,

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { AppointmentSummaryItem } from '../../../../core/models/api.models';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { BoardCardComponent } from '../board-card/board-card.component';
-import { BoardColumn } from '../../board.service';
+import { BoardColumn } from '../../board.model';
 
 @Component({
   selector: 'app-board-column',

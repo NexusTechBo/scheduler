@@ -4,6 +4,7 @@ import { EMPTY, Observable, catchError, defer, finalize, tap } from 'rxjs';
 import { CatalogsApi } from '../../core/api/catalogs.api';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
 import { Specialty } from '../../core/models/api.models';
+import { LOAD_ERROR } from '../../core/utils/messages.util';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
@@ -17,7 +18,7 @@ export class SpecialtiesService {
 
   readonly specialties = computed(() => this.resource.value() ?? []);
   readonly isLoading = this.resource.isLoading;
-  readonly errorMessage = resourceError(this.resource, 'No se pudieron cargar las especialidades');
+  readonly errorMessage = resourceError(this.resource, LOAD_ERROR.specialties);
   private readonly _saving = signal(false);
   readonly saving = this._saving.asReadonly();
 

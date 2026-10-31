@@ -5,7 +5,6 @@ import { CatalogsApi } from '../../core/api/catalogs.api';
 import { StaffApi } from '../../core/api/staff.api';
 import { resourceError } from '../../core/http/api-error';
 import {
-  Role,
   Staff,
   StaffFilters,
   StaffRegisterRequest,
@@ -13,10 +12,9 @@ import {
 } from '../../core/models/api.models';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { StaffRoleFilter } from './staff.model';
 
 const PAGE_SIZE = 12;
-
-export type StaffRoleFilter = Role | 'all';
 
 @Injectable()
 export class StaffService {

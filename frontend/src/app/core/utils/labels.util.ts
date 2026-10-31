@@ -36,6 +36,10 @@ export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] 
   { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
 ];
 
+export function specialtyLabel(name: string | null | undefined): string {
+  return name ?? 'Sin especialidad';
+}
+
 function nameWords(name: string): string[] {
   return name
     .replace(/^(dr|dra)\.?\s+/i, '')

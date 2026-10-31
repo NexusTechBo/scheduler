@@ -3,14 +3,8 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ClinicsApi } from '../../core/api/clinics.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, retryAfterSeconds } from '../../core/http/api-error';
-import { ClinicActivatedResponse } from '../../core/models/api.models';
 import { createCooldown } from '../../core/utils/cooldown.util';
-
-export type ActivationState =
-  | { status: 'loading' }
-  | { status: 'success'; result: ClinicActivatedResponse }
-  | { status: 'invalid' }
-  | { status: 'error'; message: string };
+import { ActivationState } from './activation.model';
 
 @Injectable()
 export class ActivationService {

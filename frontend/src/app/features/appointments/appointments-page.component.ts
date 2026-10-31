@@ -2,7 +2,7 @@ import { LowerCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { canCancelAppointment, canConfirmAppointment } from '../../core/auth/permissions';
+import { canCancelAppointment, canConfirmAppointment } from '../../core/utils/appointment.util';
 import { APPOINTMENT_STATUSES, STATUS_PLURAL_LABEL } from '../../core/utils/labels.util';
 import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
@@ -17,11 +17,8 @@ import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
-import {
-  AppointmentRow,
-  AppointmentStatusFilter,
-  AppointmentsService,
-} from './appointments.service';
+import { AppointmentRow, AppointmentStatusFilter } from './appointments.model';
+import { AppointmentsService } from './appointments.service';
 import { GuestLinkButtonComponent } from './components/guest-link-button/guest-link-button.component';
 
 @Component({

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
-import { GUEST_BOOKING_PATH, ROLES } from './core/navigation/navigation';
+import { ROLES } from './core/auth/roles';
+import { GUEST_BOOKING_PATH } from './core/navigation/navigation';
 
 export const routes: Routes = [
   {

@@ -1,14 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
-import { PatientsApi } from '../../core/api/patients.api';
-import { StaffApi } from '../../core/api/staff.api';
-import { AuthService } from '../../core/auth/auth.service';
-import { apiErrorMessage } from '../../core/http/api-error';
-import { Patient, PatientRequest } from '../../core/models/api.models';
-import { NotificationService } from './notification.service';
+import { PatientsApi } from '../../../../core/api/patients.api';
+import { StaffApi } from '../../../../core/api/staff.api';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { apiErrorMessage } from '../../../../core/http/api-error';
+import { Patient, PatientRequest } from '../../../../core/models/api.models';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 @Injectable({ providedIn: 'root' })
-export class PatientSaveService {
+export class PatientFormService {
   private readonly patientsApi = inject(PatientsApi);
   private readonly staffApi = inject(StaffApi);
   private readonly notifications = inject(NotificationService);

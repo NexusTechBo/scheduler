@@ -1,3 +1,4 @@
+import { ROLES } from '../auth/roles';
 import { Role } from '../models/api.models';
 
 export const HOME_URL = '/dashboard';
@@ -13,13 +14,6 @@ export interface NavItem {
   icon: NavIcon;
   roles: Role[];
 }
-
-export const ROLES = {
-  staff: ['ADMINISTRATOR', 'DOCTOR', 'ASSISTANT'],
-  doctor: ['DOCTOR'],
-  admin: ['ADMINISTRATOR'],
-  guestLink: ['ADMINISTRATOR'],
-} as const satisfies Record<string, readonly Role[]>;
 
 const NAV_ITEMS: NavItem[] = [
   {
