@@ -35,14 +35,14 @@ Claude Code hooks: Prettier runs on every edited `frontend/src` file; editing an
 
 ## Frontend — `frontend/`
 
-- **Stack:** Angular 19 (standalone components, signals, `rxResource`), Angular CDK (dialogs, overlays), RxJS, Tailwind CSS 4, `@stomp/rx-stomp`, `jwt-decode`, Karma/Jasmine, Prettier (`printWidth: 100`, single quotes).
+- **Stack:** Angular 19 (standalone components, signals, `rxResource`), Angular CDK (dialogs, overlays), RxJS, Tailwind CSS 4, `@stomp/rx-stomp`, `jwt-decode`, Prettier (`printWidth: 100`, single quotes).
 - **Structure:** `src/app/core` · `features/<feature>` (page + `<feature>.service.ts` + `<feature>.model.ts` + `components/`) · `layout/shell` · `shared`.
 - **API access:** relative URLs (`'patients'`) prefixed by `apiUrlInterceptor` with `environment.apiUrl` (`/api/`); `authInterceptor` adds the bearer token and logs out on 401. Types mirroring backend DTOs live in `core/models/api.models.ts`.
 - **Auth & roles:** `AuthService` keeps the session (decoded JWT) in a signal + `localStorage`; routes use `authGuard`, `guestGuard`, `roleGuard(...ROLES.x)`; menu items per role in `core/navigation/navigation.ts`.
 - **Guest page:** public route `clinic/guest/appointment/clinic?slug=<slug>` (outside the shell, `features/guest-booking`, shareable link); `GuestSessionService` gets/renews the guest token and keeps it in `sessionStorage`, never in `AuthService`; `authInterceptor` sends it only to `guest/*` URLs (none to `public/guest/session`). Only ADMINISTRATOR sees the "Enlace de reserva" button that copies the link.
 - **UI language:** Spanish (texts, `LOCALE_ID = 'es'`). Code, identifiers and comments in English.
 - **Dev proxy:** `proxy.conf.js` forwards `/api` and `/ws` to `BACKEND_URL` (default `http://localhost:8080`).
-- **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npx ng test --watch=false` · `npm run format` / `npm run format:check`.
+- **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npm run format` / `npm run format:check`.
 
 ## Generated artifacts (repository root, git-ignored)
 
