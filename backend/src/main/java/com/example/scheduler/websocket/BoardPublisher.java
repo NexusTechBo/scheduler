@@ -11,7 +11,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 @RequiredArgsConstructor
 public class BoardPublisher {
-
     private final SimpMessagingTemplate messagingTemplate;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -20,7 +19,11 @@ public class BoardPublisher {
         try {
             messagingTemplate.convertAndSend(AppointmentChangedEvent.boardTopic(event.clinicId()), event.payload());
         } catch (RuntimeException e) {
-            log.error("Board event for appointment {} could not be published to clinic {}", appointmentId, event.clinicId(), e);
+            log.error(
+                    "Board event for appointment {} could not be published to clinic {}",
+                    appointmentId,
+                    event.clinicId(),
+                    e);
         }
     }
 }

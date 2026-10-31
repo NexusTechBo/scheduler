@@ -3,16 +3,17 @@ package com.example.scheduler.service.impl;
 import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
-import com.example.scheduler.dto.personal.PersonalRequest;
-import com.example.scheduler.dto.personal.PersonalUpdateRequest;
 import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
+import com.example.scheduler.dto.personal.PersonalRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
+import com.example.scheduler.dto.personal.PersonalUpdateRequest;
 import com.example.scheduler.entity.*;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
+import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
@@ -20,6 +21,10 @@ import com.example.scheduler.notification.StaffCreatedEvent;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.PersonalService;
 import com.example.scheduler.util.Utils;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -27,11 +32,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -51,16 +51,18 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
-        if(specialtyId != null) getSpecialtyOrThrowById(specialtyId);
+        if (specialtyId != null) getSpecialtyOrThrowById(specialtyId);
         var active = isActive == null ? Boolean.TRUE : isActive;
-        return personalRepository.findAllDoctorsByFilters(specialtyId, active, pageable)
+        return personalRepository
+                .findAllDoctorsByFilters(specialtyId, active, pageable)
                 .map(personalMapper::toResponse);
     }
 
     @Override
     public Page<PersonalResponse> findAllPersonal(Long specialtyId, Boolean isActive, ERole role, Pageable pageable) {
-        if(specialtyId != null) getSpecialtyOrThrowById(specialtyId);
-        return personalRepository.findAllByFilters(specialtyId, isActive, role, pageable)
+        if (specialtyId != null) getSpecialtyOrThrowById(specialtyId);
+        return personalRepository
+                .findAllByFilters(specialtyId, isActive, role, pageable)
                 .map(personalMapper::toResponse);
     }
 
@@ -70,14 +72,14 @@ public class PersonalServiceImpl implements PersonalService {
         var clinic = getCurrentClinic();
         var username = request.username() + Utils.usernameSuffix(clinic.getSlug());
         if (personalRepository.existsByUsername(username))
-            throw new BusinessException("personal.usernameTaken", username);
+            throw new BusinessException(MessageKeys.PERSONAL_USERNAME_TAKEN, username);
         if (personalRepository.existsByCi(request.ci()))
-            throw new BusinessException("personal.alreadyExists");
+            throw new BusinessException(MessageKeys.PERSONAL_ALREADY_EXISTS);
         if (personalRepository.existsByEmail(request.email()))
-            throw new BadRequestException("personal.emailAlreadyExists", request.email());
+            throw new BadRequestException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, request.email());
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null && personalRepository.existsByPhoneNumber(phoneNumber))
-            throw new BusinessException("personal.phoneAlreadyExists", phoneNumber);
+            throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
         var personal = Personal.builder()
                 .username(username)
                 .ci(request.ci())
@@ -95,15 +97,15 @@ public class PersonalServiceImpl implements PersonalService {
                 saved.getUsername(),
                 request.password(),
                 saved.getRole(),
-                clinic.getName()
-        ));
+                clinic.getName()));
         return personalMapper.toResponse(saved);
     }
 
     @Override
     public PersonalResponse findPersonalById(Long personalId) {
-        var personal = personalRepository.findById(personalId)
-                .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", personalId));
+        var personal = personalRepository
+                .findById(personalId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_NOT_FOUND, personalId));
         return personalMapper.toResponse(personal);
     }
 
@@ -113,17 +115,16 @@ public class PersonalServiceImpl implements PersonalService {
         var personal = getPersonalOrThrowById(personalId);
         if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT) {
             var now = LocalDateTime.now(clock);
-            if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(personalId, AppointmentStatus.CANCELLED, now))
-                throw new BusinessException("personal.doctorHasUpcomingAppointments");
+            if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(
+                    personalId, AppointmentStatus.CANCELLED, now))
+                throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_UPCOMING_APPOINTMENTS);
             if (doctorAvailabilityRepository.existsByDoctorIdAndActiveTrue(personalId))
-                throw new BusinessException("personal.doctorHasActiveAvailabilities");
+                throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_ACTIVE_AVAILABILITIES);
         }
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
-        if (personal.getRole() != ERole.ADMINISTRATOR)
-            personal.setRole(request.role());
+        if (personal.getRole() != ERole.ADMINISTRATOR) personal.setRole(request.role());
         personal.setSpecialty(getSpecialtyOrThrowById(request.specialtyId()));
-        if (request.password() != null)
-            personal.setPassword(passwordEncoder.encode(request.password()));
+        if (request.password() != null) personal.setPassword(passwordEncoder.encode(request.password()));
         return personalMapper.toResponse(personalRepository.save(personal));
     }
 
@@ -132,8 +133,9 @@ public class PersonalServiceImpl implements PersonalService {
     public PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request) {
         var personal = getPersonalOrThrowById(userId);
         if (request.newPassword() != null) {
-            if (request.currentPassword() == null || !passwordEncoder.matches(request.currentPassword(), personal.getPassword()))
-                throw new BadRequestException("personal.currentPasswordIncorrect");
+            if (request.currentPassword() == null
+                    || !passwordEncoder.matches(request.currentPassword(), personal.getPassword()))
+                throw new BadRequestException(MessageKeys.PERSONAL_CURRENT_PASSWORD_INCORRECT);
             personal.setPassword(passwordEncoder.encode(request.newPassword()));
         }
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
@@ -142,10 +144,12 @@ public class PersonalServiceImpl implements PersonalService {
 
     private void updateContactData(Personal personal, String name, String email, String rawPhoneNumber) {
         if (!personal.getEmail().equals(email) && personalRepository.existsByEmail(email))
-            throw new BadRequestException("personal.emailAlreadyExists", email);
+            throw new BadRequestException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
         var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber);
-        if (phoneNumber != null && !Objects.equals(personal.getPhoneNumber(), phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))
-            throw new BusinessException("personal.phoneAlreadyExists", phoneNumber);
+        if (phoneNumber != null
+                && !Objects.equals(personal.getPhoneNumber(), phoneNumber)
+                && personalRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
         personal.setName(name);
         personal.setEmail(email);
         personal.setPhoneNumber(phoneNumber);
@@ -154,8 +158,7 @@ public class PersonalServiceImpl implements PersonalService {
     @Override
     @Transactional
     public void deactivatePersonalById(Long personalId, Long userId) {
-        if (personalId.equals(userId))
-            throw new BusinessException("personal.cannotDeactivateSelf");
+        if (personalId.equals(userId)) throw new BusinessException(MessageKeys.PERSONAL_CANNOT_DEACTIVATE_SELF);
         var personal = getPersonalOrThrowById(personalId);
         personal.setActive(false);
         personalRepository.save(personal);
@@ -202,35 +205,40 @@ public class PersonalServiceImpl implements PersonalService {
 
     private Clinic getCurrentClinic() {
         var clinicId = TenantContext.getCurrentClinicId();
-        return clinicRepository.findById(clinicId)
-                .orElseThrow(() -> new ResourceNotFoundException("clinic.notFound", clinicId));
+        return clinicRepository
+                .findById(clinicId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.CLINIC_NOT_FOUND, clinicId));
     }
 
     private Personal getPersonalOrThrowById(Long personalId) {
-        return personalRepository.findByIdForUpdate(personalId)
-                .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", personalId));
+        return personalRepository
+                .findByIdForUpdate(personalId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_NOT_FOUND, personalId));
     }
 
     private Personal getDoctorPatientsOrThrowById(Long personalId) {
-        return personalRepository.findDoctorPatientsByIdAndRole(personalId, ERole.DOCTOR)
-                .orElseThrow(() -> new ResourceNotFoundException("personal.notFound", personalId));
+        return personalRepository
+                .findDoctorPatientsByIdAndRole(personalId, ERole.DOCTOR)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_NOT_FOUND, personalId));
     }
 
     private Specialty getSpecialtyOrThrowById(Long specialtyId) {
-        if(specialtyId == null){
+        if (specialtyId == null) {
             return null;
         }
-        return  specialtyRepository.findById(specialtyId)
-                .orElseThrow(() -> new ResourceNotFoundException("specialty.notFound", specialtyId));
+        return specialtyRepository
+                .findById(specialtyId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.SPECIALTY_NOT_FOUND, specialtyId));
     }
 
     private Patient getPatientOrThrowById(Long patientId) {
-        return patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
+        return patientRepository
+                .findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
     }
 
     private void verifyDoctorPermission(String role, Long accountId, Long userId) {
         if (ERole.DOCTOR.name().equals(role) && !accountId.equals(userId))
-            throw new ForbiddenException("common.forbidden");
+            throw new ForbiddenException(MessageKeys.COMMON_FORBIDDEN);
     }
 }

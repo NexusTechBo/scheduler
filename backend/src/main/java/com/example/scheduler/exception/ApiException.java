@@ -15,5 +15,4 @@ public abstract class ApiException extends RuntimeException {
         this.messageKey = messageKey;
         this.args = args != null ? args : new Object[0];
     }
-
 }

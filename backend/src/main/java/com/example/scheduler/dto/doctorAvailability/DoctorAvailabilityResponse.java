@@ -1,4 +1,4 @@
-package com.example.scheduler.dto.DoctorAvailability;
+package com.example.scheduler.dto.doctorAvailability;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -9,5 +9,4 @@ public record DoctorAvailabilityResponse(
         LocalTime startTime,
         LocalTime endTime,
         Integer slotDurationMinutes,
-        Boolean active
-) {}
+        Boolean active) {}

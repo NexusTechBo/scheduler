@@ -1,24 +1,22 @@
 package com.example.scheduler.config.tenant;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.engine.jdbc.connections.spi.MultiTenantConnectionProvider;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 @Component
 @RequiredArgsConstructor
 public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConnectionProvider<String> {
-
     private final DataSource dataSource;
 
     @Override
     public Connection getAnyConnection() throws SQLException {
         var connection = dataSource.getConnection();
-        setSearchPath(connection, "public");
+        setSearchPath(connection, TenantContext.PUBLIC_SCHEMA);
         return connection;
     }
 
@@ -30,13 +28,13 @@ public class SchemaBasedMultiTenantConnectionProvider implements MultiTenantConn
     @Override
     public Connection getConnection(String tenantIdentifier) throws SQLException {
         var connection = dataSource.getConnection();
-        setSearchPath(connection, tenantIdentifier + ", public");
+        setSearchPath(connection, tenantIdentifier + ", " + TenantContext.PUBLIC_SCHEMA);
         return connection;
     }
 
     @Override
     public void releaseConnection(String tenantIdentifier, Connection connection) throws SQLException {
-        setSearchPath(connection, "public");
+        setSearchPath(connection, TenantContext.PUBLIC_SCHEMA);
         connection.close();
     }
 

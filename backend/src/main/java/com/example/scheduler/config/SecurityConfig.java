@@ -1,6 +1,7 @@
 package com.example.scheduler.config;
 
 import com.example.scheduler.exception.ErrorResponseWriter;
+import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.middleware.JwtAuthFilter;
 import com.example.scheduler.middleware.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
@@ -23,29 +24,28 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
     private final JwtAuthFilter jwtAuthFilter;
     private final RateLimitFilter rateLimitFilter;
 
     @Value("${security.public-paths:}")
     private String[] publicPaths;
+
     private final ErrorResponseWriter errorResponseWriter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
+        return http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> {
-                    if (publicPaths.length > 0)
-                        a.requestMatchers(publicPaths).permitAll();
+                    if (publicPaths.length > 0) a.requestMatchers(publicPaths).permitAll();
                     a.requestMatchers("/actuator/**").denyAll();
                     a.anyRequest().authenticated();
                 })
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint((req, res, _) -> errorResponseWriter.write(req, res, HttpStatus.UNAUTHORIZED, "security.authenticationRequired"))
-                        .accessDeniedHandler((req, res, _) -> errorResponseWriter.write(req, res, HttpStatus.FORBIDDEN, "security.accessDenied")))
+                .exceptionHandling(e -> e.authenticationEntryPoint((req, res, _) -> errorResponseWriter.write(
+                                req, res, HttpStatus.UNAUTHORIZED, MessageKeys.SECURITY_AUTHENTICATION_REQUIRED))
+                        .accessDeniedHandler((req, res, _) -> errorResponseWriter.write(
+                                req, res, HttpStatus.FORBIDDEN, MessageKeys.SECURITY_ACCESS_DENIED)))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, JwtAuthFilter.class)
                 .httpBasic(AbstractHttpConfigurer::disable)

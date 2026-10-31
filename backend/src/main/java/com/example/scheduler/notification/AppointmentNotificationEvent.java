@@ -1,7 +1,6 @@
 package com.example.scheduler.notification;
 
 import com.example.scheduler.enums.AppointmentStatus;
-
 import java.time.LocalDateTime;
 
 public record AppointmentNotificationEvent(
@@ -14,5 +13,4 @@ public record AppointmentNotificationEvent(
         String patientEmail,
         LocalDateTime startTime,
         LocalDateTime endTime,
-        String cancellationReason
-) {}
+        String cancellationReason) {}

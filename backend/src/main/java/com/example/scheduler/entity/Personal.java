@@ -2,10 +2,9 @@ package com.example.scheduler.entity;
 
 import com.example.scheduler.enums.ERole;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 @Getter
 @Setter
@@ -55,10 +54,9 @@ public class Personal {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "doctor_patient",
-        joinColumns = @JoinColumn(name = "doctor_id"),
-        inverseJoinColumns = @JoinColumn(name = "patient_id")
-    )
+            name = "doctor_patient",
+            joinColumns = @JoinColumn(name = "doctor_id"),
+            inverseJoinColumns = @JoinColumn(name = "patient_id"))
     @Builder.Default
     private List<Patient> patients = new ArrayList<>();
 }

@@ -1,10 +1,14 @@
 package com.example.scheduler.middleware;
 
 import com.example.scheduler.util.LogKeys;
+import com.example.scheduler.util.LogUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
@@ -16,27 +20,23 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.regex.Pattern;
-
 @Slf4j
 @Component
 @Order(AccessLogFilter.ORDER)
 public class AccessLogFilter extends OncePerRequestFilter {
     public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 10;
-    private static final Pattern STATIC_RESOURCE = Pattern.compile(".*\\.(css|js|map|png|jpe?g|gif|svg|ico|woff2?|ttf|html)$");
+    private static final Pattern STATIC_RESOURCE =
+            Pattern.compile(".*\\.(css|js|map|png|jpe?g|gif|svg|ico|woff2?|ttf|html)$");
 
     @Value("${security.system-paths:}")
     private String[] systemPaths;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
             throws ServletException, IOException {
         var traceId = MDC.get(LogKeys.TRACE_ID);
-        if (traceId != null)
-            response.setHeader(LogKeys.REQUEST_ID_HEADER, traceId);
+        if (traceId != null) response.setHeader(LogKeys.REQUEST_ID_HEADER, traceId);
         var path = request.getRequestURI();
         if (isExcluded(path) || HttpMethod.OPTIONS.matches(request.getMethod())) {
             chain.doFilter(request, response);
@@ -50,7 +50,11 @@ public class AccessLogFilter extends OncePerRequestFilter {
             failed = true;
             throw e;
         } finally {
-            log(request, path, failed ? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : response.getStatus(), (System.nanoTime() - start) / 1_000_000);
+            log(
+                    request,
+                    path,
+                    failed ? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : response.getStatus(),
+                    (System.nanoTime() - start) / 1_000_000);
         }
     }
 
@@ -60,8 +64,8 @@ public class AccessLogFilter extends OncePerRequestFilter {
         var userId = request.getAttribute(LogKeys.ATTR_USER_ID);
         var role = request.getAttribute(LogKeys.ATTR_ROLE);
         var event = log.atLevel(levelFor(status))
-                .addKeyValue("method", method)
-                .addKeyValue("path", path)
+                .addKeyValue(LogKeys.METHOD, method)
+                .addKeyValue(LogKeys.PATH, path)
                 .addKeyValue("status", status)
                 .addKeyValue("durationMs", durationMs);
         if (clinicId != null) event = event.addKeyValue(LogKeys.CLINIC_ID, clinicId);
@@ -73,10 +77,9 @@ public class AccessLogFilter extends OncePerRequestFilter {
                 path,
                 status,
                 durationMs,
-                orDash(clinicId),
-                orDash(userId),
-                orDash(role)
-        );
+                LogUtils.orDash(clinicId),
+                LogUtils.orDash(userId),
+                LogUtils.orDash(role));
     }
 
     private static Level levelFor(int status) {
@@ -86,10 +89,7 @@ public class AccessLogFilter extends OncePerRequestFilter {
     }
 
     private boolean isExcluded(String path) {
-        return Arrays.stream(systemPaths).anyMatch(path::startsWith) || STATIC_RESOURCE.matcher(path).matches();
-    }
-
-    private static String orDash(Object value) {
-        return Objects.toString(value, "-");
+        return Arrays.stream(systemPaths).anyMatch(path::startsWith)
+                || STATIC_RESOURCE.matcher(path).matches();
     }
 }

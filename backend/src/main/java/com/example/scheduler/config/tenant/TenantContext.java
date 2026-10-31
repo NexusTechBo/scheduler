@@ -4,10 +4,9 @@ import com.example.scheduler.util.LogKeys;
 import org.slf4j.MDC;
 
 public class TenantContext {
+    public static final String PUBLIC_SCHEMA = "public";
     private static final String CLINIC_SCHEMA_PREFIX = "clinic_";
     private static final ThreadLocal<Tenant> CURRENT_TENANT = new ThreadLocal<>();
-
-    public record Tenant(Long clinicId, String clinicSlug) {}
 
     public static String schemaName(String clinicSlug) {
         return CLINIC_SCHEMA_PREFIX + clinicSlug;
@@ -23,6 +22,11 @@ public class TenantContext {
         return CURRENT_TENANT.get();
     }
 
+    public static void restore(Tenant previousTenant) {
+        if (previousTenant == null) clear();
+        else setCurrentTenant(previousTenant.clinicId(), previousTenant.clinicSlug());
+    }
+
     public static String getCurrentTenant() {
         var tenant = current();
         return tenant == null ? null : schemaName(tenant.clinicSlug());
@@ -30,8 +34,7 @@ public class TenantContext {
 
     public static Long getCurrentClinicId() {
         var tenant = current();
-        if (tenant == null)
-            throw new IllegalStateException("No clinic tenant bound");
+        if (tenant == null) throw new IllegalStateException("No clinic tenant bound");
         return tenant.clinicId();
     }
 

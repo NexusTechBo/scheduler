@@ -11,7 +11,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 @RequiredArgsConstructor
 public class EmailNotificationListener {
-
     private final EmailService emailService;
 
     @Async(AsyncConfig.MAIL_TASK_EXECUTOR)

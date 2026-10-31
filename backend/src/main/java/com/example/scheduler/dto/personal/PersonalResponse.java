@@ -9,5 +9,4 @@ public record PersonalResponse(
         String phoneNumber,
         boolean active,
         String role,
-        String specialtyName
-) {}
+        String specialtyName) {}

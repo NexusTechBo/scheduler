@@ -1,23 +1,18 @@
 package com.example.scheduler.notification;
 
+import com.example.scheduler.config.LocaleConfig;
 import com.example.scheduler.enums.ERole;
-import org.springframework.util.StringUtils;
-import org.springframework.web.util.HtmlUtils;
-
+import com.example.scheduler.util.Utils;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import java.util.regex.Pattern;
+import org.springframework.util.StringUtils;
 
 public final class EmailTemplates {
-    private static final Locale SPANISH = Locale.forLanguageTag("es");
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", SPANISH);
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", SPANISH);
-    private static final Pattern CONTROL_CHARS = Pattern.compile("\\p{Cntrl}");
-
-    public record EmailContent(String subject, String html) {}
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", LocaleConfig.SPANISH);
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", LocaleConfig.SPANISH);
 
     private EmailTemplates() {}
 
@@ -33,11 +28,11 @@ public final class EmailTemplates {
                 </table>
                 <p>Te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
                 """.formatted(
-                escape(event.name()),
-                escape(clinicLabel(event.clinicName())),
-                escape(event.username()),
-                escape(event.rawPassword()),
-                escape(roleLabel(event.role())));
+                        Utils.escapeHtml(event.name()),
+                        Utils.escapeHtml(clinicLabel(event.clinicName())),
+                        Utils.escapeHtml(event.username()),
+                        Utils.escapeHtml(event.rawPassword()),
+                        Utils.escapeHtml(roleLabel(event.role())));
         return new EmailContent(subject, layout(body));
     }
 
@@ -52,10 +47,10 @@ public final class EmailTemplates {
                 <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
                 <p>Este enlace vence en 48 horas. Si no solicitaste este registro, puedes ignorar este correo.</p>
                 """.formatted(
-                escape(event.adminName()),
-                escape(clinic),
-                button(link, "Activar clínica"),
-                anchor(link));
+                        Utils.escapeHtml(event.adminName()),
+                        Utils.escapeHtml(clinic),
+                        button(link, "Activar clínica"),
+                        anchor(link));
         return new EmailContent(subject, layout(body));
     }
 
@@ -70,11 +65,11 @@ public final class EmailTemplates {
                 %s
                 <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
                 """.formatted(
-                escape(event.adminName()),
-                escape(clinic),
-                row("Usuario", event.adminUsername()),
-                button(link, "Iniciar sesión"),
-                anchor(link));
+                        Utils.escapeHtml(event.adminName()),
+                        Utils.escapeHtml(clinic),
+                        row("Usuario", event.adminUsername()),
+                        button(link, "Iniciar sesión"),
+                        anchor(link));
         return new EmailContent(subject, layout(body));
     }
 
@@ -84,21 +79,21 @@ public final class EmailTemplates {
                 <p>Hola %s,</p>
                 <p>La siguiente cita fue <strong>confirmada</strong>:</p>
                 %s
-                """.formatted(escape(recipientName), appointmentDetails(event));
+                """.formatted(Utils.escapeHtml(recipientName), appointmentDetails(event));
         return new EmailContent(subject, layout(body));
     }
 
     public static EmailContent appointmentCancelled(AppointmentNotificationEvent event, String recipientName) {
         var subject = "Cita cancelada - " + clinicLabel(event.clinicName());
         var reason = StringUtils.hasText(event.cancellationReason())
-                ? "<p><strong>Motivo:</strong> " + escape(event.cancellationReason()) + "</p>"
+                ? "<p><strong>Motivo:</strong> " + Utils.escapeHtml(event.cancellationReason()) + "</p>"
                 : "";
         var body = """
                 <p>Hola %s,</p>
                 <p>La siguiente cita fue <strong>cancelada</strong>:</p>
                 %s
                 %s
-                """.formatted(escape(recipientName), appointmentDetails(event), reason);
+                """.formatted(Utils.escapeHtml(recipientName), appointmentDetails(event), reason);
         return new EmailContent(subject, layout(body));
     }
 
@@ -111,9 +106,7 @@ public final class EmailTemplates {
     }
 
     private static String appointmentDetails(AppointmentNotificationEvent event) {
-        var specialtyRow = StringUtils.hasText(event.specialtyName())
-                ? row("Especialidad", event.specialtyName())
-                : "";
+        var specialtyRow = StringUtils.hasText(event.specialtyName()) ? row("Especialidad", event.specialtyName()) : "";
         var time = formatTime(event.startTime()) + (event.endTime() != null ? " - " + formatTime(event.endTime()) : "");
         return "<table cellpadding=\"4\">"
                 + row("Clínica", clinicLabel(event.clinicName()))
@@ -126,16 +119,18 @@ public final class EmailTemplates {
     }
 
     private static String row(String label, String value) {
-        return "<tr><td><strong>" + label + ":</strong></td><td>" + escape(value) + "</td></tr>";
+        return "<tr><td><strong>" + label + ":</strong></td><td>" + Utils.escapeHtml(value) + "</td></tr>";
     }
 
     private static String button(String href, String label) {
-        return "<p><a href=\"" + escape(href) + "\" style=\"display: inline-block; padding: 10px 20px; background-color: #2563eb; "
-                + "color: #ffffff; text-decoration: none; border-radius: 6px;\">" + escape(label) + "</a></p>";
+        return "<p><a href=\"" + Utils.escapeHtml(href)
+                + "\" style=\"display: inline-block; padding: 10px 20px; background-color: #2563eb; "
+                + "color: #ffffff; text-decoration: none; border-radius: 6px;\">" + Utils.escapeHtml(label)
+                + "</a></p>";
     }
 
     private static String anchor(String href) {
-        var url = escape(href);
+        var url = Utils.escapeHtml(href);
         return "<a href=\"" + url + "\">" + url + "</a>";
     }
 
@@ -153,7 +148,8 @@ public final class EmailTemplates {
     }
 
     private static String clinicLabel(String clinicName) {
-        var name = clinicName == null ? null : CONTROL_CHARS.matcher(clinicName).replaceAll("").strip();
+        var name =
+                clinicName == null ? null : Utils.stripControlChars(clinicName).strip();
         return StringUtils.hasText(name) ? name : "la clínica";
     }
 
@@ -165,9 +161,5 @@ public final class EmailTemplates {
             case ASSISTANT -> "Asistente";
             case GUEST -> "Invitado";
         };
-    }
-
-    private static String escape(String value) {
-        return value == null ? "" : HtmlUtils.htmlEscape(value, "UTF-8");
     }
 }

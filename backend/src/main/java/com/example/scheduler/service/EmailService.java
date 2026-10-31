@@ -7,8 +7,12 @@ import com.example.scheduler.notification.StaffCreatedEvent;
 
 public interface EmailService {
     void sendStaffCredentials(StaffCreatedEvent event);
+
     void sendAppointmentConfirmed(AppointmentNotificationEvent event);
+
     void sendAppointmentCancelled(AppointmentNotificationEvent event);
+
     void sendClinicActivation(ClinicActivationEvent event);
+
     void sendClinicWelcome(ClinicActivatedEvent event);
 }

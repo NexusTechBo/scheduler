@@ -2,17 +2,17 @@ package com.example.scheduler.controller;
 
 import com.example.scheduler.dto.specialty.SpecialtyRequest;
 import com.example.scheduler.dto.specialty.SpecialtyResponse;
+import com.example.scheduler.security.RoleExpressions;
 import com.example.scheduler.service.SpecialtyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/specialties")
@@ -28,7 +28,7 @@ public class SpecialtyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMINISTRATOR')")
+    @PreAuthorize(RoleExpressions.ADMINISTRATOR)
     @Operation(summary = "POST /api/specialties — create a specialty (administrator only)")
     public ResponseEntity<SpecialtyResponse> createSpecialty(@Valid @RequestBody SpecialtyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(specialtyService.createSpecialty(request));

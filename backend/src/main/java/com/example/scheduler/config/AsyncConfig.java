@@ -1,5 +1,6 @@
 package com.example.scheduler.config;
 
+import com.example.scheduler.config.mdc.MdcTaskDecorator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,8 +23,9 @@ public class AsyncConfig {
         executor.setTaskDecorator(new MdcTaskDecorator());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
-        executor.setRejectedExecutionHandler((_, pool) ->
-                log.error("Email task rejected: mail executor saturated (queue size {}), email dropped", pool.getQueue().size()));
+        executor.setRejectedExecutionHandler((_, pool) -> log.error(
+                "Email task rejected: mail executor saturated (queue size {}), email dropped",
+                pool.getQueue().size()));
         return executor;
     }
 }

@@ -1,10 +1,9 @@
 package com.example.scheduler.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import lombok.*;
 
 @Getter
 @Setter

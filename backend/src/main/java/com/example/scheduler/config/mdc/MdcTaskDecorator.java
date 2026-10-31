@@ -1,11 +1,10 @@
-package com.example.scheduler.config;
+package com.example.scheduler.config.mdc;
 
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.core.task.TaskDecorator;
 
 public class MdcTaskDecorator implements TaskDecorator {
-
     @Override
     public @NonNull Runnable decorate(@NonNull Runnable runnable) {
         var context = MDC.getCopyOfContextMap();

@@ -6,15 +6,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
+import javax.crypto.SecretKey;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtil {
@@ -30,11 +29,11 @@ public class JwtUtil {
     public String generate(Long userId, String role, Clinic clinic, String userName) {
         return Jwts.builder()
                 .subject(userId.toString())
-                .claim("role", role)
-                .claim("clinicId", clinic.getId())
-                .claim("clinicName", clinic.getName())
-                .claim("clinicSlug", clinic.getSlug())
-                .claim("username", userName)
+                .claim(JwtClaims.ROLE, role)
+                .claim(JwtClaims.CLINIC_ID, clinic.getId())
+                .claim(JwtClaims.CLINIC_NAME, clinic.getName())
+                .claim(JwtClaims.CLINIC_SLUG, clinic.getSlug())
+                .claim(JwtClaims.USERNAME, userName)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 86_400_000L))
                 .signWith(key)
@@ -44,10 +43,10 @@ public class JwtUtil {
     public String generateGuest(Clinic clinic, Instant expiresAt) {
         return Jwts.builder()
                 .subject(GUEST_SUBJECT)
-                .claim("role", ERole.GUEST.name())
-                .claim("clinicId", clinic.getId())
-                .claim("clinicName", clinic.getName())
-                .claim("clinicSlug", clinic.getSlug())
+                .claim(JwtClaims.ROLE, ERole.GUEST.name())
+                .claim(JwtClaims.CLINIC_ID, clinic.getId())
+                .claim(JwtClaims.CLINIC_NAME, clinic.getName())
+                .claim(JwtClaims.CLINIC_SLUG, clinic.getSlug())
                 .issuedAt(new Date())
                 .expiration(Date.from(expiresAt))
                 .signWith(key)
@@ -56,7 +55,11 @@ public class JwtUtil {
 
     public Optional<Claims> parse(String token) {
         try {
-            return Optional.of(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload());
+            return Optional.of(Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload());
         } catch (JwtException | IllegalArgumentException _) {
             return Optional.empty();
         }
