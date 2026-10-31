@@ -1,4 +1,4 @@
-package com.example.scheduler.security;
+package com.example.scheduler.util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -7,11 +7,11 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HexFormat;
 
-public final class ActivationTokens {
+public final class TokenUtils {
     private static final int TOKEN_BYTES = 32;
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private ActivationTokens() {}
+    private TokenUtils() {}
 
     public static String generate() {
         var bytes = new byte[TOKEN_BYTES];

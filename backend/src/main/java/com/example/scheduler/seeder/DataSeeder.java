@@ -1,10 +1,10 @@
 package com.example.scheduler.seeder;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.entity.*;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.SchemaProvisioningService;
+import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.Utils;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;

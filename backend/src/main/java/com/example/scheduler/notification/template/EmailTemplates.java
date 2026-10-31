@@ -2,6 +2,7 @@ package com.example.scheduler.notification.template;
 
 import com.example.scheduler.config.LocaleConfig;
 import com.example.scheduler.enums.ERole;
+import com.example.scheduler.notification.EmailContent;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.notification.event.ClinicActivatedEvent;
 import com.example.scheduler.notification.event.ClinicActivationEvent;

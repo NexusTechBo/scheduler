@@ -1,6 +1,6 @@
 package com.example.scheduler.validator.partialBlockTimes;
 
-import com.example.scheduler.dto.scheduleException.ScheduleExceptionRequest;
+import com.example.scheduler.dto.scheduleexception.ScheduleExceptionRequest;
 import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

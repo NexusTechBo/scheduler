@@ -1,4 +1,4 @@
-package com.example.scheduler.dto.scheduleException;
+package com.example.scheduler.dto.scheduleexception;
 
 import com.example.scheduler.validator.partialBlockTimes.PartialBlockTimes;
 import com.example.scheduler.validator.timeRange.TimeRange;

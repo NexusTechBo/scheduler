@@ -1,8 +1,7 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.appointment.AppointmentRequest;
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilitySlotsResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilitySlotsResponse;
 import com.example.scheduler.dto.guest.GuestAppointmentRequest;
 import com.example.scheduler.dto.guest.GuestAppointmentResponse;
 import com.example.scheduler.dto.guest.GuestClinicResponse;
@@ -25,6 +24,7 @@ import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.service.DoctorAvailabilityService;
 import com.example.scheduler.service.GuestService;
 import com.example.scheduler.service.PatientService;
+import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.Utils;
 import java.time.LocalDate;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.example.scheduler.config.tenant;
+package com.example.scheduler.tenant;
 
 import java.sql.Connection;
 import java.sql.SQLException;

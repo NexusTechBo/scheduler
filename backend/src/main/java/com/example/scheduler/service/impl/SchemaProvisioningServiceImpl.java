@@ -1,7 +1,7 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.service.SchemaProvisioningService;
+import com.example.scheduler.tenant.TenantContext;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.Flyway;

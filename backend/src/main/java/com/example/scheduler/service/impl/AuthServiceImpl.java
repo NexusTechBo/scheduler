@@ -1,6 +1,5 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.login.LoginRequest;
 import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
@@ -14,8 +13,9 @@ import com.example.scheduler.exception.UnauthorizedException;
 import com.example.scheduler.mapper.PersonalMapper;
 import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PersonalRepository;
-import com.example.scheduler.security.JwtUtil;
+import com.example.scheduler.security.jwt.JwtUtil;
 import com.example.scheduler.service.AuthService;
+import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.LogUtils;
 import com.example.scheduler.util.Utils;
 import java.util.Locale;

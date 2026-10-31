@@ -1,7 +1,7 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.dto.scheduleException.ScheduleExceptionRequest;
-import com.example.scheduler.dto.scheduleException.ScheduleExceptionResponse;
+import com.example.scheduler.dto.scheduleexception.ScheduleExceptionRequest;
+import com.example.scheduler.dto.scheduleexception.ScheduleExceptionResponse;
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.ScheduleException;
 import com.example.scheduler.enums.AppointmentStatus;

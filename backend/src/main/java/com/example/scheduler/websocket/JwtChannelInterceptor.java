@@ -1,11 +1,11 @@
 package com.example.scheduler.websocket;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.ActiveUserChecker;
-import com.example.scheduler.security.JwtClaims;
-import com.example.scheduler.security.JwtUtil;
 import com.example.scheduler.security.SecurityUtils;
+import com.example.scheduler.security.jwt.JwtClaims;
+import com.example.scheduler.security.jwt.JwtUtil;
+import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.websocket.event.AppointmentChangedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

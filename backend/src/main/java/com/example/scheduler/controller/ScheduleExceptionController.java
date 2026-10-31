@@ -1,7 +1,7 @@
 package com.example.scheduler.controller;
 
-import com.example.scheduler.dto.scheduleException.ScheduleExceptionRequest;
-import com.example.scheduler.dto.scheduleException.ScheduleExceptionResponse;
+import com.example.scheduler.dto.scheduleexception.ScheduleExceptionRequest;
+import com.example.scheduler.dto.scheduleexception.ScheduleExceptionResponse;
 import com.example.scheduler.security.RoleExpressions;
 import com.example.scheduler.security.SecurityUtils;
 import com.example.scheduler.service.ScheduleExceptionService;

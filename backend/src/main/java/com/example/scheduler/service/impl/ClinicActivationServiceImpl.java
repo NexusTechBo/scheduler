@@ -1,6 +1,5 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.clinic.ActivateClinicRequest;
 import com.example.scheduler.dto.clinic.ClinicActivatedResponse;
 import com.example.scheduler.dto.clinic.ResendActivationRequest;
@@ -16,8 +15,9 @@ import com.example.scheduler.notification.event.ClinicActivationEvent;
 import com.example.scheduler.repository.ClinicActivationTokenRepository;
 import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PersonalRepository;
-import com.example.scheduler.security.ActivationTokens;
 import com.example.scheduler.service.ClinicActivationService;
+import com.example.scheduler.tenant.TenantContext;
+import com.example.scheduler.util.TokenUtils;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -52,12 +52,12 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
     }
 
     private void createActivationToken(Clinic clinic, String adminName, String adminEmail) {
-        var token = ActivationTokens.generate();
+        var token = TokenUtils.generate();
         var now = LocalDateTime.now(clock);
         var expiresAt = now.plus(TOKEN_VALIDITY);
         tokenRepository.save(ClinicActivationToken.builder()
                 .clinic(clinic)
-                .tokenHash(ActivationTokens.hash(token))
+                .tokenHash(TokenUtils.hash(token))
                 .email(adminEmail)
                 .expiresAt(expiresAt)
                 .createdAt(now)
@@ -68,7 +68,7 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
 
     @Override
     public ClinicActivatedResponse activateClinic(ActivateClinicRequest request) {
-        var tokenHash = ActivationTokens.hash(request.token());
+        var tokenHash = TokenUtils.hash(request.token());
         var clinicId = tokenRepository
                 .findClinicIdByTokenHash(tokenHash)
                 .orElseThrow(ClinicActivationServiceImpl::invalidLink);

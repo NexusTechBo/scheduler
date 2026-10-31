@@ -1,4 +1,4 @@
-package com.example.scheduler.config.mdc;
+package com.example.scheduler.config;
 
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;

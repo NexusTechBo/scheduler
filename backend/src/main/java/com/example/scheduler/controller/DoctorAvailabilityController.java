@@ -1,8 +1,8 @@
 package com.example.scheduler.controller;
 
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilityRequest;
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilityResponse;
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilitySlotsResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilityRequest;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilityResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilitySlotsResponse;
 import com.example.scheduler.security.RoleExpressions;
 import com.example.scheduler.security.SecurityUtils;
 import com.example.scheduler.service.DoctorAvailabilityService;

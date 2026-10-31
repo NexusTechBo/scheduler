@@ -2,22 +2,25 @@ package com.example.scheduler.security;
 
 import java.util.List;
 import java.util.Objects;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SecurityUtils {
     public static final String ROLE_PREFIX = "ROLE_";
     public static final String BEARER_PREFIX = "Bearer ";
 
+    private SecurityUtils() {}
+
     public static String extractRole(Authentication auth) {
         return auth.getAuthorities().stream()
-                .map(a -> Objects.requireNonNull(a.getAuthority()).replace(ROLE_PREFIX, ""))
+                .map(a -> stripRolePrefix(Objects.requireNonNull(a.getAuthority())))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private static String stripRolePrefix(String authority) {
+        return authority.startsWith(ROLE_PREFIX) ? authority.substring(ROLE_PREFIX.length()) : authority;
     }
 
     public static Long extractUserId(Authentication auth) {

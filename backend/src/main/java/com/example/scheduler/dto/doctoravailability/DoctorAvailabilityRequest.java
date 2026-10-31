@@ -1,4 +1,4 @@
-package com.example.scheduler.dto.doctorAvailability;
+package com.example.scheduler.dto.doctoravailability;
 
 import com.example.scheduler.validator.timeRange.TimeRange;
 import jakarta.validation.constraints.Min;

@@ -1,7 +1,7 @@
 package com.example.scheduler.config;
 
-import com.example.scheduler.config.tenant.CustomTenantResolver;
-import com.example.scheduler.config.tenant.SchemaBasedMultiTenantConnectionProvider;
+import com.example.scheduler.tenant.CustomTenantResolver;
+import com.example.scheduler.tenant.SchemaBasedMultiTenantConnectionProvider;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.cfg.AvailableSettings;

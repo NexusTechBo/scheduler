@@ -1,6 +1,5 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
 import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
@@ -20,6 +19,7 @@ import com.example.scheduler.mapper.PersonalMapper;
 import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.PersonalService;
+import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.Utils;
 import java.time.Clock;
 import java.time.LocalDateTime;

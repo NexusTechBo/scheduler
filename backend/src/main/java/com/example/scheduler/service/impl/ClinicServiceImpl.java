@@ -1,6 +1,5 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.clinic.ClinicCreatedResponse;
 import com.example.scheduler.dto.clinic.ClinicRequest;
 import com.example.scheduler.entity.Clinic;
@@ -15,6 +14,7 @@ import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.service.ClinicActivationService;
 import com.example.scheduler.service.ClinicService;
 import com.example.scheduler.service.SchemaProvisioningService;
+import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.Utils;
 import java.time.Clock;
 import java.time.LocalDateTime;

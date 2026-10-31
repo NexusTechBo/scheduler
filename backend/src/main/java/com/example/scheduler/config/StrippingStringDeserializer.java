@@ -1,4 +1,4 @@
-package com.example.scheduler.config.stripping;
+package com.example.scheduler.config;
 
 import java.util.Locale;
 import tools.jackson.core.JsonParser;
@@ -7,8 +7,8 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.deser.jdk.StringDeserializer;
 
-public final class StrippingStringDeserializer extends ValueDeserializer<String> {
-    public static final StrippingStringDeserializer STRIP = new StrippingStringDeserializer(true);
+final class StrippingStringDeserializer extends ValueDeserializer<String> {
+    static final StrippingStringDeserializer STRIP = new StrippingStringDeserializer(true);
     static final StrippingStringDeserializer KEEP = new StrippingStringDeserializer(false);
 
     private final boolean strip;

@@ -1,7 +1,7 @@
 package com.example.scheduler.service;
 
-import com.example.scheduler.dto.scheduleException.ScheduleExceptionRequest;
-import com.example.scheduler.dto.scheduleException.ScheduleExceptionResponse;
+import com.example.scheduler.dto.scheduleexception.ScheduleExceptionRequest;
+import com.example.scheduler.dto.scheduleexception.ScheduleExceptionResponse;
 import java.time.LocalDate;
 import java.util.List;
 

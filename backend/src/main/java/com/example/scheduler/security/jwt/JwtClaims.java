@@ -1,4 +1,4 @@
-package com.example.scheduler.security;
+package com.example.scheduler.security.jwt;
 
 public final class JwtClaims {
     public static final String ROLE = "role";

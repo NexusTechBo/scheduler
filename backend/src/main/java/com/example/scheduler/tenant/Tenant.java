@@ -1,3 +1,3 @@
-package com.example.scheduler.config.tenant;
+package com.example.scheduler.tenant;
 
 public record Tenant(Long clinicId, String clinicSlug) {}

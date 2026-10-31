@@ -1,4 +1,4 @@
-package com.example.scheduler.dto.scheduleException;
+package com.example.scheduler.dto.scheduleexception;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

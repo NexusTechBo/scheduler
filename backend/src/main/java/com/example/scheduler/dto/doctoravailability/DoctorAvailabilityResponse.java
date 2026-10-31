@@ -1,4 +1,4 @@
-package com.example.scheduler.dto.doctorAvailability;
+package com.example.scheduler.dto.doctoravailability;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;

@@ -1,6 +1,5 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.appointment.AppointmentRequest;
 import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
@@ -19,6 +18,7 @@ import com.example.scheduler.mapper.AppointmentMapper;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.AppointmentService;
+import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.websocket.event.AppointmentChangedEvent;
 import com.example.scheduler.websocket.event.BoardEvent;
 import java.time.Clock;

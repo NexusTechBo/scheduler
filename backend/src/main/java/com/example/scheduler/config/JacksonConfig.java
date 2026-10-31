@@ -1,6 +1,5 @@
 package com.example.scheduler.config;
 
-import com.example.scheduler.config.stripping.StrippingStringDeserializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.JacksonModule;

@@ -1,4 +1,4 @@
-package com.example.scheduler.config.tenant;
+package com.example.scheduler.tenant;
 
 import com.example.scheduler.util.LogKeys;
 import org.slf4j.MDC;

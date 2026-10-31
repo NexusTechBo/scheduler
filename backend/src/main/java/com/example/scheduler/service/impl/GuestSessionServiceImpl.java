@@ -6,7 +6,7 @@ import com.example.scheduler.enums.ClinicStatus;
 import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.repository.ClinicRepository;
-import com.example.scheduler.security.JwtUtil;
+import com.example.scheduler.security.jwt.JwtUtil;
 import com.example.scheduler.service.GuestSessionService;
 import java.time.Clock;
 import java.time.Instant;

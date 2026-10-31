@@ -1,4 +1,4 @@
-package com.example.scheduler.config.rateLimiting;
+package com.example.scheduler.ratelimiting;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

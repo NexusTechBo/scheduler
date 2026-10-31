@@ -1,6 +1,6 @@
 package com.example.scheduler.controller;
 
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilitySlotsResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilitySlotsResponse;
 import com.example.scheduler.dto.guest.GuestAppointmentRequest;
 import com.example.scheduler.dto.guest.GuestAppointmentResponse;
 import com.example.scheduler.dto.guest.GuestClinicResponse;

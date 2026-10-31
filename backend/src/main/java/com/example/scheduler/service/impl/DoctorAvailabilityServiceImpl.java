@@ -1,9 +1,9 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilityRequest;
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilityResponse;
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilitySlotsResponse;
-import com.example.scheduler.dto.doctorAvailability.SlotResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilityRequest;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilityResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilitySlotsResponse;
+import com.example.scheduler.dto.doctoravailability.SlotResponse;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.enums.ERole;

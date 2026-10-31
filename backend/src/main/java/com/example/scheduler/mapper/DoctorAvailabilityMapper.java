@@ -1,6 +1,6 @@
 package com.example.scheduler.mapper;
 
-import com.example.scheduler.dto.doctorAvailability.DoctorAvailabilityResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilityResponse;
 import com.example.scheduler.entity.DoctorAvailability;
 import java.util.List;
 import org.mapstruct.Mapper;

@@ -1,4 +1,4 @@
-package com.example.scheduler.config.rateLimiting;
+package com.example.scheduler.ratelimiting;
 
 public enum RateLimitKeyStrategy {
     IP,
