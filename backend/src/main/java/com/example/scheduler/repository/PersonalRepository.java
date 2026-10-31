@@ -15,23 +15,23 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PersonalRepository extends JpaRepository<Personal, Long> {
-    String SELECT_PERSONAL = "SELECT p FROM Personal p ";
-    String FETCH_SPECIALTY = "LEFT JOIN FETCH p.specialty s ";
-    String WHERE_DOCTOR = "WHERE p.role = ERole.DOCTOR AND ";
-    String SPECIALTY_FILTER = "(:specialtyId IS NULL OR s.id = :specialtyId)";
-    String ACTIVE_FILTER = "(:isActive IS NULL OR p.active = :isActive)";
-
-    @Query(SELECT_PERSONAL + FETCH_SPECIALTY + WHERE_DOCTOR + SPECIALTY_FILTER + " AND " + ACTIVE_FILTER)
+    @Query("SELECT p FROM Personal p " + "LEFT JOIN FETCH p.specialty s "
+            + "WHERE p.role = ERole.DOCTOR AND "
+            + "(:specialtyId IS NULL OR s.id = :specialtyId) AND "
+            + "(:isActive IS NULL OR p.active = :isActive)")
     Page<Personal> findAllDoctorsByFilters(
             @Param("specialtyId") Long specialtyId, @Param("isActive") Boolean isActive, Pageable pageable);
 
-    @Query(SELECT_PERSONAL + FETCH_SPECIALTY + WHERE_DOCTOR + "p.active = true AND " + SPECIALTY_FILTER)
+    @Query("SELECT p FROM Personal p " + "LEFT JOIN FETCH p.specialty s "
+            + "WHERE p.role = ERole.DOCTOR AND "
+            + "p.active = true AND "
+            + "(:specialtyId IS NULL OR s.id = :specialtyId)")
     List<Personal> findAllDoctorsActive(@Param("specialtyId") Long specialtyId);
 
-    @Query(SELECT_PERSONAL + FETCH_SPECIALTY
+    @Query("SELECT p FROM Personal p " + "LEFT JOIN FETCH p.specialty s "
             + "WHERE (:role IS NULL OR p.role = :role) AND "
             + "(:specialtyId IS NULL OR p.specialty.id = :specialtyId) AND "
-            + ACTIVE_FILTER)
+            + "(:isActive IS NULL OR p.active = :isActive)")
     Page<Personal> findAllByFilters(
             @Param("specialtyId") Long specialtyId,
             @Param("isActive") Boolean isActive,
@@ -49,7 +49,7 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
     Optional<Personal> findByIdAndRoleAndActiveIsTrue(Long id, ERole role);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query(SELECT_PERSONAL + "WHERE p.id = :id")
+    @Query("SELECT p FROM Personal p WHERE p.id = :id")
     Optional<Personal> findByIdForUpdate(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {"patients"})

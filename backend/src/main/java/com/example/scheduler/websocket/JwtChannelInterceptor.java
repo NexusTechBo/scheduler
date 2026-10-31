@@ -6,6 +6,7 @@ import com.example.scheduler.security.ActiveUserChecker;
 import com.example.scheduler.security.JwtClaims;
 import com.example.scheduler.security.JwtUtil;
 import com.example.scheduler.security.SecurityUtils;
+import com.example.scheduler.websocket.event.AppointmentChangedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;

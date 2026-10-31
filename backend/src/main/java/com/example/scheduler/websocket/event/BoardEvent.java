@@ -1,4 +1,4 @@
-package com.example.scheduler.websocket;
+package com.example.scheduler.websocket.event;
 
 import com.example.scheduler.enums.AppointmentStatus;
 

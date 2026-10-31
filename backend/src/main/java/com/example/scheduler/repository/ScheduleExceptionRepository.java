@@ -7,12 +7,10 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ScheduleExceptionRepository extends JpaRepository<ScheduleException, Long> {
-    String GRAPH_DOCTOR_SPECIALTY = "doctor.specialty";
-
-    @EntityGraph(attributePaths = {GRAPH_DOCTOR_SPECIALTY})
+    @EntityGraph(attributePaths = {"doctor.specialty"})
     List<ScheduleException> findByDoctorIdAndDate(Long doctorId, LocalDate date);
 
-    @EntityGraph(attributePaths = {GRAPH_DOCTOR_SPECIALTY})
+    @EntityGraph(attributePaths = {"doctor.specialty"})
     List<ScheduleException> findByDoctorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(
             Long doctorId, LocalDate from);
 }

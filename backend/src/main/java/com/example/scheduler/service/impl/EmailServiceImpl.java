@@ -1,11 +1,11 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.notification.AppointmentNotificationEvent;
-import com.example.scheduler.notification.ClinicActivatedEvent;
-import com.example.scheduler.notification.ClinicActivationEvent;
-import com.example.scheduler.notification.EmailContent;
-import com.example.scheduler.notification.EmailTemplates;
-import com.example.scheduler.notification.StaffCreatedEvent;
+import com.example.scheduler.notification.event.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.ClinicActivatedEvent;
+import com.example.scheduler.notification.event.ClinicActivationEvent;
+import com.example.scheduler.notification.event.StaffCreatedEvent;
+import com.example.scheduler.notification.template.EmailContent;
+import com.example.scheduler.notification.template.EmailTemplates;
 import com.example.scheduler.service.EmailService;
 import com.example.scheduler.util.LogUtils;
 import jakarta.mail.MessagingException;

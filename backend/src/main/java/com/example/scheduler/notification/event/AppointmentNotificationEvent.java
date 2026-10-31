@@ -1,4 +1,4 @@
-package com.example.scheduler.notification;
+package com.example.scheduler.notification.event;
 
 import com.example.scheduler.enums.AppointmentStatus;
 import java.time.LocalDateTime;

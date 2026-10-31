@@ -1,4 +1,4 @@
-package com.example.scheduler.notification;
+package com.example.scheduler.notification.event;
 
 import java.time.LocalDateTime;
 import org.jspecify.annotations.NonNull;

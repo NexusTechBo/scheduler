@@ -1,6 +1,10 @@
 package com.example.scheduler.notification;
 
 import com.example.scheduler.config.AsyncConfig;
+import com.example.scheduler.notification.event.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.ClinicActivatedEvent;
+import com.example.scheduler.notification.event.ClinicActivationEvent;
+import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;

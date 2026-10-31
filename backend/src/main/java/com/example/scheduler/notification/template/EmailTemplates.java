@@ -1,7 +1,11 @@
-package com.example.scheduler.notification;
+package com.example.scheduler.notification.template;
 
 import com.example.scheduler.config.LocaleConfig;
 import com.example.scheduler.enums.ERole;
+import com.example.scheduler.notification.event.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.ClinicActivatedEvent;
+import com.example.scheduler.notification.event.ClinicActivationEvent;
+import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.util.Utils;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;

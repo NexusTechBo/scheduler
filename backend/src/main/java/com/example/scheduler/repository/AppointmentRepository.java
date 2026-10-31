@@ -14,21 +14,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
-    String SELECT_APPOINTMENT = "SELECT a FROM Appointment a ";
-    String FETCH_DOCTOR = "JOIN FETCH a.doctor d ";
-    String FETCH_PATIENT = "JOIN FETCH a.patient p ";
-    String DOCTOR_AND_PATIENT_FILTER = "WHERE (:doctorId IS NULL OR a.doctor.id = :doctorId) AND "
-            + "(:patientId IS NULL OR a.patient.id = :patientId) AND ";
-    String OVERLAPPING_CONDITION = "WHERE a.doctor.id = :doctorId " + "AND a.status NOT IN :excludedStatuses "
-            + "AND a.startTime < :endTime "
-            + "AND a.endTime > :startTime";
-    String GRAPH_DOCTOR_SPECIALTY = "doctor.specialty";
-    String GRAPH_PATIENT = "patient";
-
-    @Query(SELECT_APPOINTMENT + FETCH_DOCTOR
+    @Query("SELECT a FROM Appointment a " + "JOIN FETCH a.doctor d "
             + "LEFT JOIN FETCH d.specialty sp "
-            + FETCH_PATIENT
-            + DOCTOR_AND_PATIENT_FILTER
+            + "JOIN FETCH a.patient p "
+            + "WHERE (:doctorId IS NULL OR a.doctor.id = :doctorId) AND "
+            + "(:patientId IS NULL OR a.patient.id = :patientId) AND "
             + "(:status IS NULL OR a.status = :status)")
     Page<Appointment> findAllByFilters(
             @Param("doctorId") Long doctorId,
@@ -36,9 +26,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("status") AppointmentStatus status,
             Pageable pageable);
 
-    @Query("SELECT a FROM Appointment a  " + FETCH_DOCTOR
-            + FETCH_PATIENT
-            + DOCTOR_AND_PATIENT_FILTER
+    @Query("SELECT a FROM Appointment a  " + "JOIN FETCH a.doctor d "
+            + "JOIN FETCH a.patient p "
+            + "WHERE (:doctorId IS NULL OR a.doctor.id = :doctorId) AND "
+            + "(:patientId IS NULL OR a.patient.id = :patientId) AND "
             + "a.startTime >= :from AND a.startTime < :to "
             + "ORDER BY a.startTime ASC")
     List<Appointment> findByFiltersAndDateRange(
@@ -47,15 +38,21 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
 
-    @Query("SELECT COUNT(a) > 0 FROM Appointment a " + OVERLAPPING_CONDITION)
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a " + "WHERE a.doctor.id = :doctorId "
+            + "AND a.status NOT IN :excludedStatuses "
+            + "AND a.startTime < :endTime "
+            + "AND a.endTime > :startTime")
     boolean existsOverlappingAppointment(
             @Param("doctorId") Long doctorId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
             @Param("excludedStatuses") List<AppointmentStatus> excludedStatuses);
 
-    @EntityGraph(attributePaths = {GRAPH_DOCTOR_SPECIALTY, GRAPH_PATIENT})
-    @Query(SELECT_APPOINTMENT + OVERLAPPING_CONDITION)
+    @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
+    @Query("SELECT a FROM Appointment a " + "WHERE a.doctor.id = :doctorId "
+            + "AND a.status NOT IN :excludedStatuses "
+            + "AND a.startTime < :endTime "
+            + "AND a.endTime > :startTime")
     List<Appointment> findOverlappingAppointments(
             @Param("doctorId") Long doctorId,
             @Param("startTime") LocalDateTime startTime,
@@ -68,6 +65,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             Long doctorId, LocalDateTime start, LocalDateTime end, AppointmentStatus status);
 
     @NullMarked
-    @EntityGraph(attributePaths = {GRAPH_DOCTOR_SPECIALTY, GRAPH_PATIENT})
+    @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
     Optional<Appointment> findById(Long id);
 }

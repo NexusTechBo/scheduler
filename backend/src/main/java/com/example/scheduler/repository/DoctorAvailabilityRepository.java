@@ -8,15 +8,13 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DoctorAvailabilityRepository extends JpaRepository<DoctorAvailability, Long> {
-    String GRAPH_DOCTOR_SPECIALTY = "doctor.specialty";
-
-    @EntityGraph(attributePaths = {GRAPH_DOCTOR_SPECIALTY})
+    @EntityGraph(attributePaths = {"doctor.specialty"})
     List<DoctorAvailability> findByDoctorIdAndActiveTrue(Long doctorId);
 
-    @EntityGraph(attributePaths = {GRAPH_DOCTOR_SPECIALTY})
+    @EntityGraph(attributePaths = {"doctor.specialty"})
     List<DoctorAvailability> findByDoctorIdAndDayOfWeekAndActiveTrue(Long doctorId, DayOfWeek dayOfWeek);
 
-    @EntityGraph(attributePaths = {GRAPH_DOCTOR_SPECIALTY})
+    @EntityGraph(attributePaths = {"doctor.specialty"})
     Optional<DoctorAvailability> findByIdAndActiveIsTrue(Long id);
 
     boolean existsByDoctorIdAndActiveTrue(Long doctorId);

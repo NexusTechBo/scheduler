@@ -17,7 +17,7 @@ import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
-import com.example.scheduler.notification.StaffCreatedEvent;
+import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.PersonalService;
 import com.example.scheduler.util.Utils;
