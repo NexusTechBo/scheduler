@@ -5,7 +5,6 @@ import org.slf4j.MDC;
 import org.springframework.core.task.TaskDecorator;
 
 public class MdcTaskDecorator implements TaskDecorator {
-
     @Override
     public @NonNull Runnable decorate(@NonNull Runnable runnable) {
         var context = MDC.getCopyOfContextMap();

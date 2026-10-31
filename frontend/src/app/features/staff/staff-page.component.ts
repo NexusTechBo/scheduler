@@ -20,7 +20,8 @@ import {
   StaffFormData,
   StaffFormDialogComponent,
 } from './components/staff-form-dialog/staff-form-dialog.component';
-import { StaffRoleFilter, StaffService } from './staff.service';
+import { StaffRoleFilter } from './staff.model';
+import { StaffService } from './staff.service';
 
 @Component({
   selector: 'app-staff-page',

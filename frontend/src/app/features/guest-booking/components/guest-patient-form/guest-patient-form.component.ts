@@ -32,13 +32,12 @@ export class GuestPatientFormComponent implements OnInit {
     { id: 'new', label: 'Es mi primera vez' },
   ];
 
-  private readonly fb = inject(FormBuilder);
-  protected readonly form = this.fb.group({
-    kind: this.fb.control<PatientKind | null>(null, Validators.required),
-    ci: this.fb.nonNullable.control('', [notBlank, ciValidator]),
-    phoneNumber: this.fb.nonNullable.control('', [notBlank, phoneValidator]),
-    name: this.fb.nonNullable.control({ value: '', disabled: true }, notBlank),
-    email: this.fb.nonNullable.control({ value: '', disabled: true }, Validators.email),
+  protected readonly form = inject(FormBuilder).nonNullable.group({
+    kind: [null as PatientKind | null, Validators.required],
+    ci: ['', [notBlank, ciValidator]],
+    phoneNumber: ['', [notBlank, phoneValidator]],
+    name: [{ value: '', disabled: true }, notBlank],
+    email: [{ value: '', disabled: true }, Validators.email],
   });
   protected readonly kind = toSignal(this.form.controls.kind.valueChanges, { initialValue: null });
 

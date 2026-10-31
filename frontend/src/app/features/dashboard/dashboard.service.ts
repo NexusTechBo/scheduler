@@ -12,25 +12,7 @@ import {
   toLocalDateTime,
 } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
-import { UiIconName } from '../../shared/ui/ui-icon/ui-icon.component';
-
-interface Kpi {
-  label: string;
-  value: number | null;
-  icon: UiIconName;
-  tone: string;
-}
-
-export interface WeekDayStats {
-  iso: string;
-  weekday: string;
-  day: number;
-  isToday: boolean;
-  confirmed: number;
-  pending: number;
-  cancelled: number;
-  total: number;
-}
+import { Kpi, WeekDayStats } from './dashboard.model';
 
 const PENDING_LIMIT = 6;
 

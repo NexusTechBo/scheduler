@@ -2,9 +2,8 @@ package com.example.scheduler.entity;
 
 import com.example.scheduler.enums.ClinicStatus;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
+import lombok.*;
 
 @Getter
 @Setter

@@ -10,16 +10,10 @@ import jakarta.validation.constraints.Size;
 
 @SpecialtyRoleMatch
 public record PersonalUpdateRequest(
-        @NotBlank
-        String name,
-        @NotBlank
-        @Email
-        String email,
+        @NotBlank String name,
+        @NotBlank @Email String email,
         String phoneNumber,
-        @Size(min = 8)
-        String password,
-        @NotNull
-        @ValidRole
-        ERole role,
-        Long specialtyId
-) implements SpecialtyRoleMatch.Request {}
+        @Size(min = 8) String password,
+        @NotNull @ValidRole ERole role,
+        Long specialtyId)
+        implements SpecialtyRoleMatch.Request {}

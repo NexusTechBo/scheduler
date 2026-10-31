@@ -2,10 +2,9 @@ package com.example.scheduler.security;
 
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.repository.PersonalRepository;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
 
 @Component
 @RequiredArgsConstructor

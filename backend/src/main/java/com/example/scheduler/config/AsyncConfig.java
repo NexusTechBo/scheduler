@@ -22,8 +22,9 @@ public class AsyncConfig {
         executor.setTaskDecorator(new MdcTaskDecorator());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
-        executor.setRejectedExecutionHandler((_, pool) ->
-                log.error("Email task rejected: mail executor saturated (queue size {}), email dropped", pool.getQueue().size()));
+        executor.setRejectedExecutionHandler((_, pool) -> log.error(
+                "Email task rejected: mail executor saturated (queue size {}), email dropped",
+                pool.getQueue().size()));
         return executor;
     }
 }

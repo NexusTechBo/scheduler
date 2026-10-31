@@ -1,12 +1,13 @@
 package com.example.scheduler.util;
 
-/** MDC keys, structured log fields and request attributes shared by the logging filters. */
 public final class LogKeys {
     public static final String TRACE_ID = "traceId";
     public static final String CLINIC_ID = "clinicId";
     public static final String CLINIC_SLUG = "clinicSlug";
     public static final String USER_ID = "userId";
     public static final String ROLE = "role";
+    public static final String METHOD = "method";
+    public static final String PATH = "path";
     public static final String GUEST_USER = "guest";
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
 

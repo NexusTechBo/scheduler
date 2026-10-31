@@ -1,6 +1,5 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.appointment.AppointmentRequest;
 import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
@@ -13,22 +12,15 @@ import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
+import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.AppointmentMapper;
-import com.example.scheduler.notification.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.AppointmentService;
-import com.example.scheduler.websocket.AppointmentChangedEvent;
-import com.example.scheduler.websocket.BoardEvent;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
+import com.example.scheduler.tenant.TenantContext;
+import com.example.scheduler.websocket.event.AppointmentChangedEvent;
+import com.example.scheduler.websocket.event.BoardEvent;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -40,6 +32,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -74,13 +74,15 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private AppointmentResponse book(AppointmentRequest request, String channel) {
         var patientId = request.patientId();
-        var doctor = personalRepository.findByIdForUpdate(request.doctorId())
-                .orElseThrow(() -> new ResourceNotFoundException("personal.doctorNotFound", request.doctorId()));
+        var doctor = personalRepository
+                .findByIdForUpdate(request.doctorId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, request.doctorId()));
         var endTime = verifySlotBookable(doctor, request.startTime());
-        var patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("patient.notFound", patientId));
-        if (!patient.isActive())
-            throw new BusinessException("auth.userNotActive");
+        var patient = patientRepository
+                .findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
+        if (!patient.isActive()) throw new BusinessException(MessageKeys.AUTH_USER_NOT_ACTIVE);
         var appointment = Appointment.builder()
                 .doctor(doctor)
                 .patient(patient)
@@ -97,8 +99,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                         channel,
                         doctor.getId(),
                         patientId,
-                        saved.getStatus()
-                );
+                        saved.getStatus());
         return appointmentMapper.toResponse(saved);
     }
 
@@ -106,17 +107,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime) {
         var endTime = findSlotEnd(doctor.getId(), startTime)
-                .orElseThrow(() -> new BusinessException("appointment.outOfJourney"));
+                .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
         if (doctor.getRole() != ERole.DOCTOR)
-            throw new BadRequestException("personal.doctorNotFound", doctor.getId());
-        if (!doctor.isActive())
-            throw new BusinessException("auth.userNotActive");
+            throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
+        if (!doctor.isActive()) throw new BusinessException(MessageKeys.AUTH_USER_NOT_ACTIVE);
         if (startTime.isBefore(LocalDateTime.now(clock)))
-            throw new BadRequestException("appointment.pastDate");
+            throw new BadRequestException(MessageKeys.APPOINTMENT_PAST_DATE);
         if (isBlocked(doctor.getId(), startTime, endTime))
-            throw new BusinessException("appointment.scheduleBlocked");
+            throw new BusinessException(MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED);
         if (isSlotTaken(doctor.getId(), startTime, endTime))
-            throw new BusinessException("appointment.slotTaken");
+            throw new BusinessException(MessageKeys.APPOINTMENT_SLOT_TAKEN);
         return endTime;
     }
 
@@ -128,8 +128,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public Page<AppointmentResponse> findAllAppointments(Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable) {
-        return appointmentRepository.findAllByFilters(doctorId, patientId, status, pageable).map(appointmentMapper::toResponse);
+    public Page<AppointmentResponse> findAllAppointments(
+            Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable) {
+        return appointmentRepository
+                .findAllByFilters(doctorId, patientId, status, pageable)
+                .map(appointmentMapper::toResponse);
     }
 
     @Override
@@ -138,7 +141,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         var appointment = getAppointmentOrThrowById(AppointmentId);
         verifyPermission(appointment, userId, role);
         if (appointment.getStatus() != AppointmentStatus.PENDING)
-            throw new BusinessException("appointment.confirmOnlyPending");
+            throw new BusinessException(MessageKeys.APPOINTMENT_CONFIRM_ONLY_PENDING);
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         var saved = saveAndNotify(appointment);
         logStatusChange(saved, AppointmentStatus.PENDING);
@@ -148,11 +151,12 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional
-    public AppointmentResponse cancelAppointmentById(Long AppointmentId, CancelAppointmentRequest request, Long userId, String role) {
+    public AppointmentResponse cancelAppointmentById(
+            Long AppointmentId, CancelAppointmentRequest request, Long userId, String role) {
         var appointment = getAppointmentOrThrowById(AppointmentId);
         verifyPermission(appointment, userId, role);
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
-            throw new BusinessException("appointment.alreadyCancelled");
+            throw new BusinessException(MessageKeys.APPOINTMENT_ALREADY_CANCELLED);
         var previousStatus = appointment.getStatus();
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setCancellationReason(request.reason());
@@ -178,24 +182,34 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private static void logStatusChange(Appointment appointment, AppointmentStatus from) {
-        log.info("Appointment {} of doctor {} changed {} -> {}", appointment.getId(), appointment.getDoctor().getId(), from, appointment.getStatus());
+        log.info(
+                "Appointment {} of doctor {} changed {} -> {}",
+                appointment.getId(),
+                appointment.getDoctor().getId(),
+                from,
+                appointment.getStatus());
     }
 
     @Override
-    public Map<AppointmentStatus, List<AppointmentSummaryItem>> getBoardByRange(LocalDate from, LocalDate to, Long doctorId, Long patientId) {
-        return groupByStatus(appointmentRepository.findByFiltersAndDateRange(doctorId, patientId, from.atStartOfDay(), to.plusDays(1).atStartOfDay()));
+    public Map<AppointmentStatus, List<AppointmentSummaryItem>> getBoardByRange(
+            LocalDate from, LocalDate to, Long doctorId, Long patientId) {
+        return groupByStatus(appointmentRepository.findByFiltersAndDateRange(
+                doctorId, patientId, from.atStartOfDay(), to.plusDays(1).atStartOfDay()));
     }
 
     @Override
     public Map<String, List<AppointmentSummaryItem>> getCalendar(int month, int year, Long doctorId, Long patientId) {
         var monthStart = LocalDate.of(year, month, 1);
-        return groupByDay(appointmentRepository.findByFiltersAndDateRange(doctorId, patientId, monthStart.atStartOfDay(), monthStart.plusMonths(1).atStartOfDay()));
+        return groupByDay(appointmentRepository.findByFiltersAndDateRange(
+                doctorId,
+                patientId,
+                monthStart.atStartOfDay(),
+                monthStart.plusMonths(1).atStartOfDay()));
     }
 
     private Map<AppointmentStatus, List<AppointmentSummaryItem>> groupByStatus(List<Appointment> appointments) {
         var board = new EnumMap<AppointmentStatus, List<AppointmentSummaryItem>>(AppointmentStatus.class);
-        for (AppointmentStatus status : AppointmentStatus.values())
-            board.put(status, new ArrayList<>());
+        for (AppointmentStatus status : AppointmentStatus.values()) board.put(status, new ArrayList<>());
         for (Appointment appointment : appointments)
             board.get(appointment.getStatus()).add(toSummaryItem(appointment));
         return board;
@@ -228,9 +242,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private Appointment saveAndNotify(Appointment appointment) {
         var saved = appointmentRepository.save(appointment);
         eventPublisher.publishEvent(new AppointmentChangedEvent(
-                TenantContext.getCurrentClinicId(),
-                new BoardEvent(saved.getId(), saved.getStatus())
-        ));
+                TenantContext.getCurrentClinicId(), new BoardEvent(saved.getId(), saved.getStatus())));
         return saved;
     }
 
@@ -238,7 +250,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         var doctor = appointment.getDoctor();
         var patient = appointment.getPatient();
         if (!StringUtils.hasText(patient.getEmail())) {
-            log.info("Appointment {} email notification skipped: patient {} has no email", appointment.getId(), patient.getId());
+            log.info(
+                    "Appointment {} email notification skipped: patient {} has no email",
+                    appointment.getId(),
+                    patient.getId());
             return;
         }
         var specialty = doctor.getSpecialty();
@@ -256,20 +271,22 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private String getCurrentClinicName() {
-        return clinicRepository.findById(TenantContext.getCurrentClinicId())
+        return clinicRepository
+                .findById(TenantContext.getCurrentClinicId())
                 .map(Clinic::getName)
                 .orElse(null);
     }
 
     private Appointment getAppointmentOrThrowById(Long appointmentId) {
-        return appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("appointment.notFound", appointmentId));
+        return appointmentRepository
+                .findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.APPOINTMENT_NOT_FOUND, appointmentId));
     }
 
     private void verifyPermission(Appointment appointment, Long userId, String role) {
         if (ERole.DOCTOR.name().equals(role))
             if (!appointment.getDoctor().getId().equals(userId))
-                throw new ForbiddenException("appointment.unauthorized");
+                throw new ForbiddenException(MessageKeys.APPOINTMENT_UNAUTHORIZED);
     }
 
     private boolean isBlocked(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
@@ -279,7 +296,9 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private Optional<LocalDateTime> findSlotEnd(Long doctorId, LocalDateTime startTime) {
         var time = startTime.toLocalTime();
-        return doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, startTime.getDayOfWeek()).stream()
+        return doctorAvailabilityRepository
+                .findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, startTime.getDayOfWeek())
+                .stream()
                 .filter(a -> a.getSlotDurationMinutes() != null && a.getSlotDurationMinutes() > 0)
                 .filter(a -> {
                     var slotSeconds = a.getSlotDurationMinutes() * 60L;
@@ -294,10 +313,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     private boolean isSlotTaken(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
         return appointmentRepository.existsOverlappingAppointment(
-                doctorId,
-                startTime,
-                endTime,
-                List.of(AppointmentStatus.CANCELLED)
-        );
+                doctorId, startTime, endTime, List.of(AppointmentStatus.CANCELLED));
     }
 }

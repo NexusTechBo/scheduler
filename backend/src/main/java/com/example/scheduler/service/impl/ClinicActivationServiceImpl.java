@@ -1,6 +1,5 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.dto.clinic.ActivateClinicRequest;
 import com.example.scheduler.dto.clinic.ClinicActivatedResponse;
 import com.example.scheduler.dto.clinic.ResendActivationRequest;
@@ -10,13 +9,18 @@ import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.ClinicStatus;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
-import com.example.scheduler.notification.ClinicActivatedEvent;
-import com.example.scheduler.notification.ClinicActivationEvent;
+import com.example.scheduler.exception.MessageKeys;
+import com.example.scheduler.notification.event.ClinicActivatedEvent;
+import com.example.scheduler.notification.event.ClinicActivationEvent;
 import com.example.scheduler.repository.ClinicActivationTokenRepository;
 import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PersonalRepository;
-import com.example.scheduler.security.ActivationTokens;
 import com.example.scheduler.service.ClinicActivationService;
+import com.example.scheduler.tenant.TenantContext;
+import com.example.scheduler.util.TokenUtils;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -27,17 +31,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.LocalDateTime;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClinicActivationServiceImpl implements ClinicActivationService {
     static final Duration TOKEN_VALIDITY = Duration.ofHours(48);
     static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
-    static final String INVALID_LINK_MESSAGE = "clinic.activationLinkInvalid";
 
     private final ClinicRepository clinicRepository;
     private final ClinicActivationTokenRepository tokenRepository;
@@ -53,33 +52,34 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
     }
 
     private void createActivationToken(Clinic clinic, String adminName, String adminEmail) {
-        var token = ActivationTokens.generate();
+        var token = TokenUtils.generate();
         var now = LocalDateTime.now(clock);
         var expiresAt = now.plus(TOKEN_VALIDITY);
         tokenRepository.save(ClinicActivationToken.builder()
                 .clinic(clinic)
-                .tokenHash(ActivationTokens.hash(token))
+                .tokenHash(TokenUtils.hash(token))
                 .email(adminEmail)
                 .expiresAt(expiresAt)
                 .createdAt(now)
                 .build());
-        eventPublisher.publishEvent(new ClinicActivationEvent(
-                clinic.getId(), clinic.getName(), adminName, adminEmail, token, expiresAt));
+        eventPublisher.publishEvent(
+                new ClinicActivationEvent(clinic.getId(), clinic.getName(), adminName, adminEmail, token, expiresAt));
     }
 
     @Override
     public ClinicActivatedResponse activateClinic(ActivateClinicRequest request) {
-        var tokenHash = ActivationTokens.hash(request.token());
-        var clinicId = tokenRepository.findClinicIdByTokenHash(tokenHash)
+        var tokenHash = TokenUtils.hash(request.token());
+        var clinicId = tokenRepository
+                .findClinicIdByTokenHash(tokenHash)
                 .orElseThrow(ClinicActivationServiceImpl::invalidLink);
         return inClinicTenant(clinicId, _ -> {
-            var clinic = clinicRepository.findByIdForUpdate(clinicId)
-                    .orElseThrow(ClinicActivationServiceImpl::invalidLink);
-            var token = tokenRepository.findByTokenHashForUpdate(tokenHash)
+            var clinic =
+                    clinicRepository.findByIdForUpdate(clinicId).orElseThrow(ClinicActivationServiceImpl::invalidLink);
+            var token = tokenRepository
+                    .findByTokenHashForUpdate(tokenHash)
                     .orElseThrow(ClinicActivationServiceImpl::invalidLink);
             var now = LocalDateTime.now(clock);
-            if (clinic.getStatus() != ClinicStatus.PENDING_ACTIVATION || !token.isUsable(now))
-                throw invalidLink();
+            if (clinic.getStatus() != ClinicStatus.PENDING_ACTIVATION || !token.isUsable(now)) throw invalidLink();
             var admin = getClinicAdmin(clinicId);
             clinic.setStatus(ClinicStatus.ACTIVE);
             clinic.setActivatedAt(now);
@@ -101,7 +101,10 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
                     return null;
                 });
             } catch (RuntimeException e) {
-                log.error("Activation resend failed for clinic {}: {}", clinicId, e.getClass().getSimpleName());
+                log.error(
+                        "Activation resend failed for clinic {}: {}",
+                        clinicId,
+                        e.getClass().getSimpleName());
             }
         }
     }
@@ -109,7 +112,9 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
     private void reissueActivationToken(Long clinicId) {
         var clinic = clinicRepository.findByIdForUpdate(clinicId).orElse(null);
         if (clinic == null || clinic.getStatus() != ClinicStatus.PENDING_ACTIVATION) return;
-        var latest = tokenRepository.findFirstByClinicIdOrderByCreatedAtDesc(clinicId).orElse(null);
+        var latest = tokenRepository
+                .findFirstByClinicIdOrderByCreatedAtDesc(clinicId)
+                .orElse(null);
         if (latest == null) return;
         var now = LocalDateTime.now(clock);
         if (latest.getCreatedAt().isAfter(now.minus(RESEND_COOLDOWN))) {
@@ -123,7 +128,8 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
     }
 
     private Personal getClinicAdmin(Long clinicId) {
-        return personalRepository.findFirstByRoleOrderByIdAsc(ERole.ADMINISTRATOR)
+        return personalRepository
+                .findFirstByRoleOrderByIdAsc(ERole.ADMINISTRATOR)
                 .orElseThrow(() -> new IllegalStateException("Clinic " + clinicId + " has no administrator"));
     }
 
@@ -134,14 +140,11 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
             TenantContext.setCurrentTenant(clinicId, slug);
             return new TransactionTemplate(transactionManager).execute(action);
         } finally {
-            if (previousTenant == null)
-                TenantContext.clear();
-            else
-                TenantContext.setCurrentTenant(previousTenant.clinicId(), previousTenant.clinicSlug());
+            TenantContext.restore(previousTenant);
         }
     }
 
     private static BadRequestException invalidLink() {
-        return new BadRequestException(INVALID_LINK_MESSAGE);
+        return new BadRequestException(MessageKeys.CLINIC_ACTIVATION_LINK_INVALID);
     }
 }

@@ -1,7 +1,8 @@
 package com.example.scheduler.service.impl;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.service.SchemaProvisioningService;
+import com.example.scheduler.tenant.TenantContext;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.Flyway;
 import org.jspecify.annotations.NonNull;
@@ -9,8 +10,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-
-import javax.sql.DataSource;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +21,8 @@ public class SchemaProvisioningServiceImpl implements SchemaProvisioningService,
 
     @Override
     public void run(@NonNull ApplicationArguments args) {
-        jdbcTemplate.queryForList("SELECT slug FROM clinics", String.class)
+        jdbcTemplate
+                .queryForList("SELECT slug FROM clinics", String.class)
                 .forEach(slug -> createTenantSchema(TenantContext.schemaName(slug)));
     }
 

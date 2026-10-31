@@ -33,8 +33,8 @@ export class ResendActivationComponent implements OnInit {
 
   protected readonly buttonLabel = computed(() => {
     if (this.resend.sending()) return 'Enviando…';
-    const remaining = this.resend.remaining();
-    return remaining > 0 ? `Reenviar en ${remaining} s` : this.label();
+    const remaining = this.resend.remainingLabel();
+    return remaining ? `Reenviar en ${remaining}` : this.label();
   });
 
   ngOnInit(): void {

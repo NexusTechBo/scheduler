@@ -21,7 +21,8 @@ import {
   LinearScale,
   Tooltip,
 } from 'chart.js';
-import { WeekDayStats } from '../../dashboard.service';
+import { STATUS_PLURAL_LABEL } from '../../../../core/utils/labels.util';
+import { WeekDayStats } from '../../dashboard.model';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -83,9 +84,9 @@ export class WeekChartComponent {
     return {
       labels: days.map((day) => `${capitalize(day.weekday)} ${day.day}`),
       datasets: [
-        dataset('Confirmadas', colors.primary, (day) => day.confirmed),
-        dataset('Pendientes', colors.tertiary, (day) => day.pending),
-        dataset('Canceladas', GRAY, (day) => day.cancelled),
+        dataset(STATUS_PLURAL_LABEL.CONFIRMED, colors.primary, (day) => day.confirmed),
+        dataset(STATUS_PLURAL_LABEL.PENDING, colors.tertiary, (day) => day.pending),
+        dataset(STATUS_PLURAL_LABEL.CANCELLED, GRAY, (day) => day.cancelled),
       ],
     };
   }

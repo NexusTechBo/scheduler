@@ -23,7 +23,6 @@ import {
 } from '../../core/http/api-error';
 import {
   Availability,
-  AvailabilityRequest,
   DayOfWeek,
   ScheduleException,
   ScheduleExceptionRequest,
@@ -32,13 +31,9 @@ import { formatLongDate, formatTime, toIso } from '../../core/utils/calendar.uti
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { AddAvailabilityResult, AvailabilityBlock } from './availability.model';
 
-type AvailabilityBlock = Omit<AvailabilityRequest, 'dayOfWeek'>;
-
-interface AddAvailabilityResult {
-  saved: DayOfWeek[];
-  failed: { day: DayOfWeek; message: string }[];
-}
+const REMOVE_LABEL = 'Quitar';
 
 @Injectable()
 export class AvailabilityService {
@@ -130,7 +125,7 @@ export class AvailabilityService {
         {
           title: 'Quitar horario',
           message: `¿Quitar el bloque del ${dayLabel.toLowerCase()} de ${formatTime(block.startTime)} a ${formatTime(block.endTime)}? Las citas ya agendadas se mantienen.`,
-          confirmLabel: 'Quitar',
+          confirmLabel: REMOVE_LABEL,
           danger: true,
         },
         () => this.api.removeAvailability(block.id),
@@ -169,7 +164,7 @@ export class AvailabilityService {
         {
           title: 'Quitar bloqueo',
           message: `¿Habilitar nuevamente el ${formatLongDate(exception.date).toLowerCase()}?`,
-          confirmLabel: 'Quitar',
+          confirmLabel: REMOVE_LABEL,
         },
         () => this.api.removeException(exception.id),
         'Bloqueo quitado',

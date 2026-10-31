@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RevealDirective } from '../../directives/reveal.directive';
-import { LANDING_STEPS } from '../../constants/landing.content';
+import { LANDING_ANCHORS, LANDING_STEPS } from '../../constants/landing.content';
 
 @Component({
   selector: 'app-steps-landing-page',
@@ -10,5 +10,6 @@ import { LANDING_STEPS } from '../../constants/landing.content';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StepsLandingPageComponent {
+  protected readonly anchor = LANDING_ANCHORS.howItWorks;
   protected readonly steps = LANDING_STEPS;
 }

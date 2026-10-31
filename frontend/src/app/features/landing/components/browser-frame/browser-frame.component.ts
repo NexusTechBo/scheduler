@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { LandingShot } from '../../constants/landing.content';
+import { LandingShot } from '../../landing.model';
 
-/** App screenshot inside a minimal browser window. */
 @Component({
   selector: 'app-browser-frame',
   template: `
@@ -13,7 +12,7 @@ import { LandingShot } from '../../constants/landing.content';
         <span class="h-2.5 w-2.5 rounded-full bg-amber-400/80"></span>
         <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/80"></span>
         <span
-          class="ml-3 hidden flex-1 truncate rounded-md bg-gray-900/[0.04] px-3 py-1 text-[11px] font-medium text-gray-400 sm:block"
+          class="ml-3 hidden flex-1 truncate rounded-md bg-gray-900/4 px-3 py-1 text-[11px] font-medium text-gray-400 sm:block"
           >app.clinicflow.com</span
         >
       </div>
@@ -34,6 +33,5 @@ import { LandingShot } from '../../constants/landing.content';
 })
 export class BrowserFrameComponent {
   shot = input.required<LandingShot>();
-  /** Load immediately (above the fold) instead of lazily. */
   eager = input(false);
 }

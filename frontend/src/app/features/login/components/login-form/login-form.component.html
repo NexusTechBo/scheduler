@@ -33,9 +33,24 @@
       </app-form-field>
     </div>
 
-    <button type="submit" class="btn btn-primary mt-6 w-full" [disabled]="submitting()">
-      {{ submitting() ? 'Ingresando…' : 'Ingresar' }}
+    <button
+      type="submit"
+      class="btn btn-primary mt-6 w-full"
+      [attr.aria-disabled]="submitting() || coolingDown() || null"
+    >
+      @if (submitting()) {
+        Ingresando…
+      } @else if (coolingDown()) {
+        Reintenta en {{ retryInLabel() }}
+      } @else {
+        Ingresar
+      }
     </button>
+    <span class="sr-only" aria-live="polite">
+      @if (cooldownFinished()) {
+        Ya puedes intentarlo de nuevo
+      }
+    </span>
   </form>
 
   <div aria-live="polite">

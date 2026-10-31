@@ -10,8 +10,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Patient } from '../../../../core/models/api.models';
-import { initials } from '../../../../core/utils/labels.util';
-import { SpecialtyLabelPipe, specialtyLabel } from '../../../../shared/pipes/specialty-label.pipe';
+import { initials, specialtyLabel } from '../../../../core/utils/labels.util';
+import { SpecialtyLabelPipe } from '../../../../shared/pipes/specialty-label.pipe';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';

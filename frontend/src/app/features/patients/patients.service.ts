@@ -6,12 +6,12 @@ import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
 import { Patient } from '../../core/models/api.models';
+import { ACTION_LABEL, LOAD_ERROR } from '../../core/utils/messages.util';
 import { NotificationService } from '../../shared/services/notification.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
+import { PatientScope } from './patients.model';
 
 const PATIENTS_PAGE_SIZE = 12;
-
-export type PatientScope = 'mine' | 'all';
 
 @Injectable()
 export class PatientsService {
@@ -99,7 +99,7 @@ export class PatientsService {
   readonly isLoading = computed(() => this.activeResource().isLoading());
   readonly errorMessage = resourceError(
     { error: () => this.activeResource().error() },
-    'No se pudieron cargar los pacientes',
+    LOAD_ERROR.patients,
   );
 
   reload(): void {
@@ -135,7 +135,7 @@ export class PatientsService {
         {
           title: 'Desactivar paciente',
           message: `${patient.name} ya no podrá agendar nuevas citas.`,
-          confirmLabel: 'Desactivar',
+          confirmLabel: ACTION_LABEL.deactivate,
           danger: true,
         },
         () => this.patientsApi.deactivate(patient.id),
@@ -151,7 +151,7 @@ export class PatientsService {
         {
           title: 'Reactivar paciente',
           message: `¿Reactivar a ${patient.name}?`,
-          confirmLabel: 'Reactivar',
+          confirmLabel: ACTION_LABEL.reactivate,
         },
         () => this.patientsApi.activate(patient.id),
         'Paciente reactivado',

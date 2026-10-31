@@ -17,6 +17,9 @@ export class LoginFormComponent {
   private readonly loginService = inject(LoginService);
   protected readonly submitting = this.loginService.submitting;
   protected readonly pendingActivation = this.loginService.pendingActivation;
+  protected readonly coolingDown = this.loginService.coolingDown;
+  protected readonly retryInLabel = this.loginService.retryInLabel;
+  protected readonly cooldownFinished = this.loginService.cooldownFinished;
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     username: [usernameFromState(inject(Location).getState()), Validators.required],

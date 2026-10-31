@@ -1,8 +1,10 @@
 import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
 
+export const INVALID_EMAIL_MESSAGE = 'Ingresa un email válido';
+
 const VALIDATION_MESSAGES: Record<string, (error: { requiredLength?: number }) => string> = {
   required: () => 'Este campo es obligatorio',
-  email: () => 'Ingresa un email válido',
+  email: () => INVALID_EMAIL_MESSAGE,
   minlength: (error) => `Debe tener al menos ${error.requiredLength} caracteres`,
   maxlength: (error) => `Debe tener como máximo ${error.requiredLength} caracteres`,
   pattern: () => 'El formato ingresado no es válido',
@@ -30,6 +32,10 @@ export const PHONE_ERRORS = {
 export const usernameValidator = Validators.pattern(/^[a-z0-9._-]{3,50}$/);
 export const USERNAME_ERRORS = {
   pattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
+};
+
+export const TIME_RANGE_ERRORS = {
+  endBeforeStart: 'La hora de fin debe ser posterior a la de inicio',
 };
 
 export function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {

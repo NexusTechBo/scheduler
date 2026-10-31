@@ -1,64 +1,63 @@
 <section class="relative isolate pt-16 sm:pt-24">
-    <div class="landing-blob -left-32 -top-24 -z-10 h-96 w-96 bg-primary/40"></div>
-    <div class="landing-blob -right-24 top-40 -z-10 h-[28rem] w-[28rem] bg-secondary/40"></div>
+  <div class="landing-blob -left-32 -top-24 -z-10 h-96 w-96 bg-primary/40"></div>
+  <div class="landing-blob -right-24 top-40 -z-10 h-112 w-md bg-secondary/40"></div>
 
-    <div class="mx-auto max-w-6xl px-4 text-center sm:px-6">
-      <p
-        appReveal
-        class="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/70 px-4 py-1.5 text-sm font-semibold text-primary shadow-sm"
-      >
-        <span class="h-2 w-2 rounded-full bg-secondary"></span>
-        Gestión de citas para clínicas
-      </p>
-      <h1
-        appReveal
-        class="mx-auto max-w-4xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl"
-      >
-        La agenda de tu clínica, <span class="landing-text-gradient">simple y en orden</span>
-      </h1>
-      <p appReveal class="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-        Citas, doctores, pacientes y horarios en un solo lugar. Menos llamadas, menos inasistencias
-        y más tiempo para tus pacientes.
-      </p>
-      <div appReveal class="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-        <a routerLink="/register" class="btn btn-primary shadow-lg shadow-primary/25">
-          Empieza gratis
-          <app-ui-icon name="chevronRight" class="h-4 w-4" />
-        </a>
-        <a href="#producto" class="btn btn-secondary">Ver el producto</a>
-      </div>
+  <div class="mx-auto max-w-6xl px-4 text-center sm:px-6">
+    <p
+      appReveal
+      class="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/70 px-4 py-1.5 text-sm font-semibold text-primary shadow-sm"
+    >
+      <span class="h-2 w-2 rounded-full bg-secondary"></span>
+      Gestión de citas para clínicas
+    </p>
+    <h1
+      appReveal
+      class="mx-auto max-w-4xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl"
+    >
+      La agenda de tu clínica, <span class="landing-text-gradient">simple y en orden</span>
+    </h1>
+    <p appReveal class="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
+      Citas, doctores, pacientes y horarios en un solo lugar. Menos llamadas, menos inasistencias y
+      más tiempo para tus pacientes.
+    </p>
+    <div appReveal class="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+      <a routerLink="/register" class="btn btn-primary shadow-lg shadow-primary/25">
+        Empieza gratis
+        <app-ui-icon name="chevronRight" class="h-4 w-4" />
+      </a>
+      <a [href]="productHref" class="btn btn-secondary">Ver el producto</a>
+    </div>
+  </div>
+
+  <div class="relative mx-auto mt-16 max-w-6xl px-4 sm:mt-20 sm:px-6">
+    <div appReveal>
+      <app-browser-frame class="landing-tilt" [shot]="heroShot" [eager]="true" />
     </div>
 
-    <!-- Hero mockup -->
-    <div class="relative mx-auto mt-16 max-w-6xl px-4 sm:mt-20 sm:px-6">
-      <div appReveal>
-        <app-browser-frame class="landing-tilt" [shot]="heroShot" [eager]="true" />
-      </div>
+    <img
+      class="landing-float absolute -bottom-10 right-2 hidden w-40 rounded-4xl border-[6px] border-gray-900 shadow-2xl sm:block md:right-0 md:w-48 lg:-right-6 lg:w-56"
+      [ngSrc]="heroMobileShot.src"
+      [alt]="heroMobileShot.alt"
+      width="600"
+      height="1299"
+      loading="lazy"
+      decoding="async"
+    />
 
-      <img
-        class="landing-float absolute -bottom-10 right-2 hidden w-40 rounded-[2rem] border-[6px] border-gray-900 shadow-2xl sm:block md:right-0 md:w-48 lg:-right-6 lg:w-56"
-        [src]="heroMobileShot.src"
-        [alt]="heroMobileShot.alt"
-        width="600"
-        height="1299"
-        loading="lazy"
-        decoding="async"
-      />
-
-      <div
-        class="landing-float absolute -left-2 bottom-16 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-xl backdrop-blur md:flex lg:-left-8"
-        style="animation-delay: -3s"
-        aria-hidden="true"
+    <div
+      class="landing-float absolute -left-2 bottom-16 hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-xl backdrop-blur md:flex lg:-left-8"
+      style="animation-delay: -3s"
+      aria-hidden="true"
+    >
+      <span
+        class="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/15 text-secondary"
       >
-        <span
-          class="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/15 text-secondary"
-        >
-          <app-ui-icon name="check" class="h-5 w-5" />
-        </span>
-        <span class="text-left">
-          <span class="block text-sm font-bold">Cita confirmada</span>
-          <span class="block text-xs text-gray-500">Natalia Herrera · 10:00</span>
-        </span>
-      </div>
+        <app-ui-icon name="check" class="h-5 w-5" />
+      </span>
+      <span class="text-left">
+        <span class="block text-sm font-bold">Cita confirmada</span>
+        <span class="block text-xs text-gray-500">Natalia Herrera · 10:00</span>
+      </span>
     </div>
-  </section>
+  </div>
+</section>

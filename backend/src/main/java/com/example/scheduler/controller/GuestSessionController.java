@@ -24,7 +24,11 @@ public class GuestSessionController {
 
     @PostMapping("/session")
     @SecurityRequirements
-    @Operation(summary = "POST /api/public/guest/session — short-lived GUEST token for an active clinic's public booking page (public)")
+    @Operation(
+            summary =
+                    "POST /api/public/guest/session — short-lived GUEST token for an active clinic's public booking page (public)",
+            description =
+                    "Rate limited per client IP; when exceeded it responds 429 with a Retry-After header (seconds).")
     public ResponseEntity<GuestSessionResponse> createGuestSession(@Valid @RequestBody GuestSessionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(guestSessionService.createGuestSession(request));
     }

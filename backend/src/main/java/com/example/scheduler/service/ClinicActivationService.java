@@ -7,6 +7,8 @@ import com.example.scheduler.entity.Clinic;
 
 public interface ClinicActivationService {
     void issueActivationToken(Clinic clinic, String adminName, String adminEmail);
+
     ClinicActivatedResponse activateClinic(ActivateClinicRequest request);
+
     void resendActivation(ResendActivationRequest request);
 }

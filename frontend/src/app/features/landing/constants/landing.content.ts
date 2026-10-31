@@ -1,47 +1,25 @@
-import { UiIconName } from '../../../shared/ui/ui-icon/ui-icon.component';
-
-/** Static copy and screenshots for the public landing page. Edit texts here, not in the template. */
+import {
+  LandingFeature,
+  LandingRole,
+  LandingShot,
+  LandingShowcase,
+  LandingStep,
+} from '../landing.model';
 
 const SHOTS = 'landing/';
 
-export interface LandingFeature {
-  icon: UiIconName;
-  title: string;
-  description: string;
-}
-
-export interface LandingStep {
-  title: string;
-  description: string;
-}
-
-export interface LandingShot {
-  src: string;
-  alt: string;
-}
-
-export interface LandingShowcase {
-  eyebrow: string;
-  title: string;
-  description: string;
-  points: string[];
-  shot: LandingShot;
-}
-
-export interface LandingRole {
-  id: string;
-  label: string;
-  icon: UiIconName;
-  title: string;
-  description: string;
-  shot: LandingShot;
-}
+export const LANDING_ANCHORS = {
+  features: 'funciones',
+  product: 'producto',
+  roles: 'roles',
+  howItWorks: 'como-funciona',
+} as const;
 
 export const LANDING_NAV = [
-  { label: 'Funciones', anchor: 'funciones' },
-  { label: 'Producto', anchor: 'producto' },
-  { label: 'Roles', anchor: 'roles' },
-  { label: 'Cómo funciona', anchor: 'como-funciona' },
+  { label: 'Funciones', anchor: LANDING_ANCHORS.features },
+  { label: 'Producto', anchor: LANDING_ANCHORS.product },
+  { label: 'Roles', anchor: LANDING_ANCHORS.roles },
+  { label: 'Cómo funciona', anchor: LANDING_ANCHORS.howItWorks },
 ];
 
 export const HERO_SHOT: LandingShot = {

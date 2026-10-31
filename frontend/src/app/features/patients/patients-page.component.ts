@@ -23,7 +23,8 @@ import {
   PatientFormData,
   PatientFormDialogComponent,
 } from './components/patient-form-dialog/patient-form-dialog.component';
-import { PatientScope, PatientsService } from './patients.service';
+import { PatientScope } from './patients.model';
+import { PatientsService } from './patients.service';
 
 @Component({
   selector: 'app-patients-page',

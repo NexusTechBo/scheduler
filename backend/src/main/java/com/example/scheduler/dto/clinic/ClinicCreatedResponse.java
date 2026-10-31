@@ -7,5 +7,4 @@ public record ClinicCreatedResponse(
         String slug,
         Long adminPersonalId,
         String adminUsername,
-        String adminEmail
-) {}
+        String adminEmail) {}

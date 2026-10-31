@@ -1,26 +1,26 @@
-<section id="producto" class="scroll-mt-20 bg-white/60 py-24">
-    <div class="mx-auto flex max-w-6xl flex-col gap-24 px-4 sm:px-6">
-      @for (item of showcase; track item.title; let odd = $odd) {
-        <div class="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-14">
-          <div appReveal [class]="odd ? 'lg:order-2' : ''">
-            <p class="text-sm font-bold uppercase tracking-wider text-primary">{{ item.eyebrow }}</p>
-            <h2 class="mt-2 text-3xl font-extrabold tracking-tight">{{ item.title }}</h2>
-            <p class="mt-4 text-gray-600">{{ item.description }}</p>
-            <ul class="mt-6 space-y-3">
-              @for (point of item.points; track point) {
-                <li class="flex items-start gap-3 text-sm font-medium text-gray-700">
-                  <span
-                    class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary"
-                  >
-                    <app-ui-icon name="check" class="h-3.5 w-3.5" />
-                  </span>
-                  {{ point }}
-                </li>
-              }
-            </ul>
-          </div>
-          <app-browser-frame appReveal [class]="odd ? 'lg:order-1' : ''" [shot]="item.shot" />
+<section [id]="anchor" class="scroll-mt-20 bg-white/60 py-24">
+  <div class="mx-auto flex max-w-6xl flex-col gap-24 px-4 sm:px-6">
+    @for (item of showcase; track item.title; let odd = $odd) {
+      <div class="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-14">
+        <div appReveal [class]="odd ? 'lg:order-2' : ''">
+          <p class="text-sm font-bold uppercase tracking-wider text-primary">{{ item.eyebrow }}</p>
+          <h2 class="mt-2 text-3xl font-extrabold tracking-tight">{{ item.title }}</h2>
+          <p class="mt-4 text-gray-600">{{ item.description }}</p>
+          <ul class="mt-6 space-y-3">
+            @for (point of item.points; track point) {
+              <li class="flex items-start gap-3 text-sm font-medium text-gray-700">
+                <span
+                  class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary"
+                >
+                  <app-ui-icon name="check" class="h-3.5 w-3.5" />
+                </span>
+                {{ point }}
+              </li>
+            }
+          </ul>
         </div>
-      }
-    </div>
-  </section>
+        <app-browser-frame appReveal [class]="odd ? 'lg:order-1' : ''" [shot]="item.shot" />
+      </div>
+    }
+  </div>
+</section>

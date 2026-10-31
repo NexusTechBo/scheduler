@@ -1,21 +1,22 @@
 package com.example.scheduler.controller;
 
-import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityRequest;
-import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilityResponse;
-import com.example.scheduler.dto.DoctorAvailability.DoctorAvailabilitySlotsResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilityRequest;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilityResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilitySlotsResponse;
+import com.example.scheduler.security.RoleExpressions;
+import com.example.scheduler.security.SecurityUtils;
 import com.example.scheduler.service.DoctorAvailabilityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/doctorAvailability")
@@ -25,31 +26,38 @@ public class DoctorAvailabilityController {
     private final DoctorAvailabilityService doctorAvailabilityService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('DOCTOR')")
+    @PreAuthorize(RoleExpressions.DOCTOR)
     @Operation(summary = "POST /api/doctorAvailability — add a weekly availability block for the current doctor")
-    public ResponseEntity<DoctorAvailabilityResponse> addDoctorAvailability(@Valid @RequestBody DoctorAvailabilityRequest request, Authentication auth){
-        return ResponseEntity.status(HttpStatus.CREATED).body(doctorAvailabilityService.addDoctorAvailability(Long.parseLong(auth.getName()), request));
+    public ResponseEntity<DoctorAvailabilityResponse> addDoctorAvailability(
+            @Valid @RequestBody DoctorAvailabilityRequest request, Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(doctorAvailabilityService.addDoctorAvailability(SecurityUtils.extractUserId(auth), request));
     }
 
     @DeleteMapping("/{availabilityId}")
-    @PreAuthorize("hasRole('DOCTOR')")
-    @Operation(summary = "DELETE /api/doctorAvailability/{id} — remove a weekly availability block of the current doctor")
-    public ResponseEntity<Void> deactivateDoctorAvailabilityById(@PathVariable Long availabilityId, Authentication auth) {
-        doctorAvailabilityService.deactivateDoctorAvailabilityById(availabilityId, Long.parseLong(auth.getName()));
+    @PreAuthorize(RoleExpressions.DOCTOR)
+    @Operation(
+            summary = "DELETE /api/doctorAvailability/{id} — remove a weekly availability block of the current doctor")
+    public ResponseEntity<Void> deactivateDoctorAvailabilityById(
+            @PathVariable Long availabilityId, Authentication auth) {
+        doctorAvailabilityService.deactivateDoctorAvailabilityById(availabilityId, SecurityUtils.extractUserId(auth));
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me")
-    @PreAuthorize("hasRole('DOCTOR')")
+    @PreAuthorize(RoleExpressions.DOCTOR)
     @Operation(summary = "GET /api/doctorAvailability/me — list the weekly availability blocks of the current doctor")
-    public ResponseEntity<List<DoctorAvailabilityResponse>> getAllDoctorAvailability(Authentication auth){
-        return ResponseEntity.ok(doctorAvailabilityService.getDoctorAvailabilities(Long.parseLong(auth.getName())));
+    public ResponseEntity<List<DoctorAvailabilityResponse>> getAllDoctorAvailability(Authentication auth) {
+        return ResponseEntity.ok(doctorAvailabilityService.getDoctorAvailabilities(SecurityUtils.extractUserId(auth)));
     }
 
     @GetMapping("/doctor/{doctorId}/availables")
-    @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'DOCTOR', 'ASSISTANT')")
-    @Operation(summary = "GET /api/doctorAvailability/doctor/{doctorId}/availables?date={date} — free slots (startTime/endTime) of a doctor on a date")
-    public ResponseEntity<DoctorAvailabilitySlotsResponse> getDoctorAvailabilitySlots(@PathVariable Long doctorId, @RequestParam LocalDate date){
+    @PreAuthorize(RoleExpressions.STAFF)
+    @Operation(
+            summary =
+                    "GET /api/doctorAvailability/doctor/{doctorId}/availables?date={date} — free slots (startTime/endTime) of a doctor on a date")
+    public ResponseEntity<DoctorAvailabilitySlotsResponse> getDoctorAvailabilitySlots(
+            @PathVariable Long doctorId, @RequestParam LocalDate date) {
         return ResponseEntity.ok(doctorAvailabilityService.getDoctorAvailableSlots(doctorId, date));
     }
 }

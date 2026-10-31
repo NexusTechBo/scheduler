@@ -3,17 +3,17 @@ package com.example.scheduler.service.impl;
 import com.example.scheduler.dto.guest.GuestSessionRequest;
 import com.example.scheduler.dto.guest.GuestSessionResponse;
 import com.example.scheduler.enums.ClinicStatus;
+import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.repository.ClinicRepository;
-import com.example.scheduler.security.JwtUtil;
+import com.example.scheduler.security.jwt.JwtUtil;
 import com.example.scheduler.service.GuestSessionService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +25,10 @@ public class GuestSessionServiceImpl implements GuestSessionService {
 
     @Override
     public GuestSessionResponse createGuestSession(GuestSessionRequest request) {
-        var clinic = clinicRepository.findBySlug(request.slug())
+        var clinic = clinicRepository
+                .findBySlug(request.slug())
                 .filter(c -> c.getStatus() == ClinicStatus.ACTIVE)
-                .orElseThrow(() -> new ResourceNotFoundException("guest.clinicUnavailable"));
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.GUEST_CLINIC_UNAVAILABLE));
         var expiresAt = Instant.now(clock).plus(JwtUtil.GUEST_TTL).truncatedTo(ChronoUnit.SECONDS);
         return new GuestSessionResponse(jwtUtil.generateGuest(clinic, expiresAt), expiresAt);
     }

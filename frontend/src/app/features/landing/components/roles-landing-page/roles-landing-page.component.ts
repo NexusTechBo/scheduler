@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 import { BrowserFrameComponent } from '../browser-frame/browser-frame.component';
 import { RevealDirective } from '../../directives/reveal.directive';
-import { LANDING_ROLES } from '../../constants/landing.content';
+import { LANDING_ANCHORS, LANDING_ROLES } from '../../constants/landing.content';
 
 @Component({
   selector: 'app-roles-landing-page',
@@ -12,6 +12,7 @@ import { LANDING_ROLES } from '../../constants/landing.content';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RolesLandingPageComponent {
+  protected readonly anchor = LANDING_ANCHORS.roles;
   protected readonly roles = LANDING_ROLES;
   protected readonly activeRoleId = signal(LANDING_ROLES[0].id);
   protected readonly activeRole = computed(

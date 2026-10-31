@@ -18,7 +18,7 @@ function hasPath(url: string, path: string): boolean {
   return url.startsWith(path) || url.startsWith(environment.apiUrl + path);
 }
 
-export function isGuestRequest(url: string): boolean {
+function isGuestRequest(url: string): boolean {
   return hasPath(url, GUEST_PATH);
 }
 

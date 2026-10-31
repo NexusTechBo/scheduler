@@ -3,22 +3,12 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, tap } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { resourceError } from '../../core/http/api-error';
-import {
-  AppointmentFilters,
-  AppointmentResponse,
-  AppointmentStatus,
-} from '../../core/models/api.models';
+import { AppointmentFilters } from '../../core/models/api.models';
 import { datePart, formatDayLabel, formatTimeRange } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
+import { AppointmentRow, AppointmentStatusFilter } from './appointments.model';
 
 const PAGE_SIZE = 12;
-
-export type AppointmentStatusFilter = AppointmentStatus | 'ALL';
-
-export interface AppointmentRow extends AppointmentResponse {
-  dayLabel: string;
-  timeLabel: string;
-}
 
 @Injectable()
 export class AppointmentsService {

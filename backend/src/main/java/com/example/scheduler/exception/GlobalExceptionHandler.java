@@ -2,6 +2,8 @@ package com.example.scheduler.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.query.SemanticException;
@@ -25,14 +27,10 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.util.List;
-import java.util.Locale;
-
 @Slf4j
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
-
     private final MessageSource messageSource;
 
     private String msg(String key, Object... args) {
@@ -42,106 +40,125 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApi(ApiException ex, HttpServletRequest req) {
-        log.warn("Business error {} {} on {} {}", ex.getStatus().value(), ex.getMessageKey(), req.getMethod(), req.getRequestURI());
+        log.warn(
+                "Business error {} {} on {} {}",
+                ex.getStatus().value(),
+                ex.getMessageKey(),
+                req.getMethod(),
+                req.getRequestURI());
         String resolvedMessage = msg(ex.getMessageKey(), ex.getArgs());
         return ResponseEntity.status(ex.getStatus())
                 .body(ErrorResponse.of(ex.getStatus(), resolvedMessage, req.getRequestURI()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleBodyValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
+    public ResponseEntity<ErrorResponse> handleBodyValidation(
+            MethodArgumentNotValidException ex, HttpServletRequest req) {
         var errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> new ErrorResponse.FieldErrorItem(e.getField(), e.getDefaultMessage()))
+                .map(e -> new FieldErrorItem(e.getField(), e.getDefaultMessage()))
                 .toList();
         return validationFailed(errors, req);
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<ErrorResponse> handleParamValidation(HandlerMethodValidationException ex, HttpServletRequest req) {
+    public ResponseEntity<ErrorResponse> handleParamValidation(
+            HandlerMethodValidationException ex, HttpServletRequest req) {
         var errors = ex.getParameterValidationResults().stream()
                 .flatMap(r -> r.getResolvableErrors().stream()
-                        .map(e -> new ErrorResponse.FieldErrorItem(r.getMethodParameter().getParameterName(), e.getDefaultMessage())))
+                        .map(e -> new FieldErrorItem(r.getMethodParameter().getParameterName(), e.getDefaultMessage())))
                 .toList();
         return validationFailed(errors, req);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex, HttpServletRequest req) {
         var errors = ex.getConstraintViolations().stream()
-                .map(v -> new ErrorResponse.FieldErrorItem(v.getPropertyPath().toString(), v.getMessage()))
+                .map(v -> new FieldErrorItem(v.getPropertyPath().toString(), v.getMessage()))
                 .toList();
         return validationFailed(errors, req);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadable(HttpMessageNotReadableException ex, HttpServletRequest req) {
-        return build(HttpStatus.BAD_REQUEST, msg("error.http.malformedBody"), req);
+        return build(HttpStatus.BAD_REQUEST, msg(MessageKeys.ERROR_HTTP_MALFORMED_BODY), req);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest req) {
-        return build(HttpStatus.BAD_REQUEST, msg("error.param.invalidType", ex.getName()), req);
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, msg(MessageKeys.ERROR_PARAM_INVALID_TYPE, ex.getName()), req);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingParam(MissingServletRequestParameterException ex, HttpServletRequest req) {
-        return build(HttpStatus.BAD_REQUEST, msg("error.param.missing", ex.getParameterName()), req);
+    public ResponseEntity<ErrorResponse> handleMissingParam(
+            MissingServletRequestParameterException ex, HttpServletRequest req) {
+        return build(HttpStatus.BAD_REQUEST, msg(MessageKeys.ERROR_PARAM_MISSING, ex.getParameterName()), req);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex, HttpServletRequest req) {
-        return build(HttpStatus.NOT_FOUND, msg("error.http.resourceNotFound"), req);
+        return build(HttpStatus.NOT_FOUND, msg(MessageKeys.ERROR_HTTP_RESOURCE_NOT_FOUND), req);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
-        return build(HttpStatus.METHOD_NOT_ALLOWED, msg("error.http.methodNotSupported", ex.getMethod()), req);
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest req) {
+        return build(
+                HttpStatus.METHOD_NOT_ALLOWED, msg(MessageKeys.ERROR_HTTP_METHOD_NOT_SUPPORTED, ex.getMethod()), req);
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleMediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
-        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, msg("error.http.mediaTypeNotSupported"), req);
+    public ResponseEntity<ErrorResponse> handleMediaType(
+            HttpMediaTypeNotSupportedException ex, HttpServletRequest req) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, msg(MessageKeys.ERROR_HTTP_MEDIA_TYPE_NOT_SUPPORTED), req);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest req) {
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(
+            DataIntegrityViolationException ex, HttpServletRequest req) {
         log.warn("Data integrity violation on {}: constraint {}", req.getRequestURI(), constraintName(ex));
-        return build(HttpStatus.CONFLICT, msg("error.data.conflict"), req);
+        return build(HttpStatus.CONFLICT, msg(MessageKeys.ERROR_DATA_CONFLICT), req);
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)
-    public ResponseEntity<ErrorResponse> handleOptimisticLock(OptimisticLockingFailureException ex, HttpServletRequest req) {
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(
+            OptimisticLockingFailureException ex, HttpServletRequest req) {
         log.warn("Optimistic locking conflict on {}: {}", req.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.CONFLICT, msg("error.data.optimisticLock"), req);
+        return build(HttpStatus.CONFLICT, msg(MessageKeys.ERROR_DATA_OPTIMISTIC_LOCK), req);
     }
 
     @ExceptionHandler(PropertyReferenceException.class)
-    public ResponseEntity<ErrorResponse> handlePropertyReference(PropertyReferenceException ex, HttpServletRequest req) {
-        return build(HttpStatus.BAD_REQUEST, msg("error.param.invalidSortProperty", ex.getPropertyName()), req);
+    public ResponseEntity<ErrorResponse> handlePropertyReference(
+            PropertyReferenceException ex, HttpServletRequest req) {
+        return build(
+                HttpStatus.BAD_REQUEST, msg(MessageKeys.ERROR_PARAM_INVALID_SORT_PROPERTY, ex.getPropertyName()), req);
     }
 
     @ExceptionHandler(InvalidDataAccessApiUsageException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidApiUsage(InvalidDataAccessApiUsageException ex, HttpServletRequest req) {
+    public ResponseEntity<ErrorResponse> handleInvalidApiUsage(
+            InvalidDataAccessApiUsageException ex, HttpServletRequest req) {
         if (ex.contains(SemanticException.class)) {
-            return build(HttpStatus.BAD_REQUEST, msg("error.param.invalidSort"), req);
+            return build(HttpStatus.BAD_REQUEST, msg(MessageKeys.ERROR_PARAM_INVALID_SORT), req);
         }
         return handleUnexpected(ex, req);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest req) {
-        return build(HttpStatus.FORBIDDEN, msg("security.accessDenied"), req);
+        return build(HttpStatus.FORBIDDEN, msg(MessageKeys.SECURITY_ACCESS_DENIED), req);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest req) {
         log.error("Unhandled exception on {} {}", req.getMethod(), req.getRequestURI(), ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, msg("error.server.internal"), req);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, msg(MessageKeys.ERROR_SERVER_INTERNAL), req);
     }
 
-    private ResponseEntity<ErrorResponse> validationFailed(List<ErrorResponse.FieldErrorItem> errors, HttpServletRequest req) {
+    private ResponseEntity<ErrorResponse> validationFailed(List<FieldErrorItem> errors, HttpServletRequest req) {
         return ResponseEntity.badRequest()
-                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, msg("error.validation.failed"), req.getRequestURI(), errors));
+                .body(ErrorResponse.of(
+                        HttpStatus.BAD_REQUEST, msg(MessageKeys.ERROR_VALIDATION_FAILED), req.getRequestURI(), errors));
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message, HttpServletRequest req) {
@@ -149,7 +166,8 @@ public class GlobalExceptionHandler {
     }
 
     private static String constraintName(DataIntegrityViolationException ex) {
-        return ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve && cve.getConstraintName() != null
+        return ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve
+                        && cve.getConstraintName() != null
                 ? cve.getConstraintName()
                 : ex.getClass().getSimpleName();
     }

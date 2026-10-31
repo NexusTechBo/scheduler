@@ -14,13 +14,7 @@ import {
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { DateRange } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
-
-export interface BoardColumn {
-  id: AppointmentStatus;
-  title: string;
-  accentClass: string;
-  appointments: AppointmentSummaryItem[];
-}
+import { BoardColumn } from './board.model';
 
 @Injectable()
 export class BoardService {

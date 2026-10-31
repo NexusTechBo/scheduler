@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, finalize, tap } from 'rxjs';
 import { AppointmentsApi } from '../../../core/api/appointments.api';
-import { canCancelAppointment, canConfirmAppointment } from '../../../core/auth/permissions';
+import { canCancelAppointment, canConfirmAppointment } from '../../../core/utils/appointment.util';
 import { resourceError } from '../../../core/http/api-error';
 import { AppointmentResponse } from '../../../core/models/api.models';
 import { datePart, formatLongDate } from '../../../core/utils/calendar.util';

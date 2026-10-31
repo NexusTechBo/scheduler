@@ -24,7 +24,8 @@ import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.compon
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { GuestPatientFormComponent } from './components/guest-patient-form/guest-patient-form.component';
-import { GuestBookingService, GuestBookingStep } from './guest-booking.service';
+import { GuestBookingStep } from './guest-booking.model';
+import { GuestBookingService } from './guest-booking.service';
 
 const STEP_TITLES: Record<GuestBookingStep, string> = {
   doctor: 'Elige tu doctor',
@@ -60,6 +61,9 @@ export class GuestBookingComponent implements OnInit {
   protected readonly booking = inject(GuestBookingService);
 
   protected readonly initials = initials;
+  protected readonly sessionRetryLabel = computed(() =>
+    this.session.coolingDown() ? `Reintenta en ${this.session.retryInLabel()}` : 'Reintentar',
+  );
   protected readonly stepTitle = computed(() => STEP_TITLES[this.booking.step()]);
   protected readonly dateLabel = computed(() => formatLongDate(this.booking.selectedDate()));
   protected readonly resultDateLabel = computed(() => {

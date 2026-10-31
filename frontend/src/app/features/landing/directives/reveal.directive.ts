@@ -1,9 +1,5 @@
 import { DestroyRef, Directive, ElementRef, afterNextRender, inject } from '@angular/core';
 
-/**
- * Fades and slides the element in the first time it enters the viewport.
- * Elements stay visible when IntersectionObserver is missing or the user prefers reduced motion.
- */
 @Directive({
   selector: '[appReveal]',
   host: { class: 'landing-reveal' },
