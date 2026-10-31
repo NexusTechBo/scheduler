@@ -11,6 +11,7 @@ import {
   StaffUpdateRequest,
 } from '../../core/models/api.models';
 import { ConfirmService } from '../../shared/services/confirm.service';
+import { ACTION_LABEL } from '../../core/utils/messages.util';
 import { NotificationService } from '../../shared/services/notification.service';
 import { StaffRoleFilter } from './staff.model';
 
@@ -80,7 +81,7 @@ export class StaffService {
         {
           title: 'Desactivar cuenta',
           message: `${staff.name} dejará de aparecer para nuevas reservas. Sus citas existentes se mantienen.`,
-          confirmLabel: 'Desactivar',
+          confirmLabel: ACTION_LABEL.deactivate,
           danger: true,
         },
         () => this.staffApi.deactivate(staff.id),
@@ -96,7 +97,7 @@ export class StaffService {
         {
           title: 'Reactivar cuenta',
           message: `¿Reactivar a ${staff.name}?`,
-          confirmLabel: 'Reactivar',
+          confirmLabel: ACTION_LABEL.reactivate,
         },
         () => this.staffApi.activate(staff.id),
         'Cuenta reactivada',

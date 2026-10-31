@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 import { BrowserFrameComponent } from '../browser-frame/browser-frame.component';
 import { RevealDirective } from '../../directives/reveal.directive';
-import { LANDING_SHOWCASE } from '../../constants/landing.content';
+import { LANDING_ANCHORS, LANDING_SHOWCASE } from '../../constants/landing.content';
 
 @Component({
   selector: 'app-showcase-landing-page',
@@ -12,5 +12,6 @@ import { LANDING_SHOWCASE } from '../../constants/landing.content';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShowcaseLandingPageComponent {
+  protected readonly anchor = LANDING_ANCHORS.product;
   protected readonly showcase = LANDING_SHOWCASE;
 }

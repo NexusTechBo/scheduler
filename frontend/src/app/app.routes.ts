@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
 import { ROLES } from './core/auth/roles';
-import { GUEST_BOOKING_PATH } from './core/navigation/navigation';
+import { GUEST_BOOKING_PATH, PAGE_TITLES } from './core/navigation/navigation';
 
 export const routes: Routes = [
   {
@@ -18,7 +18,7 @@ export const routes: Routes = [
     children: [
       {
         path: 'dashboard',
-        title: 'Inicio',
+        title: PAGE_TITLES.dashboard,
         loadComponent: () =>
           import('./features/dashboard/dashboard-page.component').then(
             (m) => m.DashboardPageComponent,
@@ -26,13 +26,13 @@ export const routes: Routes = [
       },
       {
         path: 'board',
-        title: 'Tablero',
+        title: PAGE_TITLES.board,
         loadComponent: () =>
           import('./features/board/board-page.component').then((m) => m.BoardPageComponent),
       },
       {
         path: 'calendar',
-        title: 'Calendario',
+        title: PAGE_TITLES.calendar,
         loadComponent: () =>
           import('./features/calendar/calendar-page.component').then(
             (m) => m.CalendarPageComponent,
@@ -40,7 +40,7 @@ export const routes: Routes = [
       },
       {
         path: 'appointments',
-        title: 'Citas',
+        title: PAGE_TITLES.appointments,
         loadComponent: () =>
           import('./features/appointments/appointments-page.component').then(
             (m) => m.AppointmentsPageComponent,
@@ -48,13 +48,13 @@ export const routes: Routes = [
       },
       {
         path: 'appointments/new',
-        title: 'Agendar cita',
+        title: PAGE_TITLES.booking,
         loadComponent: () =>
           import('./features/booking/booking-page.component').then((m) => m.BookingPageComponent),
       },
       {
         path: 'patients',
-        title: 'Pacientes',
+        title: PAGE_TITLES.patients,
         loadComponent: () =>
           import('./features/patients/patients-page.component').then(
             (m) => m.PatientsPageComponent,
@@ -62,7 +62,7 @@ export const routes: Routes = [
       },
       {
         path: 'availability',
-        title: 'Mi disponibilidad',
+        title: PAGE_TITLES.availability,
         canActivate: [roleGuard(...ROLES.doctor)],
         loadComponent: () =>
           import('./features/availability/availability-page.component').then(
@@ -71,14 +71,14 @@ export const routes: Routes = [
       },
       {
         path: 'staff',
-        title: 'Personal',
+        title: PAGE_TITLES.staff,
         canActivate: [roleGuard(...ROLES.admin)],
         loadComponent: () =>
           import('./features/staff/staff-page.component').then((m) => m.StaffPageComponent),
       },
       {
         path: 'specialties',
-        title: 'Especialidades',
+        title: PAGE_TITLES.specialties,
         canActivate: [roleGuard(...ROLES.admin)],
         loadComponent: () =>
           import('./features/specialties/specialties-page.component').then(
@@ -87,7 +87,7 @@ export const routes: Routes = [
       },
       {
         path: 'profile',
-        title: 'Mi perfil',
+        title: PAGE_TITLES.profile,
         loadComponent: () =>
           import('./features/profile/profile-page.component').then((m) => m.ProfilePageComponent),
       },

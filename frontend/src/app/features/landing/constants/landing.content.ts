@@ -8,11 +8,18 @@ import {
 
 const SHOTS = 'landing/';
 
+export const LANDING_ANCHORS = {
+  features: 'funciones',
+  product: 'producto',
+  roles: 'roles',
+  howItWorks: 'como-funciona',
+} as const;
+
 export const LANDING_NAV = [
-  { label: 'Funciones', anchor: 'funciones' },
-  { label: 'Producto', anchor: 'producto' },
-  { label: 'Roles', anchor: 'roles' },
-  { label: 'Cómo funciona', anchor: 'como-funciona' },
+  { label: 'Funciones', anchor: LANDING_ANCHORS.features },
+  { label: 'Producto', anchor: LANDING_ANCHORS.product },
+  { label: 'Roles', anchor: LANDING_ANCHORS.roles },
+  { label: 'Cómo funciona', anchor: LANDING_ANCHORS.howItWorks },
 ];
 
 export const HERO_SHOT: LandingShot = {

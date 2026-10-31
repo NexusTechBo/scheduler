@@ -8,3 +8,8 @@ export const LOAD_ERROR = {
 export const SUCCESS_MESSAGE = {
   guestLinkCopied: 'Enlace de reserva copiado',
 } as const;
+
+export const ACTION_LABEL = {
+  deactivate: 'Desactivar',
+  reactivate: 'Reactivar',
+} as const;
