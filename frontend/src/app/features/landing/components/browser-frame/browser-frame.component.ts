@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { LandingShot } from '../../constants/landing.content';
 
-/** App screenshot inside a minimal browser window. */
 @Component({
   selector: 'app-browser-frame',
   template: `
@@ -34,6 +33,5 @@ import { LandingShot } from '../../constants/landing.content';
 })
 export class BrowserFrameComponent {
   shot = input.required<LandingShot>();
-  /** Load immediately (above the fold) instead of lazily. */
   eager = input(false);
 }

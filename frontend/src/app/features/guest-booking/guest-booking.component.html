@@ -32,8 +32,15 @@
             </h1>
             <app-load-error
               [message]="session.message() ?? 'Ocurrió un error inesperado'"
+              [retryDisabled]="session.coolingDown()"
+              [retryLabel]="sessionRetryLabel()"
               (retry)="session.retry()"
             />
+            <span class="sr-only" aria-live="polite">
+              @if (session.cooldownFinished()) {
+                Ya puedes intentarlo de nuevo
+              }
+            </span>
           }
           @default {
             <h1
@@ -51,14 +58,18 @@
     } @else {
       <header class="mb-5">
         <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Reserva tu cita en</p>
-        <p class="text-2xl font-extrabold tracking-tight text-gray-900">
-          @if (booking.clinicName(); as clinicName) {
-            {{ clinicName }}
-          } @else {
-            <span class="inline-block h-7 w-48 animate-pulse rounded-lg bg-gray-900/10"></span>
-            <span class="sr-only">Cargando clínica…</span>
-          }
-        </p>
+        @if (!booking.clinicName() && booking.clinicErrorMessage(); as error) {
+          <app-load-error class="mt-2" [message]="error" (retry)="booking.reloadClinic()" />
+        } @else {
+          <p class="text-2xl font-extrabold tracking-tight text-gray-900">
+            @if (booking.clinicName(); as clinicName) {
+              {{ clinicName }}
+            } @else {
+              <span class="inline-block h-7 w-48 animate-pulse rounded-lg bg-gray-900/10"></span>
+              <span class="sr-only">Cargando clínica…</span>
+            }
+          </p>
+        }
       </header>
 
       <section
@@ -271,7 +282,7 @@
               <button
                 type="button"
                 class="btn btn-primary"
-                [disabled]="booking.submitting()"
+                [attr.aria-disabled]="booking.submitting() || booking.coolingDown() || null"
                 (click)="booking.book()"
               >
                 @if (booking.submitting()) {
@@ -280,9 +291,18 @@
                     aria-hidden="true"
                   ></span>
                 }
-                Confirmar reserva
+                @if (booking.coolingDown()) {
+                  Reintenta en {{ booking.retryInLabel() }}
+                } @else {
+                  Confirmar reserva
+                }
               </button>
             </div>
+            <span class="sr-only" aria-live="polite">
+              @if (booking.cooldownFinished()) {
+                Ya puedes intentarlo de nuevo
+              }
+            </span>
           }
 
           @case ('done') {

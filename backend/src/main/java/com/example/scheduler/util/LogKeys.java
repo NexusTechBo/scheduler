@@ -1,6 +1,5 @@
 package com.example.scheduler.util;
 
-/** MDC keys, structured log fields and request attributes shared by the logging filters. */
 public final class LogKeys {
     public static final String TRACE_ID = "traceId";
     public static final String CLINIC_ID = "clinicId";

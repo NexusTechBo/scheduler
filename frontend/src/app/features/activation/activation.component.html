@@ -103,9 +103,19 @@
           }
         }
         @case ('error') {
-          <button type="button" class="btn btn-primary mt-6 w-full" (click)="activation.retry()">
-            Reintentar
+          <button
+            type="button"
+            class="btn btn-primary mt-6 w-full"
+            [attr.aria-disabled]="activation.coolingDown() || null"
+            (click)="activation.retry()"
+          >
+            {{ activation.retryLabel() }}
           </button>
+          <span class="sr-only" aria-live="polite">
+            @if (activation.cooldownFinished()) {
+              Ya puedes intentarlo de nuevo
+            }
+          </span>
         }
         @case ('invalid') {
           <div class="mt-6">

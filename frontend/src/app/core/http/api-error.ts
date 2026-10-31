@@ -2,17 +2,29 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Signal, computed } from '@angular/core';
 import { ApiError } from '../models/api.models';
 
+const RATE_LIMIT_MESSAGE =
+  'Has realizado demasiadas solicitudes. Intenta de nuevo en unos minutos.';
+
+export function isRateLimited(error: unknown): error is HttpErrorResponse {
+  return error instanceof HttpErrorResponse && error.status === HttpStatusCode.TooManyRequests;
+}
+
+export function retryAfterSeconds(error: unknown): number {
+  if (!isRateLimited(error)) return 0;
+  const seconds = Number(error.headers.get('Retry-After'));
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 0;
+}
+
 export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error inesperado'): string {
   if (!(error instanceof HttpErrorResponse)) return fallback;
   if (error.status === 0) return 'No se pudo conectar con el servidor';
-
   const body = error.error as Partial<ApiError> | string | null;
   if (body && typeof body === 'object') {
     const details = [...new Set((body.errors ?? []).map((e) => e.message).filter(Boolean))];
     if (details.length) return details.join('. ');
     if (body.message) return body.message;
   }
-  return fallback;
+  return isRateLimited(error) ? RATE_LIMIT_MESSAGE : fallback;
 }
 
 export function activeAppointmentsConflict(error: unknown): number | null {

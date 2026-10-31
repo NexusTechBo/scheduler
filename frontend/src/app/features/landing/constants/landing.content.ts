@@ -1,7 +1,5 @@
 import { UiIconName } from '../../../shared/ui/ui-icon/ui-icon.component';
 
-/** Static copy and screenshots for the public landing page. Edit texts here, not in the template. */
-
 const SHOTS = 'landing/';
 
 export interface LandingFeature {

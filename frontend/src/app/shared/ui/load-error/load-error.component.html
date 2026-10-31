@@ -1,8 +1,13 @@
 <app-alert>
   <div class="flex flex-wrap items-center justify-between gap-3">
     <span>{{ message() }}</span>
-    <button type="button" class="btn btn-secondary btn-sm" (click)="retry.emit()">
-      Reintentar
+    <button
+      type="button"
+      class="btn btn-secondary btn-sm"
+      [attr.aria-disabled]="retryDisabled() || null"
+      (click)="onRetry()"
+    >
+      {{ retryLabel() }}
     </button>
   </div>
 </app-alert>

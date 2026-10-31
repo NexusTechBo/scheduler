@@ -121,9 +121,24 @@
     </app-form-field>
   </div>
 
-  <button type="submit" class="btn btn-primary mt-6 w-full" [disabled]="register.submitting()">
-    {{ register.submitting() ? 'Registrando…' : 'Registrar clínica' }}
+  <button
+    type="submit"
+    class="btn btn-primary mt-6 w-full"
+    [attr.aria-disabled]="register.submitting() || register.coolingDown() || null"
+  >
+    @if (register.submitting()) {
+      Registrando…
+    } @else if (register.coolingDown()) {
+      Reintenta en {{ register.retryInLabel() }}
+    } @else {
+      Registrar clínica
+    }
   </button>
+  <span class="sr-only" aria-live="polite">
+    @if (register.cooldownFinished()) {
+      Ya puedes intentarlo de nuevo
+    }
+  </span>
 
   <div class="mt-6 flex items-center gap-3">
     <span class="h-px flex-1 bg-gray-900/10"></span>

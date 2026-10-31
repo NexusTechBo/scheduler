@@ -3,7 +3,6 @@ import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
 import { GUEST_BOOKING_PATH, ROLES } from './core/navigation/navigation';
 
 export const routes: Routes = [
-  // Public landing page: no guards, reachable with or without a session.
   {
     path: '',
     pathMatch: 'full',

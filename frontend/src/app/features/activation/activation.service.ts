@@ -2,8 +2,9 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ClinicsApi } from '../../core/api/clinics.api';
 import { AuthService } from '../../core/auth/auth.service';
-import { apiErrorMessage } from '../../core/http/api-error';
+import { apiErrorMessage, retryAfterSeconds } from '../../core/http/api-error';
 import { ClinicActivatedResponse } from '../../core/models/api.models';
+import { createCooldown } from '../../core/utils/cooldown.util';
 
 export type ActivationState =
   | { status: 'loading' }
@@ -15,6 +16,7 @@ export type ActivationState =
 export class ActivationService {
   private readonly clinicsApi = inject(ClinicsApi);
   private readonly auth = inject(AuthService);
+  private readonly cooldown = createCooldown();
 
   private readonly _state = signal<ActivationState>({ status: 'loading' });
   readonly state = this._state.asReadonly();
@@ -27,6 +29,12 @@ export class ActivationService {
     const state = this._state();
     return state.status === 'error' ? state.message : null;
   });
+
+  readonly coolingDown = this.cooldown.active;
+  readonly cooldownFinished = this.cooldown.finished;
+  readonly retryLabel = computed(() =>
+    this.cooldown.active() ? `Reintenta en ${this.cooldown.label()}` : 'Reintentar',
+  );
 
   readonly hasSession = computed(() => {
     const session = this.auth.session();
@@ -50,7 +58,8 @@ export class ActivationService {
   }
 
   retry(): void {
-    if (this._state().status !== 'error') return;
+    if (this._state().status !== 'error' || this.cooldown.active()) return;
+    this.cooldown.reset();
     this.send();
   }
 
@@ -72,6 +81,8 @@ export class ActivationService {
           this._state.set({ status: 'invalid' });
           return;
         }
+        const retryAfter = retryAfterSeconds(error);
+        if (retryAfter) this.cooldown.start(retryAfter);
         this._state.set({
           status: 'error',
           message: apiErrorMessage(error, 'No se pudo activar la clínica, intenta de nuevo'),

@@ -4,7 +4,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, catchError, finalize, ignoreElements, map, tap } from 'rxjs';
 import { GuestApi } from '../../core/api/guest.api';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
-import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import { apiErrorMessage, resourceError, retryAfterSeconds } from '../../core/http/api-error';
 import {
   GuestAppointmentResponse,
   GuestDoctor,
@@ -12,6 +12,7 @@ import {
   TimeSlot,
 } from '../../core/models/api.models';
 import { formatTime, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import { createCooldown } from '../../core/utils/cooldown.util';
 
 const GUEST_BOOKING_STEPS = ['doctor', 'slot', 'patient', 'summary', 'done'] as const;
 
@@ -21,6 +22,7 @@ export type GuestBookingStep = (typeof GUEST_BOOKING_STEPS)[number];
 export class GuestBookingService {
   private readonly guestApi = inject(GuestApi);
   private readonly guestSession = inject(GuestSessionService);
+  private readonly cooldown = createCooldown();
 
   readonly today = toIso(new Date());
 
@@ -31,6 +33,7 @@ export class GuestBookingService {
     loader: () => this.guestApi.clinic(),
   });
   readonly clinicName = computed(() => this.clinicResource.value()?.name ?? null);
+  readonly clinicErrorMessage = resourceError(this.clinicResource, 'No se pudo cargar la clínica');
 
   private readonly _step = signal<GuestBookingStep>('doctor');
   readonly step = this._step.asReadonly();
@@ -38,7 +41,12 @@ export class GuestBookingService {
   readonly totalSteps = GUEST_BOOKING_STEPS.length - 1;
 
   private readonly _error = signal<string | null>(null);
-  readonly error = this._error.asReadonly();
+  private readonly _rateLimitMessage = signal<string | null>(null);
+  readonly error = computed(
+    () =>
+      this._error() ??
+      (this.cooldown.active() && this._step() === 'summary' ? this._rateLimitMessage() : null),
+  );
 
   private readonly _specialtyId = signal<number | null>(null);
   readonly specialtyId = this._specialtyId.asReadonly();
@@ -95,8 +103,15 @@ export class GuestBookingService {
 
   private readonly _submitting = signal(false);
   readonly submitting = this._submitting.asReadonly();
+  readonly coolingDown = this.cooldown.active;
+  readonly retryInLabel = this.cooldown.label;
+  readonly cooldownFinished = this.cooldown.finished;
   private readonly _result = signal<GuestAppointmentResponse | null>(null);
   readonly result = this._result.asReadonly();
+
+  reloadClinic(): void {
+    this.clinicResource.reload();
+  }
 
   reloadSpecialties(): void {
     this.specialtiesResource.reload();
@@ -151,10 +166,11 @@ export class GuestBookingService {
     const doctor = this._selectedDoctor();
     const slot = this._selectedSlot();
     const patient = this._patient();
-    if (this._submitting() || !doctor || !slot || !patient) return;
+    if (this._submitting() || this.cooldown.active() || !doctor || !slot || !patient) return;
 
     const date = this._selectedDate();
     this._submitting.set(true);
+    this.cooldown.reset();
     this._error.set(null);
     this.guestApi
       .book({ doctorId: doctor.id, startTime: toLocalDateTime(date, slot.startTime), patient })
@@ -176,6 +192,12 @@ export class GuestBookingService {
     slot: TimeSlot,
   ): Observable<never> {
     const message = apiErrorMessage(error, 'No se pudo registrar la reserva');
+    const retryAfter = retryAfterSeconds(error);
+    if (retryAfter) {
+      this._rateLimitMessage.set(message);
+      this.cooldown.start(retryAfter);
+      return EMPTY;
+    }
     if (!(error instanceof HttpErrorResponse) || error.status !== HttpStatusCode.Conflict) {
       this._error.set(message);
       return EMPTY;

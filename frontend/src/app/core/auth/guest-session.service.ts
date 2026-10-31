@@ -3,8 +3,9 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { jwtDecode } from 'jwt-decode';
 import { Observable, catchError, finalize, map, of, shareReplay, throwError } from 'rxjs';
 import { GuestApi } from '../api/guest.api';
-import { apiErrorMessage } from '../http/api-error';
+import { apiErrorMessage, isRateLimited, retryAfterSeconds } from '../http/api-error';
 import { GuestTokenPayload } from '../models/api.models';
+import { createCooldown } from '../utils/cooldown.util';
 
 const GUEST_TOKEN_KEY = 'scheduler.guestToken';
 const EXPIRY_MARGIN_MS = 30_000;
@@ -62,7 +63,13 @@ export class GuestSessionService {
   readonly message = this._message.asReadonly();
   readonly ready = computed(() => this._status() === 'ready');
 
+  private readonly cooldown = createCooldown();
+  readonly coolingDown = this.cooldown.active;
+  readonly retryInLabel = this.cooldown.label;
+  readonly cooldownFinished = this.cooldown.finished;
+
   start(slug: string | null): void {
+    this.cooldown.reset();
     this.slug = slug?.trim() || null;
     this.pending = null;
     if (!this.slug) {
@@ -80,6 +87,7 @@ export class GuestSessionService {
   }
 
   retry(): void {
+    if (this.cooldown.active()) return;
     this.start(this.slug);
   }
 
@@ -113,6 +121,11 @@ export class GuestSessionService {
   }
 
   fail(error: unknown): void {
+    if (isRateLimited(error)) {
+      if (this._status() === 'ready') return;
+      const retryAfter = retryAfterSeconds(error);
+      if (retryAfter) this.cooldown.start(retryAfter);
+    }
     const unavailable =
       error instanceof HttpErrorResponse &&
       (error.status === HttpStatusCode.NotFound || error.status === HttpStatusCode.BadRequest);

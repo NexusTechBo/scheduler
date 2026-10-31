@@ -36,6 +36,8 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     implementation 'org.mapstruct:mapstruct:1.6.3'
     implementation 'com.googlecode.libphonenumber:libphonenumber:9.0.41'
+    implementation 'com.bucket4j:bucket4j_jdk17-core:8.21.0'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     compileOnly 'org.projectlombok:lombok'
