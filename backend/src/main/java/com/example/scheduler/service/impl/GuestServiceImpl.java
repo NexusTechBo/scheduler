@@ -84,7 +84,7 @@ public class GuestServiceImpl implements GuestService {
     private GuestAppointmentResponse book(GuestAppointmentRequest<?> request, Supplier<Long> patientId) {
         var doctor = getDoctorOrThrowById(request.doctorId());
         appointmentService.verifySlotBookable(doctor, request.startTime());
-        var appointment = appointmentService.bookAppointment(
+        var appointment = appointmentService.bookGuestAppointment(
                 new AppointmentRequest(request.doctorId(), patientId.get(), request.startTime()));
         return guestMapper.toAppointmentResponse(appointment);
     }
@@ -102,7 +102,7 @@ public class GuestServiceImpl implements GuestService {
         try {
             return patientService.createPatient(new PatientRequest(ci, patient.name(), email, phoneNumber)).id();
         } catch (ApiException | DataIntegrityViolationException e) {
-            log.info("Guest patient creation rejected: {}", e.getMessage());
+            log.info("Guest patient creation rejected: {}", e instanceof ApiException api ? api.getMessageKey() : e.getClass().getSimpleName());
             throw new BusinessException(ERR_CANNOT_BOOK);
         }
     }
