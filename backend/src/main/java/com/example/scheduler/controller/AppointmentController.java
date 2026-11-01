@@ -37,12 +37,14 @@ public class AppointmentController {
     private final AppointmentService appointmentService;
 
     @PostMapping
+    @PreAuthorize(RoleExpressions.STAFF)
     @Operation(summary = "POST /api/appointments — book an appointment; every appointment starts PENDING")
     public ResponseEntity<AppointmentResponse> bookAppointment(@Valid @RequestBody AppointmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.bookAppointment(request));
     }
 
     @GetMapping("/{appointmentId}")
+    @PreAuthorize(RoleExpressions.STAFF)
     @Operation(summary = "GET /api/appointments/{id} — get an appointment details by id")
     public ResponseEntity<AppointmentResponse> findAppointmentById(
             @PathVariable Long appointmentId, Authentication auth) {
@@ -51,6 +53,7 @@ public class AppointmentController {
     }
 
     @GetMapping
+    @PreAuthorize(RoleExpressions.STAFF)
     @Operation(
             summary =
                     "GET /api/appointments — list appointments, filtered by ?doctorId={id}&patientId={id}&status={status}")
@@ -87,6 +90,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/board")
+    @PreAuthorize(RoleExpressions.STAFF)
     @Operation(
             summary =
                     "GET /api/appointments/board — appointments grouped by status, filtered by ?from={date}&to={date}&doctorId={id}&patientId={id}")
@@ -101,6 +105,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/calendar")
+    @PreAuthorize(RoleExpressions.STAFF)
     @Operation(
             summary =
                     "GET /api/appointments/calendar — appointments grouped by day, filtered by ?month={month}&year={year}&doctorId={id}&patientId={id}")

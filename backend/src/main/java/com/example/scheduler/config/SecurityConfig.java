@@ -1,9 +1,12 @@
 package com.example.scheduler.config;
 
+import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ErrorResponseWriter;
 import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.middleware.JwtAuthFilter;
 import com.example.scheduler.middleware.RateLimitFilter;
+import com.example.scheduler.security.RoleExpressions;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -40,7 +43,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(a -> {
                     if (publicPaths.length > 0) a.requestMatchers(publicPaths).permitAll();
                     a.requestMatchers("/actuator/**").denyAll();
-                    a.anyRequest().authenticated();
+                    a.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll();
+                    a.requestMatchers("/api/guest/**").hasRole(ERole.GUEST.name());
+                    a.anyRequest().hasAnyRole(RoleExpressions.STAFF_ROLES.toArray(String[]::new));
                 })
                 .exceptionHandling(e -> e.authenticationEntryPoint((req, res, _) -> errorResponseWriter.write(
                                 req, res, HttpStatus.UNAUTHORIZED, MessageKeys.SECURITY_AUTHENTICATION_REQUIRED))

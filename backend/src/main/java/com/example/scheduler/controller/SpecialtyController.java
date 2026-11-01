@@ -22,6 +22,7 @@ public class SpecialtyController {
     private final SpecialtyService specialtyService;
 
     @GetMapping
+    @PreAuthorize(RoleExpressions.STAFF)
     @Operation(summary = "GET /api/specialties — list all available specialties")
     public ResponseEntity<List<SpecialtyResponse>> findAllSpecialties() {
         return ResponseEntity.ok(specialtyService.findAllSpecialties());

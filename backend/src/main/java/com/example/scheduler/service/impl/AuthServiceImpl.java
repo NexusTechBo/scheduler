@@ -19,7 +19,7 @@ import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.LogUtils;
 import com.example.scheduler.util.Utils;
 import java.util.Locale;
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,13 +27,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final ClinicRepository clinicRepository;
     private final PersonalRepository personalRepository;
     private final PersonalMapper personalMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final String dummyPasswordHash;
+
+    public AuthServiceImpl(
+            ClinicRepository clinicRepository,
+            PersonalRepository personalRepository,
+            PersonalMapper personalMapper,
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil) {
+        this.clinicRepository = clinicRepository;
+        this.personalRepository = personalRepository;
+        this.personalMapper = personalMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.dummyPasswordHash = passwordEncoder.encode(UUID.randomUUID().toString());
+    }
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -46,21 +60,27 @@ public class AuthServiceImpl implements AuthService {
                     new BadRequestException(MessageKeys.AUTH_INVALID_CREDENTIALS));
         var clinic = clinicRepository
                 .findBySlug(username.substring(at + 1, username.length() - Utils.USERNAME_DOMAIN.length()))
-                .orElseThrow(() -> loginFailed(
-                        username, "unknown_clinic", new UnauthorizedException(MessageKeys.AUTH_INVALID_CREDENTIALS)));
+                .orElse(null);
+        if (clinic == null) {
+            passwordEncoder.matches(request.password(), dummyPasswordHash);
+            throw loginFailed(
+                    username, "unknown_clinic", new UnauthorizedException(MessageKeys.AUTH_INVALID_CREDENTIALS));
+        }
         var previousTenant = TenantContext.current();
         try {
             TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
-            var personal = personalRepository
-                    .findByUsername(username)
-                    .orElseThrow(() -> loginFailed(
-                            username, "unknown_user", new UnauthorizedException(MessageKeys.AUTH_INVALID_CREDENTIALS)));
+            var personal = personalRepository.findByUsername(username).orElse(null);
+            var passwordOk = passwordEncoder.matches(
+                    request.password(), personal != null ? personal.getPassword() : dummyPasswordHash);
+            if (personal == null)
+                throw loginFailed(
+                        username, "unknown_user", new UnauthorizedException(MessageKeys.AUTH_INVALID_CREDENTIALS));
+            if (!passwordOk)
+                throw loginFailed(
+                        username, "bad_password", new UnauthorizedException(MessageKeys.AUTH_INVALID_CREDENTIALS));
             if (!personal.isActive())
                 throw loginFailed(
                         username, "inactive_user", new UnauthorizedException(MessageKeys.AUTH_USER_NOT_ACTIVE));
-            if (!passwordEncoder.matches(request.password(), personal.getPassword()))
-                throw loginFailed(
-                        username, "bad_password", new UnauthorizedException(MessageKeys.AUTH_INVALID_CREDENTIALS));
             if (clinic.getStatus() != ClinicStatus.ACTIVE)
                 throw loginFailed(
                         username, "clinic_not_active", new ForbiddenException(MessageKeys.AUTH_CLINIC_NOT_ACTIVATED));

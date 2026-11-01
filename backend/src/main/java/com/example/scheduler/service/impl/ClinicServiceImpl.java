@@ -46,21 +46,21 @@ public class ClinicServiceImpl implements ClinicService {
         if (clinicRepository.existsByNameIgnoreCase(request.name()))
             throw new BusinessException(MessageKeys.CLINIC_ALREADY_EXISTS);
         if (clinicRepository.existsBySlug(slug)) throw new BusinessException(MessageKeys.CLINIC_SLUG_TAKEN, slug);
+        var encodedPassword = passwordEncoder.encode(request.adminPassword());
         var clinic = tx.execute(_ -> clinicRepository.save(Clinic.builder()
                 .name(request.name())
                 .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
                 .slug(slug)
                 .status(ClinicStatus.PENDING_ACTIVATION)
                 .build()));
-        var schemaName = TenantContext.schemaName(clinic.getSlug());
-        schemaProvisioningService.createTenantSchema(schemaName);
         try {
+            schemaProvisioningService.createTenantSchema(TenantContext.schemaName(clinic.getSlug()));
             TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
             return tx.execute(_ -> {
                 var admin = personalRepository.save(Personal.builder()
                         .username(request.adminUsername() + Utils.usernameSuffix(clinic.getSlug()))
                         .name(request.adminName())
-                        .password(passwordEncoder.encode(request.adminPassword()))
+                        .password(encodedPassword)
                         .email(request.adminEmail())
                         .ci(request.adminCi())
                         .role(ERole.ADMINISTRATOR)
@@ -75,8 +75,21 @@ public class ClinicServiceImpl implements ClinicService {
                         admin.getUsername(),
                         admin.getEmail());
             });
+        } catch (RuntimeException e) {
+            discardFailedClinic(clinic, tx);
+            throw e;
         } finally {
             TenantContext.clear();
+        }
+    }
+
+    private void discardFailedClinic(Clinic clinic, TransactionTemplate tx) {
+        TenantContext.clear();
+        try {
+            tx.executeWithoutResult(_ -> removeAbandonedClinic(clinic));
+            log.info("Failed registration of clinic {} rolled back", clinic.getId());
+        } catch (RuntimeException e) {
+            log.warn("Could not clean up failed registration of clinic {}", clinic.getId(), e);
         }
     }
 

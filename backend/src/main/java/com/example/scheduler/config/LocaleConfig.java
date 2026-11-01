@@ -24,18 +24,23 @@ public class LocaleConfig {
 
     @Bean
     public MessageSource messageSource() {
-        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-        source.setBasenames("messages", "org.hibernate.validator.ValidationMessages");
-        source.setDefaultEncoding("UTF-8");
-        source.setFallbackToSystemLocale(false);
+        ResourceBundleMessageSource source = bundleMessageSource();
         source.setUseCodeAsDefaultMessage(true);
         return source;
     }
 
     @Bean
-    public LocalValidatorFactoryBean getValidator(MessageSource messageSource) {
+    public LocalValidatorFactoryBean getValidator() {
         LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();
-        bean.setValidationMessageSource(messageSource);
+        bean.setValidationMessageSource(bundleMessageSource());
         return bean;
+    }
+
+    private static ResourceBundleMessageSource bundleMessageSource() {
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasenames("messages", "org.hibernate.validator.ValidationMessages");
+        source.setDefaultEncoding("UTF-8");
+        source.setFallbackToSystemLocale(false);
+        return source;
     }
 }
