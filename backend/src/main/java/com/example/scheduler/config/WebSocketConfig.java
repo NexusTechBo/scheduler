@@ -18,7 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtChannelInterceptor jwtChannelInterceptor;
 
-    @Value(WebConfig.ALLOWED_ORIGINS_PROPERTY)
+    @Value("${cors.allowed-origins:*}")
     private String[] allowedOrigins;
 
     @Override
