@@ -44,14 +44,16 @@ export class BookingService {
     { initialValue: '' },
   );
   private readonly patientsResource = rxResource({
-    request: () => this.debouncedPatientSearch(),
-    loader: ({ request }) =>
+    params: () => this.debouncedPatientSearch(),
+    stream: ({ params }) =>
       this.patientsApi
-        .list({ search: request, isActive: true, size: PATIENT_RESULTS, sort: 'id' })
+        .list({ search: params, isActive: true, size: PATIENT_RESULTS, sort: 'id' })
         .pipe(map((page) => page.content)),
   });
   readonly patientsLoading = this.patientsResource.isLoading;
-  readonly filteredPatients = computed(() => this.patientsResource.value() ?? []);
+  readonly filteredPatients = computed(() =>
+    this.patientsResource.hasValue() ? this.patientsResource.value() : [],
+  );
   readonly patientsErrorMessage = resourceError(this.patientsResource, LOAD_ERROR.patients);
 
   private readonly _specialtyId = signal<number | null>(null);
@@ -64,18 +66,22 @@ export class BookingService {
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
   private readonly selectedDoctorId = computed(() => this.selectedDoctor()?.id);
   private readonly specialtiesResource = rxResource({
-    request: () => (this.isDoctor ? undefined : true),
-    loader: () => this.catalogsApi.specialties(),
+    params: () => (this.isDoctor ? undefined : true),
+    stream: () => this.catalogsApi.specialties(),
   });
   private readonly doctorsResource = rxResource({
-    request: () => (this.isDoctor ? undefined : { specialtyId: this._specialtyId() ?? undefined }),
-    loader: ({ request }) =>
+    params: () => (this.isDoctor ? undefined : { specialtyId: this._specialtyId() ?? undefined }),
+    stream: ({ params }) =>
       this.staffApi
-        .doctors({ specialtyId: request!.specialtyId, isActive: true, size: 100 })
+        .doctors({ specialtyId: params.specialtyId, isActive: true, size: 100 })
         .pipe(map((page) => page.content)),
   });
-  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
-  readonly doctors = computed(() => this.doctorsResource.value() ?? []);
+  readonly specialties = computed(() =>
+    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
+  );
+  readonly doctors = computed(() =>
+    this.doctorsResource.hasValue() ? this.doctorsResource.value() : [],
+  );
   readonly doctorsLoading = this.doctorsResource.isLoading;
   readonly specialtiesErrorMessage = resourceError(
     this.specialtiesResource,
@@ -97,12 +103,12 @@ export class BookingService {
   });
   readonly selectedSlot = this._selectedSlot.asReadonly();
   private readonly slotsResource = rxResource({
-    request: () => {
+    params: () => {
       const doctorId = this.selectedDoctorId();
       return doctorId ? { doctorId, date: this.selectedDate() } : undefined;
     },
-    loader: ({ request }) =>
-      this.agendaApi.availableSlots(request!.doctorId, request!.date).pipe(
+    stream: ({ params }) =>
+      this.agendaApi.availableSlots(params.doctorId, params.date).pipe(
         map((response) =>
           response.availableSlots.map((slot) => ({
             startTime: formatTime(slot.startTime),
@@ -111,7 +117,9 @@ export class BookingService {
         ),
       ),
   });
-  readonly slots = computed(() => this.slotsResource.value() ?? []);
+  readonly slots = computed(() =>
+    this.slotsResource.hasValue() ? this.slotsResource.value() : [],
+  );
   readonly slotsLoading = this.slotsResource.isLoading;
   readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
 

@@ -24,7 +24,7 @@ export class DashboardService {
   private readonly weekStart = startOfWeek(new Date());
 
   private readonly weekResource = rxResource({
-    loader: () =>
+    stream: () =>
       this.appointmentsApi.board({
         from: toIso(this.weekStart),
         to: toIso(addDays(this.weekStart, 6)),

@@ -46,20 +46,20 @@ export class AvailabilityService {
   private readonly _previewDate = signal(this.today);
   readonly previewDate = this._previewDate.asReadonly();
 
-  private readonly availabilityResource = rxResource({ loader: () => this.api.availabilities() });
+  private readonly availabilityResource = rxResource({ stream: () => this.api.availabilities() });
   private readonly exceptionsResource = rxResource({
-    loader: () => this.api.exceptions(this.today),
+    stream: () => this.api.exceptions(this.today),
   });
   private readonly previewResource = rxResource({
-    request: () => this.previewDate(),
-    loader: ({ request }) =>
+    params: () => this.previewDate(),
+    stream: ({ params }) =>
       this.api
-        .availableSlots(this.doctorId, request)
+        .availableSlots(this.doctorId, params)
         .pipe(map((response) => response.availableSlots.map((slot) => formatTime(slot.startTime)))),
   });
 
   readonly week = computed(() => {
-    const blocks = this.availabilityResource.value() ?? [];
+    const blocks = this.availabilityResource.hasValue() ? this.availabilityResource.value() : [];
     return DAYS_OF_WEEK.map((day) => ({
       ...day,
       blocks: blocks
@@ -67,8 +67,12 @@ export class AvailabilityService {
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     }));
   });
-  readonly exceptions = computed(() => this.exceptionsResource.value() ?? []);
-  readonly previewSlots = computed(() => this.previewResource.value() ?? []);
+  readonly exceptions = computed(() =>
+    this.exceptionsResource.hasValue() ? this.exceptionsResource.value() : [],
+  );
+  readonly previewSlots = computed(() =>
+    this.previewResource.hasValue() ? this.previewResource.value() : [],
+  );
 
   readonly isWeekLoading = this.availabilityResource.isLoading;
   readonly isExceptionsLoading = this.exceptionsResource.isLoading;

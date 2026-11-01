@@ -8,7 +8,7 @@ Multi-tenant medical appointment scheduler. Each **clinic** is a tenant; its sta
 scheduler/
 ├── backend/        Spring Boot REST API (Gradle)
 ├── frontend/       Angular SPA (npm)
-├── render.yaml     Render deployment (both services as Docker)
+├── docker-compose.yml  local stack: backend (8080, uses the host PostgreSQL via host.docker.internal) + frontend/nginx (4200); `docker compose up -d --build`
 ├── .githooks/      git hooks (pre-commit.js: Prettier check); enable with `git config core.hooksPath .githooks`
 └── .claude/        project skills, agents and hooks (settings.json + hooks/*.js)
 ```
@@ -35,7 +35,7 @@ Claude Code hooks: Prettier runs on every edited `frontend/src` file; editing an
 
 ## Frontend — `frontend/`
 
-- **Stack:** Angular 19 (standalone components, signals, `rxResource`), Angular CDK (dialogs, overlays), RxJS, Tailwind CSS 4, `@stomp/rx-stomp`, `jwt-decode`, Prettier (`printWidth: 100`, single quotes).
+- **Stack:** Angular 22 (standalone components, signals, `rxResource` with `params`/`stream`, zone.js change detection, `@angular/build` builder), TypeScript 6, Angular CDK (dialogs, overlays), RxJS, Tailwind CSS 4, `@stomp/rx-stomp`, `jwt-decode`, Prettier (`printWidth: 100`, single quotes).
 - **Structure:** `src/app/core` · `features/<feature>` (page + `<feature>.service.ts` + `<feature>.model.ts` + `components/`) · `layout/shell` · `shared`.
 - **API access:** relative URLs (`'patients'`) prefixed by `apiUrlInterceptor` with `environment.apiUrl` (`/api/`); `authInterceptor` adds the bearer token and logs out on 401. Types mirroring backend DTOs live in `core/models/api.models.ts`.
 - **Auth & roles:** `AuthService` keeps the session (decoded JWT) in a signal + `localStorage`; routes use `authGuard`, `guestGuard`, `roleGuard(...ROLES.x)`; menu items per role in `core/navigation/navigation.ts`.

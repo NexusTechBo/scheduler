@@ -40,11 +40,11 @@ export class CalendarService {
   );
 
   private readonly resource = rxResource({
-    request: () => {
+    params: () => {
       const [year, month] = this.monthKey().split('-').map(Number);
       return { month, year };
     },
-    loader: ({ request }) => this.api.calendar(request),
+    stream: ({ params }) => this.api.calendar(params),
   });
   readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el calendario');

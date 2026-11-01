@@ -13,10 +13,10 @@ export class SpecialtiesService {
   private readonly notifications = inject(NotificationService);
 
   private readonly resource = rxResource({
-    loader: () => this.api.specialties(),
+    stream: () => this.api.specialties(),
   });
 
-  readonly specialties = computed(() => this.resource.value() ?? []);
+  readonly specialties = computed(() => (this.resource.hasValue() ? this.resource.value() : []));
   readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(this.resource, LOAD_ERROR.specialties);
   private readonly _saving = signal(false);
