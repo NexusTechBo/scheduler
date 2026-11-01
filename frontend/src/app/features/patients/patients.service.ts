@@ -41,7 +41,7 @@ export class PatientsService {
   );
 
   private readonly allResource = rxResource({
-    request: () =>
+    params: () =>
       this.scope() === 'all'
         ? {
             search: this.debouncedSearch(),
@@ -49,18 +49,18 @@ export class PatientsService {
             page: this.page(),
           }
         : undefined,
-    loader: ({ request }) =>
-      this.patientsApi.list({ ...request, size: PATIENTS_PAGE_SIZE, sort: 'id' }),
+    stream: ({ params }) =>
+      this.patientsApi.list({ ...params, size: PATIENTS_PAGE_SIZE, sort: 'id' }),
   });
   private readonly mineResource = rxResource({
-    request: () => (this.isDoctor ? this.userId : undefined),
-    loader: ({ request }) => this.staffApi.patientsOf(request),
+    params: () => (this.isDoctor ? this.userId : undefined),
+    stream: ({ params }) => this.staffApi.patientsOf(params),
   });
 
   private readonly mineFiltered = computed(() => {
     const showInactive = this.showInactive();
     const term = this.debouncedSearch().toLowerCase();
-    return (this.mineResource.value() ?? [])
+    return (this.mineResource.hasValue() ? this.mineResource.value() : [])
       .filter((patient) => showInactive || patient.active)
       .filter(
         (patient) =>
@@ -71,13 +71,14 @@ export class PatientsService {
       );
   });
   readonly patients = computed(() => {
-    if (this.scope() === 'all') return this.allResource.value()?.content ?? [];
+    if (this.scope() === 'all')
+      return this.allResource.hasValue() ? this.allResource.value().content : [];
     const start = this.page() * PATIENTS_PAGE_SIZE;
     return this.mineFiltered().slice(start, start + PATIENTS_PAGE_SIZE);
   });
   readonly pagination = computed(() => {
     if (this.scope() === 'all') {
-      const page = this.allResource.value()?.page;
+      const page = this.allResource.hasValue() ? this.allResource.value().page : undefined;
       return {
         number: this.page(),
         totalElements: page?.totalElements ?? 0,
@@ -91,7 +92,12 @@ export class PatientsService {
     };
   });
   private readonly mineIds = computed(
-    () => new Set((this.mineResource.value() ?? []).map((patient) => patient.id)),
+    () =>
+      new Set(
+        (this.mineResource.hasValue() ? this.mineResource.value() : []).map(
+          (patient) => patient.id,
+        ),
+      ),
   );
   private readonly activeResource = computed(() =>
     this.scope() === 'all' ? this.allResource : this.mineResource,

@@ -66,8 +66,8 @@ export class AuthService {
   readonly userId = computed(() => this._session()?.userId ?? null);
 
   private readonly me = rxResource({
-    request: () => this.userId() ?? undefined,
-    loader: () => this.authApi.me(),
+    params: () => this.userId() ?? undefined,
+    stream: () => this.authApi.me(),
   });
   readonly profile = computed(() => (this.me.hasValue() ? this.me.value() : undefined));
   readonly profileLoading = this.me.isLoading;

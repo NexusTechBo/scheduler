@@ -16,7 +16,7 @@ export class AppointmentDetailService {
   private readonly actions = inject(AppointmentActionsService);
   private readonly id = inject<AppointmentDetailData>(DIALOG_DATA).id;
 
-  private readonly resource = rxResource({ loader: () => this.api.get(this.id) });
+  private readonly resource = rxResource({ stream: () => this.api.get(this.id) });
   private readonly _busy = signal(false);
   private _changed = false;
 

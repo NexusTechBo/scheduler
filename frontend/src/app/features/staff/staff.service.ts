@@ -32,16 +32,22 @@ export class StaffService {
   });
 
   private readonly staffResource = rxResource({
-    request: () => this.filters(),
-    loader: ({ request }) => this.staffApi.list(request),
+    params: () => this.filters(),
+    stream: ({ params }) => this.staffApi.list(params),
   });
   private readonly specialtiesResource = rxResource({
-    loader: () => this.catalogsApi.specialties(),
+    stream: () => this.catalogsApi.specialties(),
   });
 
-  readonly staff = computed(() => this.staffResource.value()?.content ?? []);
-  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
-  readonly pagination = computed(() => this.staffResource.value()?.page ?? null);
+  readonly staff = computed(() =>
+    this.staffResource.hasValue() ? this.staffResource.value().content : [],
+  );
+  readonly specialties = computed(() =>
+    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
+  );
+  readonly pagination = computed(() =>
+    this.staffResource.hasValue() ? this.staffResource.value().page : null,
+  );
   readonly roleFilter = computed<StaffRoleFilter>(() => this.filters().role ?? 'all');
   readonly onlyActive = computed(() => this.filters().isActive === true);
   readonly isLoading = this.staffResource.isLoading;

@@ -27,10 +27,12 @@ export class GuestBookingService {
   private readonly active = computed(() => (this.guestSession.ready() ? true : undefined));
 
   private readonly clinicResource = rxResource({
-    request: () => this.active(),
-    loader: () => this.guestApi.clinic(),
+    params: () => this.active(),
+    stream: () => this.guestApi.clinic(),
   });
-  readonly clinicName = computed(() => this.clinicResource.value()?.name ?? null);
+  readonly clinicName = computed(() =>
+    this.clinicResource.hasValue() ? this.clinicResource.value().name : null,
+  );
   readonly clinicErrorMessage = resourceError(this.clinicResource, 'No se pudo cargar la clínica');
 
   private readonly _step = signal<GuestBookingStep>('doctor');
@@ -49,23 +51,27 @@ export class GuestBookingService {
   private readonly _specialtyId = signal<number | null>(null);
   readonly specialtyId = this._specialtyId.asReadonly();
   private readonly specialtiesResource = rxResource({
-    request: () => this.active(),
-    loader: () =>
+    params: () => this.active(),
+    stream: () =>
       this.guestApi
         .specialties()
         .pipe(map((list) => list.sort((a, b) => a.name.localeCompare(b.name)))),
   });
-  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
+  readonly specialties = computed(() =>
+    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
+  );
   readonly specialtiesErrorMessage = resourceError(
     this.specialtiesResource,
     LOAD_ERROR.specialties,
   );
 
   private readonly doctorsResource = rxResource({
-    request: () => this.active() && { specialtyId: this._specialtyId() ?? undefined },
-    loader: ({ request }) => this.guestApi.doctors(request!.specialtyId),
+    params: () => this.active() && { specialtyId: this._specialtyId() ?? undefined },
+    stream: ({ params }) => this.guestApi.doctors(params.specialtyId),
   });
-  readonly doctors = computed(() => this.doctorsResource.value() ?? []);
+  readonly doctors = computed(() =>
+    this.doctorsResource.hasValue() ? this.doctorsResource.value() : [],
+  );
   readonly doctorsLoading = this.doctorsResource.isLoading;
   readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
 
@@ -80,13 +86,15 @@ export class GuestBookingService {
   readonly selectedSlot = this._selectedSlot.asReadonly();
 
   private readonly slotsResource = rxResource({
-    request: () => {
+    params: () => {
       const doctorId = this._selectedDoctor()?.id;
       return this.active() && doctorId ? { doctorId, date: this._selectedDate() } : undefined;
     },
-    loader: ({ request }) => this.loadSlots(request!.doctorId, request!.date),
+    stream: ({ params }) => this.loadSlots(params.doctorId, params.date),
   });
-  readonly slots = computed(() => this.slotsResource.value() ?? []);
+  readonly slots = computed(() =>
+    this.slotsResource.hasValue() ? this.slotsResource.value() : [],
+  );
   readonly slotsLoading = this.slotsResource.isLoading;
   readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
 

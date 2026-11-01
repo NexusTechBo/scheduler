@@ -22,18 +22,20 @@ export class AppointmentsService {
   });
 
   private readonly resource = rxResource({
-    request: () => this.filters(),
-    loader: ({ request }) => this.api.list(request),
+    params: () => this.filters(),
+    stream: ({ params }) => this.api.list(params),
   });
 
   readonly appointments = computed<AppointmentRow[]>(() =>
-    (this.resource.value()?.content ?? []).map((appointment) => ({
+    (this.resource.hasValue() ? this.resource.value().content : []).map((appointment) => ({
       ...appointment,
       dayLabel: formatDayLabel(datePart(appointment.startTime)),
       timeLabel: formatTimeRange(appointment.startTime, appointment.endTime),
     })),
   );
-  readonly pagination = computed(() => this.resource.value()?.page ?? null);
+  readonly pagination = computed(() =>
+    this.resource.hasValue() ? this.resource.value().page : null,
+  );
   readonly status = computed<AppointmentStatusFilter>(() => this.filters().status ?? 'ALL');
   readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(this.resource, 'No se pudieron cargar las citas');

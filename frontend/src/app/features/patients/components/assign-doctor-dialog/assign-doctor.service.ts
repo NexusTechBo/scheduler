@@ -17,10 +17,10 @@ export class AssignDoctorService {
   readonly patient = inject<AssignDoctorData>(DIALOG_DATA).patient;
 
   private readonly assignedResource = rxResource({
-    loader: () => this.patientsApi.doctors(this.patient.id),
+    stream: () => this.patientsApi.doctors(this.patient.id),
   });
   private readonly activeDoctorsResource = rxResource({
-    loader: () =>
+    stream: () =>
       this.staffApi.doctors({ isActive: true, size: 200 }).pipe(map((page) => page.content)),
   });
 
@@ -28,7 +28,9 @@ export class AssignDoctorService {
   private readonly _message = signal('');
   readonly assigning = this._assigning.asReadonly();
   readonly message = this._message.asReadonly();
-  readonly assignedDoctors = computed(() => this.assignedResource.value() ?? []);
+  readonly assignedDoctors = computed(() =>
+    this.assignedResource.hasValue() ? this.assignedResource.value() : [],
+  );
   readonly assignedLoading = this.assignedResource.isLoading;
   readonly assignedErrorMessage = resourceError(
     this.assignedResource,
@@ -40,7 +42,9 @@ export class AssignDoctorService {
   );
   readonly assignableDoctors = computed(() => {
     const assigned = new Set(this.assignedDoctors().map((doctor) => doctor.id));
-    return (this.activeDoctorsResource.value() ?? []).filter((doctor) => !assigned.has(doctor.id));
+    return (this.activeDoctorsResource.hasValue() ? this.activeDoctorsResource.value() : []).filter(
+      (doctor) => !assigned.has(doctor.id),
+    );
   });
 
   reloadAssigned(): void {
@@ -64,7 +68,7 @@ export class AssignDoctorService {
     const request = { patientId: this.patient.id, doctorId };
     const doctorName = [
       ...this.assignedDoctors(),
-      ...(this.activeDoctorsResource.value() ?? []),
+      ...(this.activeDoctorsResource.hasValue() ? this.activeDoctorsResource.value() : []),
     ].find((doctor) => doctor.id === doctorId)?.name;
     this._assigning.set(true);
     (assign ? this.staffApi.assignPatient(request) : this.staffApi.removePatient(request))

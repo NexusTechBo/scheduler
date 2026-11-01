@@ -30,8 +30,8 @@ export class BoardService {
   readonly showDates = computed(() => this.range().from !== this.range().to);
 
   private readonly resource = rxResource({
-    request: () => this.range(),
-    loader: ({ request: { from, to } }) => this.api.board({ from, to }),
+    params: () => this.range(),
+    stream: ({ params: { from, to } }) => this.api.board({ from, to }),
   });
 
   readonly isLoading = this.resource.isLoading;
