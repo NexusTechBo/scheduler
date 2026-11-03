@@ -23,11 +23,11 @@ import {
 } from '../../../../shared/utils/validation-messages.util';
 import { StaffService } from '../../staff.service';
 
+const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
+
 export interface StaffFormData {
   staff?: Staff;
 }
-
-const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
 
 @Component({
   selector: 'app-staff-form-dialog',

@@ -1,20 +1,20 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { apiErrorMessage } from '../../../../core/http/api-error';
-import { Patient } from '../../../../core/models/api.models';
-import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
-import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
+import { apiErrorMessage } from '../../../core/http/api-error';
+import { Patient } from '../../../core/models/api.models';
+import { AlertComponent } from '../../ui/alert/alert.component';
+import { DialogFrameComponent } from '../../ui/dialog-frame/dialog-frame.component';
+import { FormFieldComponent } from '../../ui/forms/form-field/form-field.component';
 import {
   CI_ERRORS,
   PHONE_ERRORS,
   ciValidator,
   notBlank,
   phoneValidator,
-} from '../../../../shared/utils/validation-messages.util';
+} from '../../utils/validation-messages.util';
 import { PatientFormService } from './patient-form.service';
-import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 export interface PatientFormData {
   patient?: Patient;

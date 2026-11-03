@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
-import { LANDING_NAV } from '../../constants/landing.content';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { HOME_URL } from '../../../../core/navigation/navigation';
+import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
+import { LANDING_NAV } from '../../constants/landing.content';
 @Component({
   selector: 'app-header-landing-page',
   templateUrl: './header-landing-page.component.html',
