@@ -61,6 +61,10 @@ public final class MessageKeys {
     public static final String GUEST_CLINIC_UNAVAILABLE = "guest.clinicUnavailable";
     public static final String GUEST_CANNOT_BOOK = "guest.cannotBook";
 
+    public static final String WHATSAPP_UNAVAILABLE = "whatsapp.unavailable";
+    public static final String WHATSAPP_SESSION_LIMIT = "whatsapp.sessionLimit";
+    public static final String WHATSAPP_NO_ACTIVE_SESSION = "whatsapp.noActiveSession";
+
     public static final String VALIDATION_PHONE_INVALID = "validation.phone.invalid";
 
     public static final String ERROR_VALIDATION_FAILED = "error.validation.failed";

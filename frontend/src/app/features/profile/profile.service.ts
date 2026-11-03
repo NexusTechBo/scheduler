@@ -12,7 +12,7 @@ export class ProfileService {
   private readonly notifications = inject(NotificationService);
   private readonly auth = inject(AuthService);
 
-  readonly profile = this.auth.profile;
+  readonly me = this.auth.profile;
   readonly isLoading = this.auth.profileLoading;
   readonly errorMessage = resourceError(
     { error: this.auth.profileError },

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RevealDirective } from '../../directives/reveal.directive';
 import { LANDING_STATS } from '../../constants/landing.content';
+import { RevealDirective } from '../../directives/reveal.directive';
 
 @Component({
   selector: 'app-stats-landing-page',

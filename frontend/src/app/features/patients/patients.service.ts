@@ -7,8 +7,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
 import { Patient } from '../../core/models/api.models';
 import { ACTION_LABEL, LOAD_ERROR } from '../../core/utils/messages.util';
-import { NotificationService } from '../../shared/services/notification.service';
 import { ConfirmService } from '../../shared/services/confirm.service';
+import { NotificationService } from '../../shared/services/notification.service';
 import { PatientScope } from './patients.model';
 
 const PATIENTS_PAGE_SIZE = 12;

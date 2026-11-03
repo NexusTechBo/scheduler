@@ -7,8 +7,8 @@ import { GuestSessionService } from '../../core/auth/guest-session.service';
 import { apiErrorMessage, resourceError, retryAfterSeconds } from '../../core/http/api-error';
 import {
   GuestAppointmentResponse,
-  GuestDoctor,
   GuestBookingPatient,
+  GuestDoctor,
   TimeSlot,
 } from '../../core/models/api.models';
 import { formatTime, toIso, toLocalDateTime } from '../../core/utils/calendar.util';

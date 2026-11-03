@@ -7,11 +7,14 @@ import com.example.scheduler.notification.event.ClinicActivationEvent;
 import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.util.StringUtils;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class EmailNotificationListener {
@@ -38,6 +41,10 @@ public class EmailNotificationListener {
     @Async(AsyncConfig.MAIL_TASK_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentNotification(AppointmentNotificationEvent event) {
+        if (!StringUtils.hasText(event.patientEmail())) {
+            log.info("Appointment {} email notification skipped: patient has no email", event.appointmentId());
+            return;
+        }
         switch (event.status()) {
             case CONFIRMED -> emailService.sendAppointmentConfirmed(event);
             case CANCELLED -> emailService.sendAppointmentCancelled(event);

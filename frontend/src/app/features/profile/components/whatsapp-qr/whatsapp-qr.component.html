@@ -1,0 +1,102 @@
+<app-dialog-frame
+  title="WhatsApp"
+  subtitle="Avisos de citas a tus pacientes"
+  (closed)="ref.close()"
+>
+  <div aria-live="polite">
+    @switch (whatsapp.view()) {
+      @case ('loading') {
+        <div class="flex flex-col items-center gap-3">
+          <app-skeleton heightClass="h-6 w-32" />
+          <app-skeleton heightClass="h-4 w-56" />
+          <span class="sr-only">Consultando el estado de WhatsApp…</span>
+        </div>
+      }
+      @case ('connected') {
+        <div class="flex flex-col items-center gap-3 text-center">
+          <span
+            class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary"
+          >
+            <span class="h-2 w-2 rounded-full bg-primary" aria-hidden="true"></span>
+            {{ whatsapp.statusLabel() }}
+          </span>
+          @if (whatsapp.phoneNumber(); as phone) {
+            <p class="text-lg font-extrabold text-gray-900">{{ phone }}</p>
+          }
+          <p class="text-sm leading-relaxed text-gray-600">
+            Las confirmaciones y cancelaciones de citas se envían a tus pacientes desde este número.
+          </p>
+        </div>
+      }
+      @case ('reconnecting') {
+        <div class="flex flex-col items-center gap-3 text-center">
+          <span
+            class="inline-flex items-center gap-2 rounded-full bg-tertiary/10 px-3 py-1 text-sm font-bold text-tertiary"
+          >
+            <span class="h-2 w-2 animate-pulse rounded-full bg-tertiary" aria-hidden="true"></span>
+            {{ whatsapp.statusLabel() }}
+          </span>
+          <p class="text-sm leading-relaxed text-gray-600">
+            Se perdió la conexión con WhatsApp. Estamos intentando reconectar, espera unos segundos.
+          </p>
+        </div>
+      }
+      @case ('linking') {
+        <div class="flex flex-col items-center gap-4">
+          <span
+            class="inline-flex items-center gap-2 rounded-full bg-gray-900/6 px-3 py-1 text-sm font-bold text-gray-600"
+          >
+            <span class="h-2 w-2 animate-pulse rounded-full bg-gray-400" aria-hidden="true"></span>
+            {{ whatsapp.statusLabel() }}
+          </span>
+          <ol class="w-full list-decimal space-y-1 pl-5 text-sm text-gray-600">
+            <li>Abre WhatsApp en el teléfono de la clínica.</li>
+            <li>
+              Ve a <strong>Dispositivos vinculados</strong> →
+              <strong>Vincular un dispositivo</strong>.
+            </li>
+            <li>Escanea este código.</li>
+          </ol>
+          @if (whatsapp.qrUrl(); as qrUrl) {
+            <img
+              [src]="qrUrl"
+              alt="Código QR para vincular WhatsApp"
+              class="h-64 w-64 rounded-2xl bg-white p-2 shadow-sm"
+            />
+          } @else {
+            <div class="flex h-64 w-64 flex-col">
+              <app-skeleton heightClass="h-64 w-64" />
+            </div>
+            <p class="text-sm text-gray-500">Generando código QR…</p>
+          }
+        </div>
+      }
+      @case ('expired') {
+        <p class="text-center text-sm leading-relaxed text-gray-600">
+          El código QR expiró. Genera uno nuevo para vincular tu WhatsApp.
+        </p>
+      }
+      @case ('error') {
+        <app-load-error [message]="whatsapp.error() ?? ''" (retry)="whatsapp.restart()" />
+      }
+    }
+  </div>
+
+  <ng-container ngProjectAs="[dialogFooter]">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Cerrar</button>
+    @if (whatsapp.view() === 'connected') {
+      <button
+        type="button"
+        class="btn btn-danger"
+        [disabled]="whatsapp.loggingOut()"
+        (click)="logout()"
+      >
+        {{ whatsapp.loggingOut() ? 'Desvinculando…' : 'Desvincular' }}
+      </button>
+    } @else if (whatsapp.view() === 'expired') {
+      <button type="button" class="btn btn-primary" (click)="whatsapp.restart()">
+        Generar nuevo código
+      </button>
+    }
+  </ng-container>
+</app-dialog-frame>

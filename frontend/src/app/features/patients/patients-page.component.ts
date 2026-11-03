@@ -3,6 +3,10 @@ import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { Patient } from '../../core/models/api.models';
 import { initials } from '../../core/utils/labels.util';
+import {
+  PatientFormData,
+  PatientFormDialogComponent,
+} from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
@@ -19,10 +23,6 @@ import {
   AssignDoctorData,
   AssignDoctorDialogComponent,
 } from './components/assign-doctor-dialog/assign-doctor-dialog.component';
-import {
-  PatientFormData,
-  PatientFormDialogComponent,
-} from './components/patient-form-dialog/patient-form-dialog.component';
 import { PatientScope } from './patients.model';
 import { PatientsService } from './patients.service';
 

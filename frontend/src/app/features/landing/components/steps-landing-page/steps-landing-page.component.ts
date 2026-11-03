@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RevealDirective } from '../../directives/reveal.directive';
 import { LANDING_ANCHORS, LANDING_STEPS } from '../../constants/landing.content';
+import { RevealDirective } from '../../directives/reveal.directive';
 
 @Component({
   selector: 'app-steps-landing-page',

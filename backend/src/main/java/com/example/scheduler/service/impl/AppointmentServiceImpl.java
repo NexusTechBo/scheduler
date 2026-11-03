@@ -39,7 +39,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -145,7 +144,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         var saved = saveAndNotify(appointment);
         logStatusChange(saved, AppointmentStatus.PENDING);
-        publishEmailNotification(saved, getCurrentClinicName());
+        publishPatientNotification(saved, getCurrentClinic());
         return appointmentMapper.toResponse(saved);
     }
 
@@ -162,7 +161,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setCancellationReason(request.reason());
         var saved = saveAndNotify(appointment);
         logStatusChange(saved, previousStatus);
-        publishEmailNotification(saved, getCurrentClinicName());
+        publishPatientNotification(saved, getCurrentClinic());
         return appointmentMapper.toResponse(saved);
     }
 
@@ -170,14 +169,14 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public void cancelAppointments(List<Appointment> appointments, String reason) {
         if (appointments.isEmpty()) return;
-        var clinicName = getCurrentClinicName();
+        var clinic = getCurrentClinic();
         for (Appointment appointment : appointments) {
             var previousStatus = appointment.getStatus();
             appointment.setStatus(AppointmentStatus.CANCELLED);
             appointment.setCancellationReason(reason);
             var saved = saveAndNotify(appointment);
             logStatusChange(saved, previousStatus);
-            publishEmailNotification(saved, clinicName);
+            publishPatientNotification(saved, clinic);
         }
     }
 
@@ -246,35 +245,23 @@ public class AppointmentServiceImpl implements AppointmentService {
         return saved;
     }
 
-    private void publishEmailNotification(Appointment appointment, String clinicName) {
+    private void publishPatientNotification(Appointment appointment, Clinic clinic) {
         var doctor = appointment.getDoctor();
         var patient = appointment.getPatient();
-        if (!StringUtils.hasText(patient.getEmail())) {
-            log.info(
-                    "Appointment {} email notification skipped: patient {} has no email",
-                    appointment.getId(),
-                    patient.getId());
-            return;
-        }
         var specialty = doctor.getSpecialty();
         eventPublisher.publishEvent(new AppointmentNotificationEvent(
                 appointment.getStatus(),
                 appointment.getId(),
-                clinicName,
+                clinic.getName(),
+                clinic.getPhoneNumber(),
                 doctor.getName(),
                 specialty != null ? specialty.getName() : null,
                 patient.getName(),
                 patient.getEmail(),
+                patient.getPhoneNumber(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
                 appointment.getCancellationReason()));
-    }
-
-    private String getCurrentClinicName() {
-        return clinicRepository
-                .findById(TenantContext.getCurrentClinicId())
-                .map(Clinic::getName)
-                .orElse(null);
     }
 
     private Appointment getAppointmentOrThrowById(Long appointmentId) {
@@ -314,5 +301,12 @@ public class AppointmentServiceImpl implements AppointmentService {
     private boolean isSlotTaken(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
         return appointmentRepository.existsOverlappingAppointment(
                 doctorId, startTime, endTime, List.of(AppointmentStatus.CANCELLED));
+    }
+
+    private Clinic getCurrentClinic() {
+        var clinicId = TenantContext.getCurrentClinicId();
+        return clinicRepository
+                .findById(clinicId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.CLINIC_NOT_FOUND, clinicId));
     }
 }

@@ -4,7 +4,6 @@ import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/ht
 import localeEs from '@angular/common/locales/es';
 import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
 import { routes } from './app.routes';
 import { apiUrlInterceptor, authInterceptor } from './core/http/api.interceptors';
 

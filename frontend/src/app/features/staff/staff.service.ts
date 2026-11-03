@@ -10,8 +10,8 @@ import {
   StaffRegisterRequest,
   StaffUpdateRequest,
 } from '../../core/models/api.models';
-import { ConfirmService } from '../../shared/services/confirm.service';
 import { ACTION_LABEL } from '../../core/utils/messages.util';
+import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { StaffRoleFilter } from './staff.model';
 
