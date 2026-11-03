@@ -5,8 +5,8 @@ import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, retryAfterSeconds } from '../../core/http/api-error';
 import { HOME_URL } from '../../core/navigation/navigation';
-import { NotificationService } from '../../shared/services/notification.service';
 import { createCooldown } from '../../core/utils/cooldown.util';
+import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
 export class LoginService {

@@ -28,6 +28,10 @@ public final class Utils {
         throw new BadRequestException(MessageKeys.VALIDATION_PHONE_INVALID);
     }
 
+    public static String stripLeadingPlus(String phoneNumber) {
+        return phoneNumber != null ? phoneNumber.replaceFirst("^\\+", "") : null;
+    }
+
     public static String blankToNull(String value) {
         return StringUtils.hasText(value) ? value : null;
     }

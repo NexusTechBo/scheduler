@@ -5,6 +5,9 @@ export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 export type DayOfWeek =
   'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
+export type WhatsappSessionStatus =
+  'IDLE' | 'INITIALIZING' | 'QR_PENDING' | 'READY' | 'DISCONNECTED';
+
 export interface Page<T> {
   content: T[];
   page: {
@@ -318,4 +321,9 @@ export interface GuestAppointmentResponse {
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
+}
+
+export interface WhatsappSessionStatusResponse {
+  id: string;
+  status: WhatsappSessionStatus;
 }

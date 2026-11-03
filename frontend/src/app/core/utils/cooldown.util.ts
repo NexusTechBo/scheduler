@@ -1,5 +1,5 @@
-import { DestroyRef, Signal, computed, inject, signal } from '@angular/core';
-import { Subscription, interval } from 'rxjs';
+import { computed, DestroyRef, inject, Signal, signal } from '@angular/core';
+import { interval, Subscription } from 'rxjs';
 
 export interface Cooldown {
   readonly active: Signal<boolean>;
