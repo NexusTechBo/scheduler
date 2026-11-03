@@ -21,15 +21,15 @@ public interface AppointmentService {
 
     LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime);
 
-    AppointmentResponse findAppointmentById(Long appointmentId, Long userId, String role);
+    AppointmentResponse findAppointmentById(Long appointmentId, Long userId, boolean restrictToOwn);
 
     Page<AppointmentResponse> findAllAppointments(
             Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable);
 
-    AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, String role);
+    AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, boolean restrictToOwn);
 
     AppointmentResponse cancelAppointmentById(
-            Long AppointmentId, CancelAppointmentRequest request, Long userId, String role);
+            Long AppointmentId, CancelAppointmentRequest request, Long userId, boolean restrictToOwn);
 
     void cancelAppointments(List<Appointment> appointments, String reason);
 

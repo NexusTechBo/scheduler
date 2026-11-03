@@ -7,7 +7,7 @@ public record AppointmentNotificationEvent(
         AppointmentStatus status,
         Long appointmentId,
         String clinicName,
-        String clinicPhoneNumber,
+        String clinicSlug,
         String doctorName,
         String specialtyName,
         String patientName,

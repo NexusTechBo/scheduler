@@ -127,6 +127,10 @@
           </div>
         </form>
       </section>
+
+      @if (profile.canToggleDoctorMode() && me()) {
+        <app-doctor-mode-card class="lg:col-start-2" />
+      }
     </div>
   }
 </div>

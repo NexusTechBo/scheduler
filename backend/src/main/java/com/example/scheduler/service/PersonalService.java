@@ -1,7 +1,9 @@
 package com.example.scheduler.service;
 
+import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
+import com.example.scheduler.dto.personal.DoctorModeRequest;
 import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
 import com.example.scheduler.dto.personal.PersonalRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
@@ -24,13 +26,15 @@ public interface PersonalService {
 
     PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request);
 
+    LoginResponse updateDoctorMode(Long userId, DoctorModeRequest request);
+
     void deactivatePersonalById(Long personalId, Long userId);
 
     PersonalResponse activatePersonalById(Long personalId);
 
-    void assignPatient(AssignAndRemoveRequest request, Long userId, String role);
+    void assignPatient(AssignAndRemoveRequest request, Long userId, boolean restrictToOwn);
 
-    void removePatient(AssignAndRemoveRequest request, Long userId, String role);
+    void removePatient(AssignAndRemoveRequest request, Long userId, boolean restrictToOwn);
 
-    List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, String role);
+    List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, boolean restrictToOwn);
 }

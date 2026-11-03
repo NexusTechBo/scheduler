@@ -5,6 +5,8 @@ import { toHttpParams } from '../http/http-params.util';
 import {
   AssignPatientRequest,
   DoctorFilters,
+  DoctorModeRequest,
+  LoginResponse,
   Page,
   Patient,
   ProfileUpdateRequest,
@@ -36,6 +38,10 @@ export class StaffApi {
 
   updateSelf(request: ProfileUpdateRequest): Observable<Staff> {
     return this.http.put<Staff>('personal/update', request);
+  }
+
+  updateDoctorMode(request: DoctorModeRequest): Observable<LoginResponse> {
+    return this.http.put<LoginResponse>('personal/me/doctor-mode', request);
   }
 
   deactivate(id: number): Observable<void> {

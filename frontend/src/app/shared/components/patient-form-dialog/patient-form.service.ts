@@ -20,7 +20,7 @@ export class PatientFormService {
       : this.patientsApi.create(request);
     return save$.pipe(
       switchMap((saved) =>
-        !patient && this.auth.hasRole('DOCTOR')
+        !patient && this.auth.restrictedToOwnData()
           ? this.staffApi
               .assignPatient({ patientId: saved.id, doctorId: this.auth.userId()! })
               .pipe(

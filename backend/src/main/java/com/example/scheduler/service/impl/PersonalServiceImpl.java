@@ -1,7 +1,9 @@
 package com.example.scheduler.service.impl;
 
+import com.example.scheduler.dto.login.LoginResponse;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
+import com.example.scheduler.dto.personal.DoctorModeRequest;
 import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
 import com.example.scheduler.dto.personal.PersonalRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
@@ -18,6 +20,7 @@ import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
 import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.repository.*;
+import com.example.scheduler.security.jwt.JwtUtil;
 import com.example.scheduler.service.PersonalService;
 import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.Utils;
@@ -26,6 +29,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +37,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -47,6 +52,7 @@ public class PersonalServiceImpl implements PersonalService {
     private final AppointmentRepository appointmentRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final JwtUtil jwtUtil;
     private final Clock clock;
 
     @Override
@@ -62,7 +68,7 @@ public class PersonalServiceImpl implements PersonalService {
     public Page<PersonalResponse> findAllPersonal(Long specialtyId, Boolean isActive, ERole role, Pageable pageable) {
         if (specialtyId != null) getSpecialtyOrThrowById(specialtyId);
         return personalRepository
-                .findAllByFilters(specialtyId, isActive, role, pageable)
+                .findAllByFilters(specialtyId, isActive, role, role == ERole.DOCTOR, pageable)
                 .map(personalMapper::toResponse);
     }
 
@@ -113,14 +119,10 @@ public class PersonalServiceImpl implements PersonalService {
     @Transactional
     public PersonalResponse updatePersonalByAdmin(Long personalId, PersonalUpdateRequest request) {
         var personal = getPersonalOrThrowById(personalId);
-        if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT) {
-            var now = LocalDateTime.now(clock);
-            if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(
-                    personalId, AppointmentStatus.CANCELLED, now))
-                throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_UPCOMING_APPOINTMENTS);
-            if (doctorAvailabilityRepository.existsByDoctorIdAndActiveTrue(personalId))
-                throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_ACTIVE_AVAILABILITIES);
-        }
+        if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT)
+            verifyCanStopBeingDoctor(personalId);
+        if (personal.isAlsoDoctor() && request.specialtyId() == null)
+            throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_SPECIALTY_REQUIRED);
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
         if (personal.getRole() != ERole.ADMINISTRATOR) personal.setRole(request.role());
         personal.setSpecialty(getSpecialtyOrThrowById(request.specialtyId()));
@@ -157,6 +159,27 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     @Transactional
+    public LoginResponse updateDoctorMode(Long userId, DoctorModeRequest request) {
+        var personal = getPersonalOrThrowById(userId);
+        if (personal.getRole() != ERole.ADMINISTRATOR) throw new ForbiddenException(MessageKeys.COMMON_FORBIDDEN);
+        if (request.enabled()) {
+            if (request.specialtyId() == null)
+                throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_SPECIALTY_REQUIRED);
+            personal.setSpecialty(getSpecialtyOrThrowById(request.specialtyId()));
+            personal.setAlsoDoctor(true);
+        } else if (personal.isAlsoDoctor()) {
+            verifyCanStopBeingDoctor(userId);
+            personal.setAlsoDoctor(false);
+            personal.setSpecialty(null);
+        }
+        var saved = personalRepository.saveAndFlush(personal);
+        log.info("Doctor mode of administrator {} set to {}", saved.getId(), saved.isAlsoDoctor());
+        return new LoginResponse(jwtUtil.generate(
+                saved.getId(), saved.getRole(), saved.getRoles(), getCurrentClinic(), saved.getName()));
+    }
+
+    @Override
+    @Transactional
     public void deactivatePersonalById(Long personalId, Long userId) {
         if (personalId.equals(userId)) throw new BusinessException(MessageKeys.PERSONAL_CANNOT_DEACTIVATE_SELF);
         var personal = getPersonalOrThrowById(personalId);
@@ -174,10 +197,10 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     @Transactional
-    public void assignPatient(AssignAndRemoveRequest request, Long userId, String role) {
+    public void assignPatient(AssignAndRemoveRequest request, Long userId, boolean restrictToOwn) {
         var doctor = getDoctorPatientsOrThrowById(request.doctorId());
         var patient = getPatientOrThrowById(request.patientId());
-        verifyDoctorPermission(role, doctor.getId(), userId);
+        verifyDoctorPermission(restrictToOwn, doctor.getId(), userId);
         if (!doctor.getPatients().contains(patient)) {
             doctor.getPatients().add(patient);
             personalRepository.save(doctor);
@@ -186,10 +209,10 @@ public class PersonalServiceImpl implements PersonalService {
 
     @Override
     @Transactional
-    public void removePatient(AssignAndRemoveRequest request, Long userId, String role) {
+    public void removePatient(AssignAndRemoveRequest request, Long userId, boolean restrictToOwn) {
         var doctor = getDoctorPatientsOrThrowById(request.doctorId());
         var patient = getPatientOrThrowById(request.patientId());
-        verifyDoctorPermission(role, doctor.getId(), userId);
+        verifyDoctorPermission(restrictToOwn, doctor.getId(), userId);
         if (doctor.getPatients().contains(patient)) {
             doctor.getPatients().remove(patient);
             personalRepository.save(doctor);
@@ -197,8 +220,8 @@ public class PersonalServiceImpl implements PersonalService {
     }
 
     @Override
-    public List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, String role) {
-        verifyDoctorPermission(role, doctorId, userId);
+    public List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, boolean restrictToOwn) {
+        verifyDoctorPermission(restrictToOwn, doctorId, userId);
         var doctor = getDoctorPatientsOrThrowById(doctorId);
         return patientMapper.toResponseList(doctor.getPatients());
     }
@@ -218,7 +241,7 @@ public class PersonalServiceImpl implements PersonalService {
 
     private Personal getDoctorPatientsOrThrowById(Long personalId) {
         return personalRepository
-                .findDoctorPatientsByIdAndRole(personalId, ERole.DOCTOR)
+                .findDoctorPatientsById(personalId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_NOT_FOUND, personalId));
     }
 
@@ -237,8 +260,15 @@ public class PersonalServiceImpl implements PersonalService {
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
     }
 
-    private void verifyDoctorPermission(String role, Long accountId, Long userId) {
-        if (ERole.DOCTOR.name().equals(role) && !accountId.equals(userId))
-            throw new ForbiddenException(MessageKeys.COMMON_FORBIDDEN);
+    private void verifyDoctorPermission(boolean restrictToOwn, Long accountId, Long userId) {
+        if (restrictToOwn && !accountId.equals(userId)) throw new ForbiddenException(MessageKeys.COMMON_FORBIDDEN);
+    }
+
+    private void verifyCanStopBeingDoctor(Long doctorId) {
+        if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(
+                doctorId, AppointmentStatus.CANCELLED, LocalDateTime.now(clock)))
+            throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_UPCOMING_APPOINTMENTS);
+        if (doctorAvailabilityRepository.existsByDoctorIdAndActiveTrue(doctorId))
+            throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_ACTIVE_AVAILABILITIES);
     }
 }

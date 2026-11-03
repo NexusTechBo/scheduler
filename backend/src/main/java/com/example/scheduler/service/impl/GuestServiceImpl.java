@@ -11,7 +11,6 @@ import com.example.scheduler.dto.guest.GuestPatientRequest;
 import com.example.scheduler.dto.patient.PatientRequest;
 import com.example.scheduler.entity.Patient;
 import com.example.scheduler.entity.Personal;
-import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.ApiException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.MessageKeys;
@@ -117,7 +116,7 @@ public class GuestServiceImpl implements GuestService {
 
     private Personal getDoctorOrThrowById(Long doctorId) {
         return personalRepository
-                .findByIdAndRoleAndActiveIsTrue(doctorId, ERole.DOCTOR)
+                .findActiveDoctorById(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctorId));
     }
 

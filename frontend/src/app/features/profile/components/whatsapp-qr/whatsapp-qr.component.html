@@ -20,11 +20,9 @@
             <span class="h-2 w-2 rounded-full bg-primary" aria-hidden="true"></span>
             {{ whatsapp.statusLabel() }}
           </span>
-          @if (whatsapp.phoneNumber(); as phone) {
-            <p class="text-lg font-extrabold text-gray-900">{{ phone }}</p>
-          }
           <p class="text-sm leading-relaxed text-gray-600">
-            Las confirmaciones y cancelaciones de citas se envían a tus pacientes desde este número.
+            Las confirmaciones y cancelaciones de citas se envían a tus pacientes desde el WhatsApp
+            vinculado.
           </p>
         </div>
       }
@@ -49,8 +47,14 @@
             <span class="h-2 w-2 animate-pulse rounded-full bg-gray-400" aria-hidden="true"></span>
             {{ whatsapp.statusLabel() }}
           </span>
+          @if (whatsapp.clinicPhoneNumber(); as clinicPhone) {
+            <p class="w-full rounded-2xl bg-primary/5 px-4 py-2.5 text-sm text-gray-600">
+              Te recomendamos escanearlo con el número de la clínica:
+              <strong class="whitespace-nowrap text-gray-900">{{ clinicPhone }}</strong>
+            </p>
+          }
           <ol class="w-full list-decimal space-y-1 pl-5 text-sm text-gray-600">
-            <li>Abre WhatsApp en el teléfono de la clínica.</li>
+            <li>Abre WhatsApp en el teléfono que enviará los avisos a tus pacientes.</li>
             <li>
               Ve a <strong>Dispositivos vinculados</strong> →
               <strong>Vincular un dispositivo</strong>.

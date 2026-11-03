@@ -60,10 +60,7 @@ export class WhatsappQrService {
     const status = this.status();
     return status ? WHATSAPP_STATUS_LABEL[status] : '';
   });
-  readonly phoneNumber = computed(() => {
-    const id = this.session()?.id;
-    return id ? `+${id}` : null;
-  });
+  readonly clinicPhoneNumber = computed(() => this.session()?.clinicPhoneNumber ?? null);
   readonly view = computed<WhatsappView>(() => {
     if (this.error()) return 'error';
     const status = this.status();

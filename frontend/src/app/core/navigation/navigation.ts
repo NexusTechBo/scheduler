@@ -87,6 +87,6 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export function navItemsFor(role: Role | null): NavItem[] {
-  return role ? NAV_ITEMS.filter((item) => item.roles.includes(role)) : [];
+export function navItemsFor(roles: readonly Role[]): NavItem[] {
+  return NAV_ITEMS.filter((item) => item.roles.some((role) => roles.includes(role)));
 }

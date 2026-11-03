@@ -1,7 +1,7 @@
 package com.example.scheduler.security;
 
-import java.util.List;
-import java.util.Objects;
+import com.example.scheduler.enums.ERole;
+import java.util.Collection;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,15 +12,13 @@ public final class SecurityUtils {
 
     private SecurityUtils() {}
 
-    public static String extractRole(Authentication auth) {
-        return auth.getAuthorities().stream()
-                .map(a -> stripRolePrefix(Objects.requireNonNull(a.getAuthority())))
-                .findFirst()
-                .orElse(null);
+    public static boolean hasRole(Authentication auth, ERole role) {
+        var authority = ROLE_PREFIX + role.name();
+        return auth.getAuthorities().stream().anyMatch(a -> authority.equals(a.getAuthority()));
     }
 
-    private static String stripRolePrefix(String authority) {
-        return authority.startsWith(ROLE_PREFIX) ? authority.substring(ROLE_PREFIX.length()) : authority;
+    public static boolean isRestrictedToOwnData(Authentication auth) {
+        return hasRole(auth, ERole.DOCTOR) && !hasRole(auth, ERole.ADMINISTRATOR);
     }
 
     public static Long extractUserId(Authentication auth) {
@@ -32,8 +30,10 @@ public final class SecurityUtils {
         return authorizationHeader.substring(BEARER_PREFIX.length());
     }
 
-    public static UsernamePasswordAuthenticationToken authenticated(String subject, String role) {
-        var authorities = List.of(new SimpleGrantedAuthority(ROLE_PREFIX + role));
+    public static UsernamePasswordAuthenticationToken authenticated(String subject, Collection<String> roles) {
+        var authorities = roles.stream()
+                .map(role -> new SimpleGrantedAuthority(ROLE_PREFIX + role))
+                .toList();
         return new UsernamePasswordAuthenticationToken(subject, null, authorities);
     }
 }

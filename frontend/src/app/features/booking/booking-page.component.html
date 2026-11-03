@@ -98,7 +98,7 @@
       }
     </section>
 
-    @if (!booking.isDoctor) {
+    @if (!booking.ownDataOnly) {
       <section class="glass-panel rounded-3xl p-6">
         <h2 class="mb-4 flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
           <span
@@ -196,7 +196,7 @@
         <h2 class="flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
           <span
             class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
-            >{{ booking.isDoctor ? 2 : 3 }}</span
+            >{{ booking.ownDataOnly ? 2 : 3 }}</span
           >
           Fecha y horario
         </h2>

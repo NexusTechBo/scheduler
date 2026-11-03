@@ -1,6 +1,6 @@
 package com.example.scheduler.controller;
 
-import com.example.scheduler.exchange.contract.SessionStatusResponse;
+import com.example.scheduler.dto.whatsapp.WhatsappStatusResponse;
 import com.example.scheduler.security.RoleExpressions;
 import com.example.scheduler.service.WhatsappExchangeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,9 +31,12 @@ public class WhatsappExchangeController {
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
-    @Operation(summary = "Status of the clinic's WhatsApp session")
+    @Operation(
+            summary = "Status of the clinic's WhatsApp session",
+            description = "id is the session id (the clinic slug); clinicPhoneNumber is the clinic phone in E.164,"
+                    + " the number expected to scan the QR")
     @GetMapping("/status")
-    public SessionStatusResponse getSessionStatus() {
+    public WhatsappStatusResponse getSessionStatus() {
         return whatsappExchangeService.getSessionStatus();
     }
 

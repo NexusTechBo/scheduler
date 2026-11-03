@@ -1,8 +1,9 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
+import { AuthService } from '../../core/auth/auth.service';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
 import {
@@ -15,6 +16,7 @@ import {
   toIso,
 } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
+import { CalendarScope } from './calendar.model';
 
 @Injectable()
 export class CalendarService {
@@ -22,7 +24,14 @@ export class CalendarService {
   private readonly actions = inject(AppointmentActionsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
   private readonly today = toIso(new Date());
+
+  readonly canFilterMine = computed(
+    () => this.auth.hasRole('ADMINISTRATOR') && this.auth.hasRole('DOCTOR'),
+  );
+  private readonly _scope = signal<CalendarScope>('all');
+  readonly scope = computed<CalendarScope>(() => (this.canFilterMine() ? this._scope() : 'all'));
 
   private readonly dateParam = toSignal(
     this.route.queryParamMap.pipe(map((params) => params.get('date'))),
@@ -42,7 +51,8 @@ export class CalendarService {
   private readonly resource = rxResource({
     params: () => {
       const [year, month] = this.monthKey().split('-').map(Number);
-      return { month, year };
+      const doctorId = this.scope() === 'mine' ? (this.auth.userId() ?? undefined) : undefined;
+      return { month, year, doctorId };
     },
     stream: ({ params }) => this.api.calendar(params),
   });
@@ -72,6 +82,10 @@ export class CalendarService {
 
   reload(): void {
     this.resource.reload();
+  }
+
+  setScope(scope: CalendarScope): void {
+    this._scope.set(scope);
   }
 
   select(iso: string): void {

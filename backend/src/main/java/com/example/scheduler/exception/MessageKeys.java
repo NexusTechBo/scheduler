@@ -28,6 +28,7 @@ public final class MessageKeys {
     public static final String PERSONAL_CANNOT_DEACTIVATE_SELF = "personal.cannotDeactivateSelf";
     public static final String PERSONAL_DOCTOR_HAS_UPCOMING_APPOINTMENTS = "personal.doctorHasUpcomingAppointments";
     public static final String PERSONAL_DOCTOR_HAS_ACTIVE_AVAILABILITIES = "personal.doctorHasActiveAvailabilities";
+    public static final String PERSONAL_DOCTOR_SPECIALTY_REQUIRED = "personal.doctorSpecialtyRequired";
 
     public static final String PATIENT_NOT_FOUND = "patient.notFound";
     public static final String PATIENT_NOT_FOUND_PHONE = "patient.notFoundPhone";

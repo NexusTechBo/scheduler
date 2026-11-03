@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { NavigationExtras, Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
 import { Role, Staff, TokenPayload } from '../models/api.models';
 
@@ -12,6 +12,7 @@ interface Session {
   token: string;
   userId: number;
   role: Role;
+  roles: Role[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
@@ -42,6 +43,7 @@ function decodeSession(token: string | null): Session | null {
       token,
       userId: Number(payload.sub),
       role: payload.role,
+      roles: payload.roles?.length ? payload.roles : [payload.role],
       clinicId: Number(payload.clinicId),
       clinicName: payload.clinicName,
       clinicSlug: payload.clinicSlug,
@@ -63,6 +65,10 @@ export class AuthService {
 
   readonly session = this._session.asReadonly();
   readonly role = computed(() => this._session()?.role ?? null);
+  readonly roles = computed<readonly Role[]>(() => this._session()?.roles ?? []);
+  readonly restrictedToOwnData = computed(
+    () => this.hasRole('DOCTOR') && !this.hasRole('ADMINISTRATOR'),
+  );
   readonly userId = computed(() => this._session()?.userId ?? null);
 
   private readonly me = rxResource({
@@ -99,22 +105,22 @@ export class AuthService {
   }
 
   hasRole(...roles: Role[]): boolean {
-    const role = this.role();
-    return role !== null && roles.includes(role);
+    const current = this.roles();
+    return roles.some((role) => current.includes(role));
   }
 
   login(username: string, password: string): Observable<Session> {
-    return this.authApi.login({ username, password }).pipe(
-      map(({ token }) => {
-        const session = decodeSession(token);
-        if (!session) throw new Error('Token inválido');
-        return session;
-      }),
-      tap((session) => {
-        writeStorage(TOKEN_KEY, session.token);
-        this._session.set(session);
-      }),
-    );
+    return this.authApi
+      .login({ username, password })
+      .pipe(map(({ token }) => this.replaceToken(token)));
+  }
+
+  replaceToken(token: string): Session {
+    const session = decodeSession(token);
+    if (!session) throw new Error('Token inválido');
+    writeStorage(TOKEN_KEY, session.token);
+    this._session.set(session);
+    return session;
   }
 
   logout(extras: NavigationExtras = {}): void {

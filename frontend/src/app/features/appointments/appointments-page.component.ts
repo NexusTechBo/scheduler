@@ -43,14 +43,14 @@ import { GuestLinkButtonComponent } from './components/guest-link-button/guest-l
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppointmentsPageComponent {
-  private readonly isDoctor = inject(AuthService).hasRole('DOCTOR');
+  private readonly ownDataOnly = inject(AuthService).restrictedToOwnData();
   protected readonly appointments = inject(AppointmentsService);
   private readonly focusRow = focusAfterLoad(this.appointments.isLoading);
 
   protected readonly canConfirm = canConfirmAppointment;
   protected readonly canCancel = canCancelAppointment;
-  protected readonly showDoctor = !this.isDoctor;
-  protected readonly subtitle = this.isDoctor ? 'Tus citas' : 'Todas las citas de la clínica';
+  protected readonly showDoctor = !this.ownDataOnly;
+  protected readonly subtitle = this.ownDataOnly ? 'Tus citas' : 'Todas las citas de la clínica';
   protected readonly tabs: SegmentedTabItem[] = [
     { id: 'ALL', label: 'Todas' },
     ...APPOINTMENT_STATUSES.map((status) => ({ id: status, label: STATUS_PLURAL_LABEL[status] })),

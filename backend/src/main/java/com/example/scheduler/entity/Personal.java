@@ -3,7 +3,9 @@ package com.example.scheduler.entity;
 import com.example.scheduler.enums.ERole;
 import jakarta.persistence.*;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import lombok.*;
 
 @Getter
@@ -49,6 +51,10 @@ public class Personal {
     @Builder.Default
     private boolean active = true;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean alsoDoctor = false;
+
     @Version
     private Long version;
 
@@ -59,4 +65,14 @@ public class Personal {
             inverseJoinColumns = @JoinColumn(name = "patient_id"))
     @Builder.Default
     private List<Patient> patients = new ArrayList<>();
+
+    public boolean isDoctor() {
+        return role == ERole.DOCTOR || alsoDoctor;
+    }
+
+    public Set<ERole> getRoles() {
+        var roles = EnumSet.of(role);
+        if (alsoDoctor) roles.add(ERole.DOCTOR);
+        return roles;
+    }
 }

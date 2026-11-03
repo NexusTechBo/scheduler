@@ -19,11 +19,12 @@ export class PatientsService {
   private readonly staffApi = inject(StaffApi);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
-  private readonly userId = inject(AuthService).userId()!;
+  private readonly auth = inject(AuthService);
+  private readonly userId = this.auth.userId()!;
 
-  readonly isDoctor = inject(AuthService).hasRole('DOCTOR');
+  readonly isDoctor = this.auth.hasRole('DOCTOR');
 
-  private readonly _scope = signal<PatientScope>(this.isDoctor ? 'mine' : 'all');
+  private readonly _scope = signal<PatientScope>(this.auth.restrictedToOwnData() ? 'mine' : 'all');
   private readonly _search = signal('');
   private readonly _showInactive = signal(false);
   private readonly page = signal(0);

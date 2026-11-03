@@ -59,9 +59,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
         TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class));
         var role = claims.get(JwtClaims.ROLE, String.class);
+        var roles = JwtUtil.extractRoles(claims);
         var userId = Long.valueOf(claims.getSubject());
         try {
-            if (!activeUserChecker.isActive(userId, role)) {
+            if (!activeUserChecker.isActive(userId, role, roles)) {
                 log.warn(
                         "Token rejected: user {} with role {} in clinic {} is inactive or its role changed",
                         userId,
@@ -76,7 +77,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     e.getClass().getSimpleName());
             return;
         }
-        SecurityContextHolder.getContext().setAuthentication(SecurityUtils.authenticated(claims.getSubject(), role));
+        SecurityContextHolder.getContext().setAuthentication(SecurityUtils.authenticated(claims.getSubject(), roles));
         bindLogContext(
                 request, clinicId, ERole.GUEST.name().equals(role) ? LogKeys.GUEST_USER : claims.getSubject(), role);
     }

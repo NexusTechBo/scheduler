@@ -8,5 +8,6 @@ public record PersonalResponse(
         String email,
         String phoneNumber,
         boolean active,
+        boolean alsoDoctor,
         String role,
         String specialtyName) {}

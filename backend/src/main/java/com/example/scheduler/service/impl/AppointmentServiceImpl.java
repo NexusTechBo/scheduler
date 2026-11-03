@@ -8,7 +8,6 @@ import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.Clinic;
 import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.AppointmentStatus;
-import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
@@ -107,8 +106,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     public LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime) {
         var endTime = findSlotEnd(doctor.getId(), startTime)
                 .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
-        if (doctor.getRole() != ERole.DOCTOR)
-            throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
+        if (!doctor.isDoctor()) throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
         if (!doctor.isActive()) throw new BusinessException(MessageKeys.AUTH_USER_NOT_ACTIVE);
         if (startTime.isBefore(LocalDateTime.now(clock)))
             throw new BadRequestException(MessageKeys.APPOINTMENT_PAST_DATE);
@@ -120,9 +118,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentResponse findAppointmentById(Long appointmentId, Long userId, String role) {
+    public AppointmentResponse findAppointmentById(Long appointmentId, Long userId, boolean restrictToOwn) {
         var appointment = getAppointmentOrThrowById(appointmentId);
-        verifyPermission(appointment, userId, role);
+        verifyPermission(appointment, userId, restrictToOwn);
         return appointmentMapper.toResponse(appointment);
     }
 
@@ -136,9 +134,9 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional
-    public AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, String role) {
+    public AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, boolean restrictToOwn) {
         var appointment = getAppointmentOrThrowById(AppointmentId);
-        verifyPermission(appointment, userId, role);
+        verifyPermission(appointment, userId, restrictToOwn);
         if (appointment.getStatus() != AppointmentStatus.PENDING)
             throw new BusinessException(MessageKeys.APPOINTMENT_CONFIRM_ONLY_PENDING);
         appointment.setStatus(AppointmentStatus.CONFIRMED);
@@ -151,9 +149,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional
     public AppointmentResponse cancelAppointmentById(
-            Long AppointmentId, CancelAppointmentRequest request, Long userId, String role) {
+            Long AppointmentId, CancelAppointmentRequest request, Long userId, boolean restrictToOwn) {
         var appointment = getAppointmentOrThrowById(AppointmentId);
-        verifyPermission(appointment, userId, role);
+        verifyPermission(appointment, userId, restrictToOwn);
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
             throw new BusinessException(MessageKeys.APPOINTMENT_ALREADY_CANCELLED);
         var previousStatus = appointment.getStatus();
@@ -253,7 +251,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getStatus(),
                 appointment.getId(),
                 clinic.getName(),
-                clinic.getPhoneNumber(),
+                clinic.getSlug(),
                 doctor.getName(),
                 specialty != null ? specialty.getName() : null,
                 patient.getName(),
@@ -270,10 +268,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.APPOINTMENT_NOT_FOUND, appointmentId));
     }
 
-    private void verifyPermission(Appointment appointment, Long userId, String role) {
-        if (ERole.DOCTOR.name().equals(role))
-            if (!appointment.getDoctor().getId().equals(userId))
-                throw new ForbiddenException(MessageKeys.APPOINTMENT_UNAUTHORIZED);
+    private void verifyPermission(Appointment appointment, Long userId, boolean restrictToOwn) {
+        if (restrictToOwn && !appointment.getDoctor().getId().equals(userId))
+            throw new ForbiddenException(MessageKeys.APPOINTMENT_UNAUTHORIZED);
     }
 
     private boolean isBlocked(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {

@@ -85,8 +85,8 @@ public class AuthServiceImpl implements AuthService {
                 throw loginFailed(
                         username, "clinic_not_active", new ForbiddenException(MessageKeys.AUTH_CLINIC_NOT_ACTIVATED));
             log.info("Login succeeded for user {} in clinic {}", personal.getId(), clinic.getId());
-            return new LoginResponse(
-                    jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic, personal.getName()));
+            return new LoginResponse(jwtUtil.generate(
+                    personal.getId(), personal.getRole(), personal.getRoles(), clinic, personal.getName()));
         } finally {
             TenantContext.restore(previousTenant);
         }

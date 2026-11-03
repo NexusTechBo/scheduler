@@ -5,7 +5,6 @@ import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
 import com.example.scheduler.enums.AppointmentStatus;
-import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.RoleExpressions;
 import com.example.scheduler.security.SecurityUtils;
 import com.example.scheduler.service.AppointmentService;
@@ -49,7 +48,7 @@ public class AppointmentController {
     public ResponseEntity<AppointmentResponse> findAppointmentById(
             @PathVariable Long appointmentId, Authentication auth) {
         return ResponseEntity.ok(appointmentService.findAppointmentById(
-                appointmentId, SecurityUtils.extractUserId(auth), SecurityUtils.extractRole(auth)));
+                appointmentId, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth)));
     }
 
     @GetMapping
@@ -73,7 +72,7 @@ public class AppointmentController {
     public ResponseEntity<AppointmentResponse> confirmAppointmentById(
             @PathVariable Long appointmentId, Authentication auth) {
         return ResponseEntity.ok(appointmentService.confirmAppointmentById(
-                appointmentId, SecurityUtils.extractUserId(auth), SecurityUtils.extractRole(auth)));
+                appointmentId, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth)));
     }
 
     @PatchMapping("/{appointmentId}/cancel")
@@ -86,7 +85,7 @@ public class AppointmentController {
             @Valid @RequestBody CancelAppointmentRequest request,
             Authentication auth) {
         return ResponseEntity.ok(appointmentService.cancelAppointmentById(
-                appointmentId, request, SecurityUtils.extractUserId(auth), SecurityUtils.extractRole(auth)));
+                appointmentId, request, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth)));
     }
 
     @GetMapping("/board")
@@ -120,8 +119,6 @@ public class AppointmentController {
     }
 
     private static Long scopedDoctorId(Long doctorId, Authentication auth) {
-        return ERole.DOCTOR.name().equals(SecurityUtils.extractRole(auth))
-                ? SecurityUtils.extractUserId(auth)
-                : doctorId;
+        return SecurityUtils.isRestrictedToOwnData(auth) ? SecurityUtils.extractUserId(auth) : doctorId;
     }
 }

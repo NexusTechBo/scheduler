@@ -51,9 +51,10 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
             throw new MessageDeliveryException("Guests cannot connect");
         var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
         var role = claims.get(JwtClaims.ROLE, String.class);
+        var roles = JwtUtil.extractRoles(claims);
         TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class));
         try {
-            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role)) {
+            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role, roles)) {
                 log.warn(
                         "STOMP CONNECT rejected: user {} with role {} in clinic {} is inactive or its role changed",
                         claims.getSubject(),
@@ -66,7 +67,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         }
         if (attrs == null) throw new MessageDeliveryException(INVALID_TOKEN);
         attrs.put(CLINIC_ID_ATTRIBUTE, clinicId);
-        accessor.setUser(SecurityUtils.authenticated(claims.getSubject(), role));
+        accessor.setUser(SecurityUtils.authenticated(claims.getSubject(), roles));
     }
 
     private void authorizeSubscription(StompHeaderAccessor accessor) {

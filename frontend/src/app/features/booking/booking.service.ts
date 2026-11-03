@@ -28,7 +28,7 @@ export class BookingService {
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
 
-  readonly isDoctor = this.auth.hasRole('DOCTOR');
+  readonly ownDataOnly = this.auth.restrictedToOwnData();
   readonly today = toIso(new Date());
 
   private readonly _patientSearch = signal('');
@@ -59,18 +59,19 @@ export class BookingService {
   private readonly _specialtyId = signal<number | null>(null);
   readonly specialtyId = this._specialtyId.asReadonly();
   private readonly _selectedDoctor = linkedSignal<DoctorOption | null>(() =>
-    this.isDoctor
+    this.ownDataOnly
       ? { id: this.auth.userId()!, name: this.auth.displayName(), specialtyName: null }
       : null,
   );
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
   private readonly selectedDoctorId = computed(() => this.selectedDoctor()?.id);
   private readonly specialtiesResource = rxResource({
-    params: () => (this.isDoctor ? undefined : true),
+    params: () => (this.ownDataOnly ? undefined : true),
     stream: () => this.catalogsApi.specialties(),
   });
   private readonly doctorsResource = rxResource({
-    params: () => (this.isDoctor ? undefined : { specialtyId: this._specialtyId() ?? undefined }),
+    params: () =>
+      this.ownDataOnly ? undefined : { specialtyId: this._specialtyId() ?? undefined },
     stream: ({ params }) =>
       this.staffApi
         .doctors({ specialtyId: params.specialtyId, isActive: true, size: 100 })

@@ -29,6 +29,11 @@ export interface StaffFormData {
   staff?: Staff;
 }
 
+function initialRole(staff: Staff | undefined): Role {
+  if (!staff) return 'DOCTOR';
+  return staff.alsoDoctor ? 'DOCTOR' : staff.role;
+}
+
 @Component({
   selector: 'app-staff-form-dialog',
   imports: [
@@ -60,7 +65,7 @@ export class StaffFormDialogComponent {
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    role: [this.staff?.role ?? ('DOCTOR' as Role)],
+    role: [initialRole(this.staff)],
     name: [this.staff?.name ?? '', notBlank],
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],

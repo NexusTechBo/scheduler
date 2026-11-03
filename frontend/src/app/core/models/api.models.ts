@@ -42,6 +42,7 @@ export interface LoginResponse {
 export interface TokenPayload {
   sub: string;
   role: Role;
+  roles?: Role[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
@@ -175,6 +176,7 @@ export interface Staff {
   email: string;
   phoneNumber: string | null;
   active: boolean;
+  alsoDoctor: boolean;
   role: Role;
   specialtyName: string | null;
 }
@@ -196,6 +198,11 @@ export interface StaffUpdateRequest {
   phoneNumber?: string | null;
   password?: string | null;
   role: Role;
+  specialtyId: number | null;
+}
+
+export interface DoctorModeRequest {
+  enabled: boolean;
   specialtyId: number | null;
 }
 
@@ -326,4 +333,5 @@ export interface GuestAppointmentResponse {
 export interface WhatsappSessionStatusResponse {
   id: string;
   status: WhatsappSessionStatus;
+  clinicPhoneNumber: string | null;
 }

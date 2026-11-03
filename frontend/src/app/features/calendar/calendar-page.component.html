@@ -1,9 +1,18 @@
 <app-page-header [title]="calendar.monthLabel()">
-  <app-calendar-nav
-    (previous)="calendar.shiftMonth(-1)"
-    (next)="calendar.shiftMonth(1)"
-    (today)="calendar.goToday()"
-  />
+  <div class="flex flex-wrap items-center gap-3">
+    @if (calendar.canFilterMine()) {
+      <app-segmented-tabs
+        [items]="scopeTabs"
+        [selectedId]="calendar.scope()"
+        (select)="setScope($event)"
+      />
+    }
+    <app-calendar-nav
+      (previous)="calendar.shiftMonth(-1)"
+      (next)="calendar.shiftMonth(1)"
+      (today)="calendar.goToday()"
+    />
+  </div>
 </app-page-header>
 
 <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto xl:flex-row xl:overflow-visible">

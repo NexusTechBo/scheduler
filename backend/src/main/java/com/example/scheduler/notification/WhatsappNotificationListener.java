@@ -25,7 +25,7 @@ public class WhatsappNotificationListener {
         };
         if (message == null) return;
         whatsappExchangeService.sendMessage(
-                event.clinicPhoneNumber(),
+                event.clinicSlug(),
                 event.patientPhoneNumber(),
                 message,
                 "appointment=" + event.appointmentId() + " status=" + event.status());
