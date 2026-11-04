@@ -1,3 +1,4 @@
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -10,11 +11,14 @@ import {
   distinctUntilChanged,
   exhaustMap,
   finalize,
+  from,
   ignoreElements,
+  map,
   repeat,
   switchMap,
   takeWhile,
   tap,
+  throwError,
   timer,
 } from 'rxjs';
 import { WhatsappApi } from '../../../../core/api/whatsapp.api';
@@ -120,7 +124,7 @@ export class WhatsappQrService {
 
   private refreshQr(): Observable<never> {
     return concat(
-      defer(() => this.api.qr()).pipe(
+      defer(() => this.fetchQr()).pipe(
         tap((qr) => this.setQr(qr)),
         repeat({ count: QR_MAX_CODES, delay: QR_REFRESH_MS }),
       ),
@@ -128,6 +132,13 @@ export class WhatsappQrService {
     ).pipe(
       ignoreElements(),
       catchError((error) => this.fail(error, 'No se pudo generar el código QR')),
+    );
+  }
+
+  private fetchQr(): Observable<Blob | null> {
+    return this.api.qr().pipe(
+      map((response) => (response.status === HttpStatusCode.NoContent ? null : response.body)),
+      catchError(withJsonErrorBody),
     );
   }
 
@@ -149,4 +160,29 @@ export class WhatsappQrService {
     this.objectUrl = qr ? URL.createObjectURL(qr) : null;
     this.qrUrl.set(this.objectUrl ? this.sanitizer.bypassSecurityTrustUrl(this.objectUrl) : null);
   }
+}
+
+function withJsonErrorBody(error: unknown): Observable<never> {
+  if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
+    return throwError(() => error);
+  }
+  return from(error.error.text()).pipe(
+    switchMap((text) => {
+      let body: unknown = null;
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = null;
+      }
+      return throwError(
+        () =>
+          new HttpErrorResponse({
+            error: body,
+            headers: error.headers,
+            status: error.status,
+            url: error.url ?? undefined,
+          }),
+      );
+    }),
+  );
 }
