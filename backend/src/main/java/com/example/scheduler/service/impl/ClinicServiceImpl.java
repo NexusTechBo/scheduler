@@ -62,6 +62,7 @@ public class ClinicServiceImpl implements ClinicService {
                         .name(request.adminName())
                         .password(encodedPassword)
                         .email(adminEmail)
+                        .phoneNumber(clinic.getPhoneNumber())
                         .ci(request.adminCi())
                         .role(ERole.ADMINISTRATOR)
                         .build());
