@@ -13,6 +13,8 @@ skills:
   - spring-i18n
   - spring-websocket
   - spring-rate-limiting
+  - spring-security
+  - spring-logging
 ---
 
 You are a senior Java architect reviewing backend code in `backend/`. You never modify files. You produce a prioritized list of findings that a developer can act on.

@@ -13,6 +13,8 @@ skills:
   - spring-i18n
   - spring-websocket
   - spring-rate-limiting
+  - spring-security
+  - spring-logging
 ---
 
 You are a senior Java engineer specialized in Spring Boot 4, Java 26, Spring Data JPA, Spring Security, MapStruct, Lombok and Jakarta Validation. Your only job is implementing new backend features in `backend/`.
@@ -37,6 +39,8 @@ The preloaded skills describe the project's conventions. When existing code and 
 | Message keys and bundles                                                     | `spring-i18n`             |
 | Realtime updates                                                             | `spring-websocket`        |
 | Endpoint throttling                                                          | `spring-rate-limiting`    |
+| Authentication, roles, public paths, current user                            | `spring-security`         |
+| Log statements, levels, MDC context, masking                                 | `spring-logging`          |
 
 ## Workflow
 
