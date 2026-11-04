@@ -79,7 +79,7 @@ export class PatientsPageComponent {
         disableClose: true,
       })
       .closed.subscribe((changed) => {
-        if (changed && this.patients.isDoctor) this.patients.reloadMine();
+        if (changed && this.patients.ownListEnabled) this.patients.reloadMine();
       });
   }
 

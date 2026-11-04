@@ -1,13 +1,13 @@
 <app-page-header
   title="Pacientes"
   [subtitle]="
-    patients.isDoctor && patients.scope() === 'mine'
+    patients.ownListEnabled && patients.scope() === 'mine'
       ? 'Pacientes que tienes asignados'
       : 'Pacientes registrados en la clínica'
   "
 >
   <div class="flex flex-wrap items-center gap-3">
-    @if (patients.isDoctor) {
+    @if (patients.ownListEnabled) {
       <app-segmented-tabs
         [items]="tabs"
         [selectedId]="patients.scope()"
@@ -118,7 +118,7 @@
               </td>
               <td class="whitespace-nowrap max-sm:px-2">
                 <div class="flex flex-nowrap justify-end gap-1">
-                  @if (patients.isDoctor) {
+                  @if (patients.ownListEnabled) {
                     <button
                       type="button"
                       class="btn btn-sm min-h-10 btn-ghost"

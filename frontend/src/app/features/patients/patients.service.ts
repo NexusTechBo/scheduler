@@ -6,6 +6,7 @@ import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
 import { Patient } from '../../core/models/api.models';
+import { PATIENT_ASSIGNMENT_ENABLED } from '../../core/utils/feature-flags.util';
 import { ACTION_LABEL, LOAD_ERROR } from '../../core/utils/messages.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -22,10 +23,12 @@ export class PatientsService {
   private readonly auth = inject(AuthService);
   private readonly userId = this.auth.userId()!;
 
-  readonly isDoctor = this.auth.hasRole('DOCTOR');
-  readonly canManageDoctors = !this.auth.restrictedToOwnData();
+  readonly ownListEnabled = PATIENT_ASSIGNMENT_ENABLED && this.auth.hasRole('DOCTOR');
+  readonly canManageDoctors = PATIENT_ASSIGNMENT_ENABLED && !this.auth.restrictedToOwnData();
 
-  private readonly _scope = signal<PatientScope>(this.auth.restrictedToOwnData() ? 'mine' : 'all');
+  private readonly _scope = signal<PatientScope>(
+    PATIENT_ASSIGNMENT_ENABLED && this.auth.restrictedToOwnData() ? 'mine' : 'all',
+  );
   private readonly _search = signal('');
   private readonly _showInactive = signal(false);
   private readonly page = signal(0);
@@ -55,7 +58,7 @@ export class PatientsService {
       this.patientsApi.list({ ...params, size: PATIENTS_PAGE_SIZE, sort: 'id' }),
   });
   private readonly mineResource = rxResource({
-    params: () => (this.isDoctor ? this.userId : undefined),
+    params: () => (this.ownListEnabled ? this.userId : undefined),
     stream: ({ params }) => this.staffApi.patientsOf(params),
   });
 
