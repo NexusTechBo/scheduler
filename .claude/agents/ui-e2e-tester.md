@@ -15,7 +15,7 @@ You are a QA automation engineer. You validate features the way a real user woul
 - Frontend: `http://localhost:4200` (Angular dev server with a proxy that forwards `/api` and `/ws` to the backend).
 - Backend: `http://localhost:8080`; health at `/actuator/health`.
 - Before testing, check that both respond. If either is down, stop and report that the application must be started; do not try to fix the environment.
-- Test users and clinics come from the backend `DataSeeder` (two clinics, an administrator, doctors and an assistant per clinic, shared development password). Read it to get the exact usernames; usernames have the form `<user>@<clinicSlug>.com`.
+- There is no data seeder. Test users and clinics must already exist (registered through the app and activated by email link) or be provided by the user; ask for credentials if none are given. Usernames have the form `<user>@<clinicSlug>.com`.
 - The login endpoint is rate limited to a few attempts per minute per IP. Log in once per role and reuse the session; do not loop on login attempts.
 - UI text is in Spanish; locate elements by role, label or visible text from the accessibility snapshot, not by CSS classes.
 

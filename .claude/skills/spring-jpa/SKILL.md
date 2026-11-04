@@ -15,7 +15,7 @@ PostgreSQL with Hibernate, schema-based multi-tenancy, `open-in-view` disabled a
 - Enums stored with `EnumType.STRING`.
 - Defaults for builder-created entities use `@Builder.Default`.
 - Entities that can be edited concurrently carry a `@Version` column for optimistic locking.
-- Creation timestamps are set in a `@PrePersist` callback and are not updatable.
+- Creation timestamps are not updatable and are set from the injected `Clock` (never `LocalDateTime.now()` without it), either in the service or in a callback that receives the clock value.
 - Column constraints (nullable, length, unique) mirror the migration; the migration is the source of truth.
 
 ## Repositories

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { TimeSlot } from '../../../../core/models/api.models';
-import { EmptyStateComponent } from '../../empty-state/empty-state.component';
-import { LoadErrorComponent } from '../../load-error/load-error.component';
-import { SkeletonComponent } from '../../skeleton/skeleton.component';
+import { TimeSlot } from '../../../core/models/api.models';
+import { EmptyStateComponent } from '../../ui/empty-state/empty-state.component';
+import { LoadErrorComponent } from '../../ui/load-error/load-error.component';
+import { SkeletonComponent } from '../../ui/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-slot-grid',

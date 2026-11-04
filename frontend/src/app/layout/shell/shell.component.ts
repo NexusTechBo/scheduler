@@ -3,8 +3,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -43,8 +45,14 @@ export class ShellComponent {
   protected readonly clinicName = computed(() => this.auth.clinic()?.name ?? '');
 
   constructor() {
-    inject(Router)
-      .events.pipe(
+    const router = inject(Router);
+
+    effect(() => {
+      if (!this.auth.session()) untracked(() => router.navigate(['/login']).finally()).finally();
+    });
+
+    router.events
+      .pipe(
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )

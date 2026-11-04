@@ -12,13 +12,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
 import { datePart, formatLongDate } from '../../core/utils/calendar.util';
-import { initials } from '../../core/utils/labels.util';
+import { DoctorPickerComponent } from '../../shared/components/doctor-picker/doctor-picker.component';
+import { SlotGridComponent } from '../../shared/components/slot-grid/slot-grid.component';
+import { SpecialtyFilterComponent } from '../../shared/components/specialty-filter/specialty-filter.component';
 import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { DatePickerComponent } from '../../shared/ui/forms/date-picker/date-picker.component';
 import { DateStripComponent } from '../../shared/ui/forms/date-strip/date-strip.component';
-import { SlotGridComponent } from '../../shared/ui/forms/slot-grid/slot-grid.component';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
@@ -37,8 +38,10 @@ import { GuestBookingService } from './guest-booking.service';
     GlassBackgroundComponent,
     GuestPatientFormComponent,
     LoadErrorComponent,
-    SkeletonComponent,
     SlotGridComponent,
+    SpecialtyFilterComponent,
+    DoctorPickerComponent,
+    SkeletonComponent,
     SpecialtyLabelPipe,
     TimeRangePipe,
     UiIconComponent,
@@ -52,7 +55,6 @@ export class GuestBookingComponent implements OnInit {
   protected readonly session = inject(GuestSessionService);
   protected readonly booking = inject(GuestBookingService);
 
-  protected readonly initials = initials;
   protected readonly sessionRetryLabel = computed(() =>
     this.session.coolingDown() ? `Reintenta en ${this.session.retryInLabel()}` : 'Reintentar',
   );

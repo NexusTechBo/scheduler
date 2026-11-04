@@ -178,6 +178,7 @@ export interface Staff {
   active: boolean;
   alsoDoctor: boolean;
   role: Role;
+  specialtyId: number | null;
   specialtyName: string | null;
 }
 

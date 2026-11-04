@@ -30,7 +30,6 @@ The backend is a layered Spring MVC application under the base package `com.exam
 | `exchange`, `exchange.contract`                               | Declarative HTTP clients to external services and their contract records.                                    |
 | `ratelimiting`                                                | Rate limit configuration records and enums.                                                                  |
 | `tool`                                                        | Spring AI tools exposed to the chat model.                                                                   |
-| `seeder`                                                      | Development data seeding.                                                                                    |
 | `util`                                                        | Small stateless helpers and constant holders (`LogKeys`, `TokenUtils`).                                      |
 
 ## Request flow

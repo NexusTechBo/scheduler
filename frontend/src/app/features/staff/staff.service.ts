@@ -18,6 +18,10 @@ import { StaffRoleFilter } from './staff.model';
 
 const PAGE_SIZE = 12;
 
+function isDoctor(staff: Staff): boolean {
+  return staff.role === 'DOCTOR' || staff.alsoDoctor;
+}
+
 @Injectable()
 export class StaffService {
   private readonly staffApi = inject(StaffApi);
@@ -70,10 +74,6 @@ export class StaffService {
     this.filters.update((current) => ({ ...current, page }));
   }
 
-  specialtyIdOf(name: string | null | undefined): number | null {
-    return this.specialties().find((s) => s.name === name)?.id ?? null;
-  }
-
   create(request: StaffRegisterRequest): Observable<Staff> {
     return this.afterSave(this.staffApi.create(request), 'Miembro del personal creado');
   }
@@ -87,7 +87,9 @@ export class StaffService {
       .confirmThen(
         {
           title: 'Desactivar cuenta',
-          message: `${staff.name} dejará de aparecer para nuevas reservas. Sus citas existentes se mantienen.`,
+          message: isDoctor(staff)
+            ? `${staff.name} dejará de aparecer para nuevas reservas. Sus citas futuras se cancelarán y se notificará a los pacientes por WhatsApp.`
+            : `¿Desactivar la cuenta de ${staff.name}?`,
           confirmLabel: ACTION_LABEL.deactivate,
           danger: true,
         },

@@ -24,7 +24,6 @@ Each clinic is a tenant with its own PostgreSQL schema named `clinic_<slug>`. Gl
 - WebSocket: `JwtChannelInterceptor` binds the tenant only for the duration of the CONNECT validation and clears it immediately; the clinic id is then kept in the STOMP session attributes, not in the thread.
 - Login: `AuthServiceImpl` finds the clinic in `public` by the slug embedded in the username, then switches to that clinic's tenant to look up the user, and restores the previous tenant afterwards.
 - Clinic registration: `ClinicServiceImpl` saves the clinic in `public`, provisions the schema, switches to the new tenant to create the administrator in a separate transaction, and on failure clears the tenant and removes the clinic and its schema.
-- Seeder: sets and clears the tenant around each clinic's data.
 
 ## Rules
 

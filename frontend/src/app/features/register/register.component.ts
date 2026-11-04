@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { BannerComponent } from '../../shared/ui/banner/banner.component';
+import { BannerComponent } from '../../shared/components/banner/banner.component';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { RegisterFormComponent } from './components/register-form/register-form.component';
 import { RegisterSuccessComponent } from './components/register-success/register-success.component';

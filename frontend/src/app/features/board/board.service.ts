@@ -5,6 +5,11 @@ import { AppointmentsApi } from '../../core/api/appointments.api';
 import { BoardSocket } from '../../core/api/board.socket';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
+import {
+  canCancelAppointment,
+  canConfirmAppointment,
+  hasAppointmentStarted,
+} from '../../core/utils/appointment.util';
 import { addDays, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
 import {
   APPOINTMENT_STATUSES,
@@ -39,12 +44,20 @@ export class BoardService {
   readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el tablero');
   readonly columns = computed<BoardColumn[]>(() => {
     const board = this.resource.hasValue() ? this.resource.value() : undefined;
-    return APPOINTMENT_STATUSES.map((status) => ({
-      id: status,
-      title: STATUS_PLURAL_LABEL[status],
-      accentClass: STATUS_STYLE[status].dot,
-      appointments: [...(board?.[status] ?? [])],
-    }));
+    return APPOINTMENT_STATUSES.map((status) => {
+      const appointments = [...(board?.[status] ?? [])];
+      const pastIds: Record<number, true> = {};
+      for (const appointment of appointments) {
+        if (hasAppointmentStarted(startOf(appointment))) pastIds[appointment.id] = true;
+      }
+      return {
+        id: status,
+        title: STATUS_PLURAL_LABEL[status],
+        accentClass: STATUS_STYLE[status].dot,
+        appointments,
+        pastIds,
+      };
+    });
   });
 
   private readonly socket = inject(BoardSocket);
@@ -68,12 +81,17 @@ export class BoardService {
   }
 
   move(appointment: AppointmentSummaryItem, target: AppointmentStatus): void {
-    const { id, clientName } = appointment;
-    const start = toLocalDateTime(appointment.appointmentDate, appointment.startTime);
+    const { id, clientName, status } = appointment;
+    const start = startOf(appointment);
     let action: Observable<unknown> | null = null;
-    if (target === 'CONFIRMED' && appointment.status === 'PENDING')
+    if (target === 'CONFIRMED' && status === 'PENDING') {
+      if (!canConfirmAppointment(status, start)) return this.rejectPast();
       action = this.actions.confirm(id, clientName, start);
-    if (target === 'CANCELLED') action = this.actions.cancel(id, clientName, start);
+    }
+    if (target === 'CANCELLED') {
+      if (!canCancelAppointment(status, start)) return this.rejectPast();
+      action = this.actions.cancel(id, clientName, start);
+    }
 
     if (!action) {
       this.notifications.error(
@@ -89,4 +107,12 @@ export class BoardService {
   private refreshAfterAction(): void {
     if (!this.socket.isConnected()) this.reload();
   }
+
+  private rejectPast(): void {
+    this.notifications.error('No se puede modificar una cita que ya pasó');
+  }
+}
+
+function startOf(appointment: AppointmentSummaryItem): string {
+  return toLocalDateTime(appointment.appointmentDate, appointment.startTime);
 }

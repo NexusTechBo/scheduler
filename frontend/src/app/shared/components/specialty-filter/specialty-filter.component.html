@@ -1,0 +1,26 @@
+<button
+  type="button"
+  class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
+  [class]="
+    selectedId() === null ? 'bg-primary text-white' : 'bg-white/60 text-gray-600 hover:bg-white'
+  "
+  [attr.aria-pressed]="selectedId() === null"
+  (click)="select.emit(null)"
+>
+  Todas
+</button>
+@for (specialty of specialties(); track specialty.id) {
+  <button
+    type="button"
+    class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
+    [class]="
+      selectedId() === specialty.id
+        ? 'bg-primary text-white'
+        : 'bg-white/60 text-gray-600 hover:bg-white'
+    "
+    [attr.aria-pressed]="selectedId() === specialty.id"
+    (click)="select.emit(specialty.id)"
+  >
+    {{ specialty.name }}
+  </button>
+}

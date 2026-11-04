@@ -3,7 +3,7 @@ import { LowerCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Availability, ScheduleException } from '../../core/models/api.models';
-import { formatLongDate } from '../../core/utils/calendar.util';
+import { LongDatePipe } from '../../shared/pipes/long-date.pipe';
 import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
@@ -20,6 +20,7 @@ import { ExceptionFormDialogComponent } from './components/exception-form-dialog
 @Component({
   selector: 'app-availability-page',
   imports: [
+    LongDatePipe,
     LowerCasePipe,
     TimeRangePipe,
     LoadErrorComponent,
@@ -43,8 +44,6 @@ export class AvailabilityPageComponent {
   private readonly focusAfterChange = focusAfterLoad(
     () => this.availability.isWeekLoading() || this.availability.isExceptionsLoading(),
   );
-
-  protected readonly formatLongDate = formatLongDate;
 
   protected removeAvailability(
     block: Availability,

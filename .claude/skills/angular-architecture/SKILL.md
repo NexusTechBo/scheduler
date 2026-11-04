@@ -9,27 +9,27 @@ A standalone-component Angular application (no NgModules) organized by feature, 
 
 ## Folder map (`src/app`)
 
-| Folder                         | Contents                                                                                                                                      | May import from             |
-|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|
-| `core/api`                     | One `*Api` class per backend resource (thin `HttpClient` wrappers returning observables) and realtime sockets (`*.socket.ts`).                | `core/models`, `core/utils` |
-| `core/auth`                    | Session service, guest session service, functional guards, role constants.                                                                    | `core`                      |
-| `core/catalogs`                | App-wide cached stores (`*Store`) for catalogs shared across features (specialties, doctors), scoped to the current clinic.                   | `core`                      |
-| `core/http`                    | Functional interceptors and API error helpers.                                                                                                | `core`                      |
-| `core/models`                  | Backend contract types in a single models file (requests, responses, filters, pagination, error shape).                                       | nothing                     |
-| `core/navigation`              | Routes constants, page titles, sidebar navigation definitions by role.                                                                        | `core`                      |
-| `core/utils`                   | Pure functions and constant maps (dates, labels, sorting, messages).                                                                          | `core/models`               |
-| `features/<feature>`           | One folder per page or flow: page component, feature service, feature model, and a `components` folder with the feature's private components. | `core`, `shared`            |
-| `shared/ui`                    | Generic, domain-agnostic UI building blocks (dialog frame, form fields, select, pickers, pagination, skeleton, empty state, badges, icons).   | nothing domain-specific     |
-| `shared/components`            | Reusable domain components used by two or more features (appointment detail dialog, patient form dialog, appointment list item).              | `core`, `shared/ui`         |
-| `shared/services`              | Cross-feature UI services (notifications, confirmation, appointment actions).                                                                 | `core`, `shared`            |
-| `shared/pipes`, `shared/utils` | Pure pipes and UI helpers (validation messages, overlay positions, focus management).                                                         | `core`                      |
-| `layout/shell`                 | Authenticated shell with sidebar and topbar, hosting child routes.                                                                            | `core`, `shared`            |
+| Folder                         | Contents                                                                                                                                          | May import from             |
+|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| `core/api`                     | One `*Api` class per backend resource (thin `HttpClient` wrappers returning observables) and realtime sockets (`*.socket.ts`).                    | `core/models`, `core/utils` |
+| `core/auth`                    | Session service, guest session service, functional guards, role constants.                                                                        | `core`                      |
+| `core/catalogs`                | App-wide cached stores (`*Store`) for catalogs shared across features (specialties, doctors), scoped to the current clinic.                       | `core`                      |
+| `core/http`                    | Functional interceptors and API error helpers.                                                                                                    | `core`                      |
+| `core/models`                  | Backend contract types in a single models file (requests, responses, filters, pagination, error shape).                                           | nothing                     |
+| `core/navigation`              | Routes constants, page titles, sidebar navigation definitions by role.                                                                            | `core`                      |
+| `core/utils`                   | Pure functions and constant maps (dates, labels, sorting, messages).                                                                              | `core/models`               |
+| `features/<feature>`           | One folder per page or flow: page component, feature service, feature model, and a `components` folder with the feature's private components.     | `core`, `shared`            |
+| `shared/ui`                    | Generic, domain-agnostic UI building blocks (dialog frame, form fields, select, pickers, pagination, skeleton, empty state, icons).               | nothing domain-specific     |
+| `shared/components`            | Reusable domain components used by two or more features (appointment detail dialog, patient form dialog, status badge, slot grid, doctor picker). | `core`, `shared/ui`         |
+| `shared/services`              | Cross-feature UI services (notifications, confirmation, appointment actions).                                                                     | `core`, `shared`            |
+| `shared/pipes`, `shared/utils` | Pure pipes and UI helpers (validation messages, overlay positions, focus management).                                                             | `core`                      |
+| `layout/shell`                 | Authenticated shell with sidebar and topbar, hosting child routes.                                                                                | `core`, `shared`            |
 
 Dependency direction is one way: features depend on shared and core; shared depends on core; core depends on nothing above it. A feature never imports from another feature; when two features need the same piece, promote it to `shared` (UI) or `core` (data).
 
 ## Data flow
 
-1. `core/api` classes call relative URLs; the URL interceptor prefixes the API base URL from the environment, and the auth interceptor adds the bearer token and `Accept-Language`, handles guest tokens and logs out on 401.
+1. `core/api` classes call relative URLs; the URL interceptor prefixes the API base URL from the environment, and the auth interceptor adds the bearer token (never to public paths), handles guest tokens, and expires the session when the token is expired or a request that carried it gets a 401. `AuthService` also schedules a logout at `expiresAt` and syncs sessions across tabs; the shell redirects to `/login` when the session becomes null. No `Accept-Language` is sent (the backend is fixed to Spanish).
 2. A feature service (`<feature>.service.ts`) is provided at the page component level (`providers` of the page), so its state lives and dies with the page. It owns filter signals, an `rxResource` keyed on those signals, derived `computed` signals for the template, and command methods that call the API and then reload or invalidate.
 3. App-wide catalogs use stores in `core/catalogs` provided in root, built on the clinic-scoped resource helper that loads lazily, caches per clinic and supports reload and invalidate. Feature services expose store signals instead of refetching catalogs.
 4. Components read signals from the feature service and call its methods; they do not call APIs directly.

@@ -1,6 +1,6 @@
 ---
 name: spring-i18n
-description: Internationalization of backend messages in the scheduler project (Spanish default, English supported). Use when adding error or validation messages, new message keys, parameterized or plural messages, or changing how the locale is resolved.
+description: Internationalization of backend messages in the scheduler project (responses fixed to Spanish; both bundles maintained). Use when adding error or validation messages, new message keys, parameterized or plural messages, or changing how the locale is resolved.
 ---
 
 # Spring i18n
@@ -11,13 +11,13 @@ All user-facing text produced by the backend (business errors, validation errors
 
 | Piece                                              | Role                                                                                                                                                                   |
 |----------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `config.LocaleConfig`                              | Accept-Language based locale resolver (supported Spanish and English, default Spanish), the `MessageSource` bean, and the validator factory wired to the same bundles. |
+| `config.LocaleConfig`                              | Fixed Spanish locale resolver (`FixedLocaleResolver`, `Accept-Language` is ignored), the `MessageSource` bean, and the validator factory wired to the same bundles.    |
 | `messages.properties`                              | English texts (base bundle).                                                                                                                                           |
 | `messages_es.properties`                           | Spanish texts.                                                                                                                                                         |
 | `exception.MessageKeys`                            | Constant holder with every key used from Java code.                                                                                                                    |
 | `GlobalExceptionHandler` and `ErrorResponseWriter` | Resolve keys plus arguments into the final message for the current locale.                                                                                             |
 
-The frontend sends `Accept-Language` on every request through its HTTP interceptor.
+Responses are always in Spanish: the frontend does not send `Accept-Language` and the resolver ignores it. The English bundle is still maintained so a language switch can be reintroduced by changing only the resolver.
 
 ## Rules
 
@@ -37,4 +37,4 @@ The frontend sends `Accept-Language` on every request through its HTTP intercept
 1. Add the constant to `MessageKeys` in the right feature group (if used from Java).
 2. Add the English text to `messages.properties` and the Spanish text to `messages_es.properties`, keeping the same ordering and grouping in both files.
 3. Throw the exception or reference the key from the annotation.
-4. Test: a controller slice test with `Accept-Language` set to each supported language can assert the resolved message.
+4. Test: a controller slice test can assert the resolved Spanish message.

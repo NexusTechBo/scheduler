@@ -1,0 +1,35 @@
+<div [class]="gridClass()">
+  @if (loading()) {
+    <app-skeleton [rows]="3" heightClass="h-17" />
+  } @else if (errorMessage(); as error) {
+    <app-load-error class="col-span-full" [message]="error" (retry)="retry.emit()" />
+  } @else {
+    @for (doctor of doctors(); track doctor.id) {
+      <button
+        type="button"
+        class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 px-3.5 py-3 text-left transition-all"
+        [class]="
+          selectedId() === doctor.id
+            ? 'border-primary bg-white shadow-md'
+            : 'border-transparent bg-white/50 hover:bg-white/80'
+        "
+        [attr.aria-pressed]="selectedId() === doctor.id"
+        (click)="select.emit(doctor)"
+      >
+        <span
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary"
+          aria-hidden="true"
+          >{{ doctor.name | initials }}</span
+        >
+        <span class="min-w-0">
+          <span class="line-clamp-2 text-sm font-bold text-gray-900">{{ doctor.name }}</span>
+          <span class="block truncate text-xs font-medium text-gray-500">{{
+            doctor.specialtyName | specialtyLabel
+          }}</span>
+        </span>
+      </button>
+    } @empty {
+      <p class="col-span-full text-sm text-gray-500">{{ emptyMessage() }}</p>
+    }
+  }
+</div>

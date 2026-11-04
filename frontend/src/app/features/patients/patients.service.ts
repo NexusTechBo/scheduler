@@ -9,7 +9,7 @@ import { Patient } from '../../core/models/api.models';
 import { ACTION_LABEL, LOAD_ERROR } from '../../core/utils/messages.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { PatientScope } from './patients.model';
+import { PatientRow, PatientScope } from './patients.model';
 
 const PATIENTS_PAGE_SIZE = 12;
 
@@ -23,6 +23,7 @@ export class PatientsService {
   private readonly userId = this.auth.userId()!;
 
   readonly isDoctor = this.auth.hasRole('DOCTOR');
+  readonly canManageDoctors = !this.auth.restrictedToOwnData();
 
   private readonly _scope = signal<PatientScope>(this.auth.restrictedToOwnData() ? 'mine' : 'all');
   private readonly _search = signal('');
@@ -100,6 +101,10 @@ export class PatientsService {
         ),
       ),
   );
+  readonly rows = computed<PatientRow[]>(() => {
+    const mine = this.mineIds();
+    return this.patients().map((patient) => ({ patient, mine: mine.has(patient.id) }));
+  });
   private readonly activeResource = computed(() =>
     this.scope() === 'all' ? this.allResource : this.mineResource,
   );
@@ -111,6 +116,10 @@ export class PatientsService {
 
   reload(): void {
     this.allResource.reload();
+    this.mineResource.reload();
+  }
+
+  reloadMine(): void {
     this.mineResource.reload();
   }
 
@@ -132,16 +141,12 @@ export class PatientsService {
     this.page.set(page);
   }
 
-  isMine(patient: Patient): boolean {
-    return this.mineIds().has(patient.id);
-  }
-
   deactivate(patient: Patient): Observable<unknown> {
     return this.confirm
       .confirmThen(
         {
           title: 'Desactivar paciente',
-          message: `${patient.name} ya no podrá agendar nuevas citas.`,
+          message: `${patient.name} ya no podrá agendar nuevas citas. Sus citas futuras se cancelarán y se le notificará por WhatsApp.`,
           confirmLabel: ACTION_LABEL.deactivate,
           danger: true,
         },
@@ -169,7 +174,7 @@ export class PatientsService {
 
   toggleMine(patient: Patient): Observable<unknown> {
     const request = { patientId: patient.id, doctorId: this.userId };
-    const mine = this.isMine(patient);
+    const mine = this.mineIds().has(patient.id);
     return (
       mine ? this.staffApi.removePatient(request) : this.staffApi.assignPatient(request)
     ).pipe(

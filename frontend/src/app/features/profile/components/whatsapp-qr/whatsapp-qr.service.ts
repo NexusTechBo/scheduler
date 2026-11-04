@@ -1,7 +1,6 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import {
   EMPTY,
   Observable,
@@ -47,17 +46,21 @@ const WHATSAPP_STATUS_LABEL: Record<WhatsappSessionStatus, string> = {
 @Injectable()
 export class WhatsappQrService {
   private readonly api = inject(WhatsappApi);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly notifications = inject(NotificationService);
 
   private readonly run = signal(0);
-  private objectUrl: string | null = null;
 
-  readonly session = signal<WhatsappSessionStatusResponse | null>(null);
-  readonly qrUrl = signal<SafeUrl | null>(null);
-  readonly error = signal<string | null>(null);
-  readonly expired = signal(false);
-  readonly loggingOut = signal(false);
+  private readonly _session = signal<WhatsappSessionStatusResponse | null>(null);
+  private readonly _qrUrl = signal<string | null>(null);
+  private readonly _error = signal<string | null>(null);
+  private readonly _expired = signal(false);
+  private readonly _loggingOut = signal(false);
+
+  readonly session = this._session.asReadonly();
+  readonly qrUrl = this._qrUrl.asReadonly();
+  readonly error = this._error.asReadonly();
+  readonly expired = this._expired.asReadonly();
+  readonly loggingOut = this._loggingOut.asReadonly();
 
   readonly status = computed(() => this.session()?.status ?? null);
   readonly statusLabel = computed(() => {
@@ -98,17 +101,17 @@ export class WhatsappQrService {
   }
 
   restart(): void {
-    this.error.set(null);
-    this.expired.set(false);
-    this.session.set(null);
+    this._error.set(null);
+    this._expired.set(false);
+    this._session.set(null);
     this.run.update((n) => n + 1);
   }
 
   logout(): Observable<void> {
-    this.loggingOut.set(true);
+    this._loggingOut.set(true);
     return this.api.logout().pipe(
       tap(() => this.restart()),
-      finalize(() => this.loggingOut.set(false)),
+      finalize(() => this._loggingOut.set(false)),
     );
   }
 
@@ -128,7 +131,7 @@ export class WhatsappQrService {
         tap((qr) => this.setQr(qr)),
         repeat({ count: QR_MAX_CODES, delay: QR_REFRESH_MS }),
       ),
-      timer(QR_REFRESH_MS).pipe(tap(() => this.expired.set(true))),
+      timer(QR_REFRESH_MS).pipe(tap(() => this._expired.set(true))),
     ).pipe(
       ignoreElements(),
       catchError((error) => this.fail(error, 'No se pudo generar el código QR')),
@@ -144,21 +147,21 @@ export class WhatsappQrService {
 
   private onStatus(session: WhatsappSessionStatusResponse): void {
     const previous = this.status();
-    this.session.set(session);
+    this._session.set(session);
     if (session.status === 'READY' && previous && previous !== 'READY') {
       this.notifications.success('WhatsApp vinculado correctamente');
     }
   }
 
   private fail(error: unknown, fallback: string): Observable<never> {
-    this.error.set(apiErrorMessage(error, fallback));
+    this._error.set(apiErrorMessage(error, fallback));
     return EMPTY;
   }
 
   private setQr(qr: Blob | null): void {
-    if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
-    this.objectUrl = qr ? URL.createObjectURL(qr) : null;
-    this.qrUrl.set(this.objectUrl ? this.sanitizer.bypassSecurityTrustUrl(this.objectUrl) : null);
+    const previous = this._qrUrl();
+    if (previous) URL.revokeObjectURL(previous);
+    this._qrUrl.set(qr ? URL.createObjectURL(qr) : null);
   }
 }
 

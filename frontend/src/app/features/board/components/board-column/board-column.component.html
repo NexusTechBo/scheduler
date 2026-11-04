@@ -20,11 +20,14 @@
     <app-skeleton [rows]="3" heightClass="h-24" />
   } @else {
     @for (appointment of column().appointments; track appointment.id) {
+      @let past = !!column().pastIds[appointment.id];
       <app-board-card
         cdkDrag
         [cdkDragData]="appointment"
+        [cdkDragDisabled]="past"
         [appointment]="appointment"
         [showDate]="showDates()"
+        [past]="past"
         (click)="open.emit(appointment)"
       />
     } @empty {

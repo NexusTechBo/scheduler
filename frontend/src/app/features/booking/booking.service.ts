@@ -60,7 +60,12 @@ export class BookingService {
   readonly specialtyId = this._specialtyId.asReadonly();
   private readonly _selectedDoctor = linkedSignal<DoctorOption | null>(() =>
     this.ownDataOnly
-      ? { id: this.auth.userId()!, name: this.auth.displayName(), specialtyName: null }
+      ? {
+          id: this.auth.userId()!,
+          name: this.auth.displayName(),
+          specialtyId: null,
+          specialtyName: null,
+        }
       : null,
   );
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
@@ -69,9 +74,7 @@ export class BookingService {
   readonly doctors = computed(() => {
     const all = this.doctorsStore.doctors();
     const id = this._specialtyId();
-    if (id === null) return all;
-    const name = this.specialties().find((s) => s.id === id)?.name;
-    return name ? all.filter((doctor) => doctor.specialtyName === name) : [];
+    return id === null ? all : all.filter((doctor) => doctor.specialtyId === id);
   });
   readonly doctorsLoading = this.doctorsStore.isLoading;
   readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
@@ -136,16 +139,17 @@ export class BookingService {
   }
 
   selectSpecialty(id: number | null): void {
+    if (this.ownDataOnly) return;
     this._specialtyId.set(id);
-    if (id === null) return;
-    const name = this.specialties().find((s) => s.id === id)?.name;
-    if (this.selectedDoctor()?.specialtyName !== name) this._selectedDoctor.set(null);
+    if (id !== null && this.selectedDoctor()?.specialtyId !== id) this._selectedDoctor.set(null);
   }
 
   selectDoctor(doctor: Staff): void {
+    if (this.ownDataOnly) return;
     this._selectedDoctor.set({
       id: doctor.id,
       name: doctor.name,
+      specialtyId: doctor.specialtyId,
       specialtyName: doctor.specialtyName,
     });
   }

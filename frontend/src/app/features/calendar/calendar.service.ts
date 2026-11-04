@@ -16,7 +16,7 @@ import {
   toIso,
 } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
-import { CalendarScope } from './calendar.model';
+import { CalendarCell, CalendarScope } from './calendar.model';
 
 @Injectable()
 export class CalendarService {
@@ -44,7 +44,7 @@ export class CalendarService {
   private readonly viewDate = computed(() => parseIso(`${this.monthKey()}-01`));
 
   readonly monthLabel = computed(() => formatMonthLabel(this.viewDate()));
-  readonly weeks = computed(() =>
+  private readonly weeks = computed(() =>
     buildMonthMatrix(this.viewDate().getFullYear(), this.viewDate().getMonth()),
   );
 
@@ -71,14 +71,19 @@ export class CalendarService {
     return result;
   });
 
-  readonly selectedDayLabel = computed(() => formatDayLabel(this.selectedDate()));
-  readonly selectedDayAppointments = computed(() => this.appointmentsFor(this.selectedDate()));
-  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today);
+  readonly cells = computed<CalendarCell[][]>(() => {
+    const loaded = this.resource.hasValue();
+    const byDay = this.byDay();
+    return this.weeks().map((week) =>
+      week.map((day) => ({ day, appointments: loaded ? (byDay.get(day.iso) ?? []) : null })),
+    );
+  });
 
-  appointmentsFor(iso: string): AppointmentSummaryItem[] | null {
-    if (!this.resource.hasValue()) return null;
-    return this.byDay().get(iso) ?? [];
-  }
+  readonly selectedDayLabel = computed(() => formatDayLabel(this.selectedDate()));
+  readonly selectedDayAppointments = computed(() =>
+    this.resource.hasValue() ? (this.byDay().get(this.selectedDate()) ?? []) : null,
+  );
+  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today);
 
   reload(): void {
     this.resource.reload();

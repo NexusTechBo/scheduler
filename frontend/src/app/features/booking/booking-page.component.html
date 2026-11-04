@@ -21,7 +21,7 @@
           <div class="flex min-w-0 items-center gap-3">
             <span
               class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/15 text-sm font-bold text-secondary"
-              >{{ initials(patient.name) }}</span
+              >{{ patient.name | initials }}</span
             >
             <div class="min-w-0">
               <p class="truncate font-bold text-gray-900">{{ patient.name }}</p>
@@ -71,7 +71,7 @@
             >
               <span
                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-xs font-bold text-secondary"
-                >{{ initials(patient.name) }}</span
+                >{{ patient.name | initials }}</span
               >
               <span class="min-w-0">
                 <span class="block truncate text-sm font-bold text-gray-900">{{
@@ -111,83 +111,27 @@
         @if (booking.specialtiesErrorMessage(); as error) {
           <app-load-error class="mb-4" [message]="error" (retry)="booking.reloadSpecialties()" />
         }
-        <div class="mb-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
-            [class]="
-              booking.specialtyId() === null
-                ? 'bg-primary text-white'
-                : 'bg-white/60 text-gray-600 hover:bg-white'
-            "
-            [attr.aria-pressed]="booking.specialtyId() === null"
-            (click)="booking.selectSpecialty(null)"
-          >
-            Todas
-          </button>
-          @for (specialty of booking.specialties(); track specialty.id) {
-            <button
-              type="button"
-              class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
-              [class]="
-                booking.specialtyId() === specialty.id
-                  ? 'bg-primary text-white'
-                  : 'bg-white/60 text-gray-600 hover:bg-white'
-              "
-              [attr.aria-pressed]="booking.specialtyId() === specialty.id"
-              (click)="booking.selectSpecialty(specialty.id)"
-            >
-              {{ specialty.name }}
-            </button>
-          }
-        </div>
+        <app-specialty-filter
+          class="mb-4"
+          [specialties]="booking.specialties()"
+          [selectedId]="booking.specialtyId()"
+          (select)="booking.selectSpecialty($event)"
+        />
 
-        <div class="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
-          @if (booking.doctorsLoading()) {
-            <app-skeleton [rows]="3" heightClass="h-17" />
-          } @else if (booking.doctorsErrorMessage()) {
-            <app-load-error
-              class="col-span-full"
-              [message]="booking.doctorsErrorMessage()!"
-              (retry)="booking.reloadDoctors()"
-            />
-          } @else {
-            @for (doctor of booking.doctors(); track doctor.id) {
-              <button
-                type="button"
-                class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 px-3.5 py-3 text-left transition-all"
-                [class]="
-                  booking.selectedDoctor()?.id === doctor.id
-                    ? 'border-primary bg-white shadow-md'
-                    : 'border-transparent bg-white/50 hover:bg-white/80'
-                "
-                [attr.aria-pressed]="booking.selectedDoctor()?.id === doctor.id"
-                (click)="booking.selectDoctor(doctor)"
-              >
-                <span
-                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary"
-                  >{{ initials(doctor.name) }}</span
-                >
-                <span class="min-w-0">
-                  <span class="line-clamp-2 text-sm font-bold text-gray-900">{{
-                    doctor.name
-                  }}</span>
-                  <span class="block truncate text-xs font-medium text-gray-500">{{
-                    doctor.specialtyName | specialtyLabel
-                  }}</span>
-                </span>
-              </button>
-            } @empty {
-              <p class="col-span-full text-sm text-gray-500">
-                {{
-                  booking.specialtyId() === null
-                    ? 'No hay doctores activos.'
-                    : 'No hay doctores activos para esta especialidad.'
-                }}
-              </p>
-            }
-          }
-        </div>
+        <app-doctor-picker
+          wide
+          [doctors]="booking.doctors()"
+          [selectedId]="booking.selectedDoctor()?.id"
+          [loading]="booking.doctorsLoading()"
+          [errorMessage]="booking.doctorsErrorMessage()"
+          [emptyMessage]="
+            booking.specialtyId() === null
+              ? 'No hay doctores activos.'
+              : 'No hay doctores activos para esta especialidad.'
+          "
+          (select)="booking.selectDoctor($event)"
+          (retry)="booking.reloadDoctors()"
+        />
       </section>
     }
 

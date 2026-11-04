@@ -27,7 +27,6 @@
 <div class="grid grid-cols-7 gap-y-1" (mouseleave)="hover.emit(null)">
   @for (week of weeks(); track $index) {
     @for (day of week; track day.iso) {
-      @let state = dayState(day);
       <button
         type="button"
         (click)="pick.emit(day.iso)"
@@ -35,25 +34,25 @@
         [attr.data-iso]="day.iso"
         [attr.tabindex]="day.iso === focusIso() ? 0 : -1"
         (mouseenter)="hover.emit(day.iso)"
-        [disabled]="state.disabled"
-        [attr.aria-label]="formatLongDate(day.iso)"
-        [attr.aria-pressed]="state.edge"
-        [attr.aria-current]="state.isToday ? 'date' : null"
+        [disabled]="day.disabled"
+        [attr.aria-label]="day.label"
+        [attr.aria-pressed]="day.edge"
+        [attr.aria-current]="day.isToday ? 'date' : null"
         class="mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-semibold transition-colors {{
-          state.disabled
+          day.disabled
             ? 'cursor-not-allowed text-gray-300'
-            : state.edge
+            : day.edge
               ? 'bg-primary font-bold text-white'
-              : state.inRange
+              : day.inRange
                 ? 'bg-primary/15 font-bold text-primary'
-                : state.isToday
+                : day.isToday
                   ? 'font-extrabold text-primary'
                   : day.inCurrentMonth
                     ? 'text-gray-700 hover:bg-white/70'
                     : 'text-gray-300 hover:bg-white/40'
         }}"
       >
-        {{ day.date.getDate() }}
+        {{ day.dayNumber }}
       </button>
     }
   }

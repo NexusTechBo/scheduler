@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { UiIconComponent } from '../ui-icon/ui-icon.component';
+import { UiIconComponent } from '../../ui/ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-banner',

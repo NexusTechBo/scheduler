@@ -12,7 +12,6 @@ import {
   signal,
 } from '@angular/core';
 import {
-  CalendarDay,
   addDays,
   buildMonthMatrix,
   formatLongDate,
@@ -23,6 +22,17 @@ import {
 } from '../../../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../../../core/utils/labels.util';
 import { UiIconComponent } from '../../ui-icon/ui-icon.component';
+
+interface MonthGridDay {
+  iso: string;
+  inCurrentMonth: boolean;
+  dayNumber: number;
+  label: string;
+  edge: boolean;
+  inRange: boolean;
+  isToday: boolean;
+  disabled: boolean;
+}
 
 const ARROW_DAYS: Record<string, number> = {
   ArrowLeft: -1,
@@ -47,7 +57,6 @@ export class MonthGridComponent {
   readonly hover = output<string | null>();
 
   protected readonly weekdays = DAYS_OF_WEEK;
-  protected readonly formatLongDate = formatLongDate;
   private readonly today = toIso(new Date());
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -60,9 +69,30 @@ export class MonthGridComponent {
   });
 
   protected readonly monthLabel = computed(() => formatMonthLabel(this.month()));
-  protected readonly weeks = computed(() =>
-    buildMonthMatrix(this.month().getFullYear(), this.month().getMonth()),
+  private readonly baseWeeks = computed(() =>
+    buildMonthMatrix(this.month().getFullYear(), this.month().getMonth()).map((week) =>
+      week.map((day) => ({
+        iso: day.iso,
+        inCurrentMonth: day.inCurrentMonth,
+        dayNumber: day.date.getDate(),
+        label: formatLongDate(day.iso),
+      })),
+    ),
   );
+  protected readonly weeks = computed<MonthGridDay[][]>(() => {
+    const start = this.start();
+    const end = this.end();
+    const [lo, hi] = start && end ? [start, end].sort() : [null, null];
+    return this.baseWeeks().map((week) =>
+      week.map((day) => ({
+        ...day,
+        edge: day.iso === start || day.iso === end,
+        inRange: !!lo && !!hi && day.iso > lo && day.iso < hi,
+        isToday: day.iso === this.today,
+        disabled: this.outOfBounds(day.iso),
+      })),
+    );
+  });
 
   protected shiftMonth(delta: number): void {
     this.month.update((date) => new Date(date.getFullYear(), date.getMonth() + delta, 1));
@@ -86,18 +116,6 @@ export class MonthGridComponent {
   private outOfBounds(iso: string): boolean {
     const min = this.min();
     return !!min && iso < min;
-  }
-
-  protected dayState(day: CalendarDay) {
-    const start = this.start();
-    const end = this.end();
-    const [lo, hi] = start && end ? [start, end].sort() : [null, null];
-    return {
-      edge: day.iso === start || day.iso === end,
-      inRange: !!lo && !!hi && day.iso > lo && day.iso < hi,
-      isToday: day.iso === this.today,
-      disabled: this.outOfBounds(day.iso),
-    };
   }
 }
 

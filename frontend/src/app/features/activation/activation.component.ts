@@ -8,8 +8,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { BannerComponent } from '../../shared/components/banner/banner.component';
 import { ResendActivationComponent } from '../../shared/components/resend-activation/resend-activation.component';
-import { BannerComponent } from '../../shared/ui/banner/banner.component';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { ActivationService } from './activation.service';

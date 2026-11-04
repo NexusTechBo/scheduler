@@ -19,18 +19,28 @@ export class BoardSocket {
   readonly connected$: Observable<unknown> = this.stomp.connected$;
 
   readonly events$: Observable<IMessage> = defer(() =>
-    this.stomp.watch({ destination: `/topic/clinic/${this.auth.session()?.clinicId}/board` }),
+    this.stomp.watch({ destination: this.boardTopic() }),
   );
 
   isConnected(): boolean {
     return this.stomp.connected();
   }
 
+  private boardTopic(): string {
+    const clinicTopic = `/topic/clinic/${this.auth.session()?.clinicId}`;
+    return this.auth.restrictedToOwnData()
+      ? `${clinicTopic}/doctor/${this.auth.userId()}/board`
+      : `${clinicTopic}/board`;
+  }
+
   constructor() {
+    let connectionToken: string | null = null;
     this.stomp.configure({
       brokerURL: wsUrl('/ws'),
-      beforeConnect: (stomp) =>
-        stomp.configure({ connectHeaders: { Authorization: `Bearer ${this.auth.token() ?? ''}` } }),
+      beforeConnect: (stomp) => {
+        connectionToken = this.auth.token();
+        stomp.configure({ connectHeaders: { Authorization: `Bearer ${connectionToken ?? ''}` } });
+      },
       heartbeatIncoming: 10_000,
       heartbeatOutgoing: 10_000,
       reconnectDelay: 1_000,
@@ -38,9 +48,11 @@ export class BoardSocket {
       maxReconnectDelay: 30_000,
     });
 
-    this.stomp.stompErrors$
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.zone.run(() => this.auth.logout()));
+    this.stomp.stompErrors$.pipe(takeUntilDestroyed()).subscribe(() =>
+      this.zone.run(() => {
+        if (connectionToken) this.auth.expireSession(connectionToken);
+      }),
+    );
 
     this.zone.runOutsideAngular(() => this.stomp.activate());
     inject(DestroyRef).onDestroy(() => void this.stomp.deactivate());

@@ -24,8 +24,10 @@ export class AssignDoctorService {
 
   private readonly _assigning = signal(false);
   private readonly _message = signal('');
+  private readonly _changed = signal(false);
   readonly assigning = this._assigning.asReadonly();
   readonly message = this._message.asReadonly();
+  readonly changed = this._changed.asReadonly();
   readonly assignedDoctors = computed(() =>
     this.assignedResource.hasValue() ? this.assignedResource.value() : [],
   );
@@ -74,6 +76,7 @@ export class AssignDoctorService {
           this._message.set(
             `${doctorName ?? 'Doctor'} ${assign ? 'asignado' : 'quitado'} correctamente`,
           );
+          this._changed.set(true);
           this.assignedResource.reload();
         },
         error: (error) => this.notifications.error(apiErrorMessage(error)),

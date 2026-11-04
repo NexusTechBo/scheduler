@@ -26,7 +26,7 @@ The backend pushes realtime updates to staff clients with STOMP over a plain Web
 ## Security model
 
 - CONNECT: the client sends the JWT in the `Authorization` native header. The interceptor parses it, rejects guests, sets the tenant temporarily to verify the user is still active and has the same role, stores the clinic id in the session attributes and sets the authenticated principal.
-- SUBSCRIBE: allowed only if the session is authenticated and the destination is exactly the topic of the user's own clinic. Any other destination is rejected. When adding a new topic, extend this authorization explicitly; never allow wildcard subscriptions.
+- SUBSCRIBE: allowed only if the session is authenticated and its token (expiry stored in the session on CONNECT) has not expired. Destinations: the clinic board `/topic/clinic/{clinicId}/board` for unrestricted staff, and the per-doctor board `/topic/clinic/{clinicId}/doctor/{doctorId}/board` (a restricted DOCTOR may only subscribe to their own; other staff to any doctor of their clinic). Any other destination is rejected. Expiry is only checked on SUBSCRIBE; existing subscriptions keep receiving events until disconnect (payloads are ids and statuses only). When adding a new topic, extend this authorization explicitly; never allow wildcard subscriptions.
 - SEND: always rejected. If a feature truly needs client-to-server messages, prefer a REST endpoint.
 - Always clear `TenantContext` in a finally block after any tenant-scoped work done inside the interceptor.
 

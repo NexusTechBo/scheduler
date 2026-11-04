@@ -5,6 +5,10 @@ export const HOME_URL = '/dashboard';
 
 export const GUEST_BOOKING_PATH = 'clinic/guest/appointment/clinic';
 
+export const SESSION_ACCESS = 'sessionAccess';
+
+export type SessionAccess = 'required' | 'guestOnly';
+
 export const PAGE_TITLES = {
   dashboard: 'Inicio',
   board: 'Tablero',

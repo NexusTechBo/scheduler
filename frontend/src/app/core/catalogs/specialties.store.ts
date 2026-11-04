@@ -1,8 +1,8 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { map } from 'rxjs';
 import { CatalogsApi } from '../api/catalogs.api';
 import { resourceError } from '../http/api-error';
-import { Specialty, SpecialtyRequest } from '../models/api.models';
+import { Specialty } from '../models/api.models';
 import { LOAD_ERROR } from '../utils/messages.util';
 import { byName } from '../utils/sort.util';
 import { clinicScopedResource } from './clinic-scoped-resource';
@@ -27,11 +27,7 @@ export class SpecialtiesStore {
     this.cache.reload();
   }
 
-  create(request: SpecialtyRequest): Observable<Specialty> {
-    return this.api.createSpecialty(request).pipe(tap((specialty) => this.add(specialty)));
-  }
-
-  private add(specialty: Specialty): void {
+  upsert(specialty: Specialty): void {
     if (this.resource.hasValue() && !this.resource.isLoading()) {
       this.resource.update((list) =>
         [...list.filter((s) => s.id !== specialty.id), specialty].sort(byName),

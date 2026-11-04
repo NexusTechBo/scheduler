@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, defer, finalize, tap } from 'rxjs';
+import { CatalogsApi } from '../../core/api/catalogs.api';
 import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { Specialty } from '../../core/models/api.models';
@@ -7,6 +8,7 @@ import { NotificationService } from '../../shared/services/notification.service'
 
 @Injectable()
 export class SpecialtiesService {
+  private readonly api = inject(CatalogsApi);
   private readonly store = inject(SpecialtiesStore);
   private readonly notifications = inject(NotificationService);
 
@@ -27,9 +29,12 @@ export class SpecialtiesService {
   create(name: string): Observable<Specialty> {
     return defer(() => {
       this._saving.set(true);
-      return this.store.create({ name });
+      return this.api.createSpecialty({ name });
     }).pipe(
-      tap(() => this.notifications.success(`Especialidad "${name}" creada`)),
+      tap((specialty) => {
+        this.store.upsert(specialty);
+        this.notifications.success(`Especialidad "${name}" creada`);
+      }),
       catchError((error) => {
         this.notifications.error(apiErrorMessage(error, 'No se pudo crear la especialidad'));
         return EMPTY;
