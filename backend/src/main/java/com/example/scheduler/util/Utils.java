@@ -5,6 +5,7 @@ import com.example.scheduler.exception.MessageKeys;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.HtmlUtils;
@@ -32,8 +33,8 @@ public final class Utils {
         return phoneNumber != null ? phoneNumber.replaceFirst("^\\+", "") : null;
     }
 
-    public static String blankToNull(String value) {
-        return StringUtils.hasText(value) ? value : null;
+    public static String normalizeEmail(String email) {
+        return StringUtils.hasText(email) ? email.strip().toLowerCase(Locale.ROOT) : null;
     }
 
     public static String usernameSuffix(String clinicSlug) {

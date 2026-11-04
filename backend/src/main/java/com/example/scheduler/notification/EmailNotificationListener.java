@@ -4,6 +4,7 @@ import com.example.scheduler.config.AsyncConfig;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.notification.event.ClinicActivatedEvent;
 import com.example.scheduler.notification.event.ClinicActivationEvent;
+import com.example.scheduler.notification.event.NotificationChannel;
 import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.service.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class EmailNotificationListener {
     @Async(AsyncConfig.MAIL_TASK_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentNotification(AppointmentNotificationEvent event) {
+        if (!event.targets(NotificationChannel.EMAIL)) return;
         if (!StringUtils.hasText(event.patientEmail())) {
             log.info("Appointment {} email notification skipped: patient has no email", event.appointmentId());
             return;

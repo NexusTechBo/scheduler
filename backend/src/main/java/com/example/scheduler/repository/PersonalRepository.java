@@ -63,7 +63,7 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
 
     boolean existsByCi(String ci);
 
-    boolean existsByEmail(String email);
+    boolean existsByEmailIgnoreCase(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
 

@@ -9,21 +9,17 @@ import com.example.scheduler.dto.guest.GuestDoctorResponse;
 import com.example.scheduler.dto.guest.GuestNewPatientRequest;
 import com.example.scheduler.dto.guest.GuestPatientRequest;
 import com.example.scheduler.dto.patient.PatientRequest;
-import com.example.scheduler.entity.Patient;
-import com.example.scheduler.entity.Personal;
 import com.example.scheduler.exception.ApiException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.GuestMapper;
-import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.repository.PatientRepository;
 import com.example.scheduler.repository.PersonalRepository;
 import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.service.DoctorAvailabilityService;
 import com.example.scheduler.service.GuestService;
 import com.example.scheduler.service.PatientService;
-import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.Utils;
 import java.time.LocalDate;
 import java.util.List;
@@ -39,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GuestServiceImpl implements GuestService {
-    private final ClinicRepository clinicRepository;
+    private final CurrentClinicProvider currentClinicProvider;
     private final PersonalRepository personalRepository;
     private final PatientRepository patientRepository;
     private final PatientService patientService;
@@ -49,11 +45,8 @@ public class GuestServiceImpl implements GuestService {
 
     @Override
     public GuestClinicResponse findCurrentClinic() {
-        var clinicId = TenantContext.getCurrentClinicId();
-        return clinicRepository
-                .findById(clinicId)
-                .map(c -> new GuestClinicResponse(c.getName(), c.getSlug()))
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.CLINIC_NOT_FOUND, clinicId));
+        var clinic = currentClinicProvider.getCurrentClinic();
+        return new GuestClinicResponse(clinic.getName(), clinic.getSlug());
     }
 
     @Override
@@ -81,22 +74,20 @@ public class GuestServiceImpl implements GuestService {
     }
 
     private GuestAppointmentResponse book(GuestAppointmentRequest<?> request, Supplier<Long> patientId) {
-        var doctor = getDoctorOrThrowById(request.doctorId());
-        appointmentService.verifySlotBookable(doctor, request.startTime());
         var appointment = appointmentService.bookGuestAppointment(
                 new AppointmentRequest(request.doctorId(), patientId.get(), request.startTime()));
         return guestMapper.toAppointmentResponse(appointment);
     }
 
     private Long resolvePatientId(GuestPatientRequest patient) {
-        return getActivePatientByCiAndPhoneNumberOrThrow(
-                        patient.ci(), Utils.normalizePhoneNumber(patient.phoneNumber()))
-                .getId();
+        return patientRepository
+                .findActiveIdByCiAndPhoneNumber(patient.ci(), Utils.normalizePhoneNumber(patient.phoneNumber()))
+                .orElseThrow(() -> new BusinessException(MessageKeys.GUEST_CANNOT_BOOK));
     }
 
     private Long resolveNewPatientId(GuestNewPatientRequest patient) {
         var phoneNumber = Utils.normalizePhoneNumber(patient.phoneNumber());
-        var email = Utils.blankToNull(patient.email());
+        var email = Utils.normalizeEmail(patient.email());
         var ci = patient.ci();
         if (patientRepository.existsByCiOrPhoneNumberOrEmailIgnoreCase(ci, phoneNumber, email))
             throw new BusinessException(MessageKeys.GUEST_CANNOT_BOOK);
@@ -114,15 +105,9 @@ public class GuestServiceImpl implements GuestService {
         }
     }
 
-    private Personal getDoctorOrThrowById(Long doctorId) {
-        return personalRepository
+    private void getDoctorOrThrowById(Long doctorId) {
+        personalRepository
                 .findActiveDoctorById(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctorId));
-    }
-
-    private Patient getActivePatientByCiAndPhoneNumberOrThrow(String ci, String phoneNumber) {
-        return patientRepository
-                .findByCiAndPhoneNumberAndActiveIsTrue(ci, phoneNumber)
-                .orElseThrow(() -> new BusinessException(MessageKeys.GUEST_CANNOT_BOOK));
     }
 }

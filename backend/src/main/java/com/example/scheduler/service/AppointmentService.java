@@ -4,8 +4,6 @@ import com.example.scheduler.dto.appointment.AppointmentRequest;
 import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
-import com.example.scheduler.entity.Appointment;
-import com.example.scheduler.entity.Personal;
 import com.example.scheduler.enums.AppointmentStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,23 +13,25 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface AppointmentService {
-    AppointmentResponse bookAppointment(AppointmentRequest request);
+    AppointmentResponse bookAppointment(AppointmentRequest request, Long userId, boolean restrictToOwn);
 
     AppointmentResponse bookGuestAppointment(AppointmentRequest request);
-
-    LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime);
 
     AppointmentResponse findAppointmentById(Long appointmentId, Long userId, boolean restrictToOwn);
 
     Page<AppointmentResponse> findAllAppointments(
             Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable);
 
-    AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, boolean restrictToOwn);
+    AppointmentResponse confirmAppointmentById(Long appointmentId, Long userId, boolean restrictToOwn);
 
     AppointmentResponse cancelAppointmentById(
-            Long AppointmentId, CancelAppointmentRequest request, Long userId, boolean restrictToOwn);
+            Long appointmentId, CancelAppointmentRequest request, Long userId, boolean restrictToOwn);
 
-    void cancelAppointments(List<Appointment> appointments, String reason);
+    int cancelDoctorAppointmentsInRange(Long doctorId, LocalDateTime from, LocalDateTime to, String reason);
+
+    int cancelUpcomingAppointmentsOfDeactivatedDoctor(Long doctorId);
+
+    int cancelUpcomingAppointmentsOfDeactivatedPatient(Long patientId);
 
     Map<AppointmentStatus, List<AppointmentSummaryItem>> getBoardByRange(
             LocalDate from, LocalDate to, Long doctorId, Long patientId);

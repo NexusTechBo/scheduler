@@ -4,13 +4,13 @@ import com.example.scheduler.dto.patient.PatientRequest;
 import com.example.scheduler.dto.patient.PatientResponse;
 import com.example.scheduler.dto.personal.PersonalResponse;
 import com.example.scheduler.entity.Patient;
-import com.example.scheduler.exception.BadRequestException;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.PatientMapper;
 import com.example.scheduler.mapper.PersonalMapper;
 import com.example.scheduler.repository.PatientRepository;
+import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.service.PatientService;
 import com.example.scheduler.util.Utils;
 import java.util.List;
@@ -28,6 +28,7 @@ public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
     private final PatientMapper patientMapper;
     private final PersonalMapper personalMapper;
+    private final AppointmentService appointmentService;
 
     @Override
     public Page<PatientResponse> findAllPatients(String search, Boolean isActive, Pageable pageable) {
@@ -40,9 +41,9 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public PatientResponse createPatient(PatientRequest request) {
         if (patientRepository.existsByCi(request.ci())) throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
-        var email = Utils.blankToNull(request.email());
+        var email = Utils.normalizeEmail(request.email());
         if (email != null && patientRepository.existsByEmailIgnoreCase(email))
-            throw new BadRequestException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
+            throw new BusinessException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PATIENT_PHONE_ALREADY_EXISTS, phoneNumber);
@@ -66,11 +67,11 @@ public class PatientServiceImpl implements PatientService {
         var patient = getPatientOrThrowById(patientId);
         if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
             throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
-        var email = Utils.blankToNull(request.email());
+        var email = Utils.normalizeEmail(request.email());
         if (email != null
                 && !email.equalsIgnoreCase(patient.getEmail())
                 && patientRepository.existsByEmailIgnoreCase(email))
-            throw new BadRequestException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
+            throw new BusinessException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
         var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
         if (phoneNumber != null
                 && !Objects.equals(patient.getPhoneNumber(), phoneNumber)
@@ -86,9 +87,12 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional
     public void deactivatePatientById(Long patientId) {
-        var patient = getPatientOrThrowById(patientId);
+        var patient = patientRepository
+                .findByIdForUpdate(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
         patient.setActive(false);
         patientRepository.save(patient);
+        appointmentService.cancelUpcomingAppointmentsOfDeactivatedPatient(patientId);
     }
 
     @Override

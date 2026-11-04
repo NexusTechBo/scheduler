@@ -10,4 +10,5 @@ public record PersonalResponse(
         boolean active,
         boolean alsoDoctor,
         String role,
+        Long specialtyId,
         String specialtyName) {}

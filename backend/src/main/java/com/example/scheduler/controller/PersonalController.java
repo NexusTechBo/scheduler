@@ -11,6 +11,8 @@ import com.example.scheduler.dto.personal.PersonalUpdateRequest;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.RoleExpressions;
 import com.example.scheduler.security.SecurityUtils;
+import com.example.scheduler.service.AuthService;
+import com.example.scheduler.service.DoctorPatientService;
 import com.example.scheduler.service.PersonalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +35,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Personal", description = "Personal Controller")
 public class PersonalController {
     private final PersonalService personalService;
+    private final DoctorPatientService doctorPatientService;
+    private final AuthService authService;
 
     @GetMapping("/doctors")
     @PreAuthorize(RoleExpressions.ADMINISTRATOR_OR_ASSISTANT)
@@ -100,7 +104,9 @@ public class PersonalController {
                     "PUT /api/personal/me/doctor-mode — the administrator turns acting as a doctor on ({enabled: true, specialtyId}) or off; returns a new token with the updated roles")
     public ResponseEntity<LoginResponse> updateDoctorMode(
             @Valid @RequestBody DoctorModeRequest request, Authentication auth) {
-        return ResponseEntity.ok(personalService.updateDoctorMode(SecurityUtils.extractUserId(auth), request));
+        var userId = SecurityUtils.extractUserId(auth);
+        personalService.updateDoctorMode(userId, request);
+        return ResponseEntity.ok(authService.issueToken(userId));
     }
 
     @DeleteMapping("/{personalId}")
@@ -122,7 +128,7 @@ public class PersonalController {
     @PreAuthorize(RoleExpressions.STAFF)
     @Operation(summary = "POST /api/personal/patients/assign — assign a patient to a doctor")
     public ResponseEntity<Void> assignPatient(@Valid @RequestBody AssignAndRemoveRequest request, Authentication auth) {
-        personalService.assignPatient(
+        doctorPatientService.assignPatient(
                 request, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth));
         return ResponseEntity.noContent().build();
     }
@@ -131,7 +137,7 @@ public class PersonalController {
     @PreAuthorize(RoleExpressions.STAFF)
     @Operation(summary = "DELETE /api/personal/patients/remove — remove a patient from a doctor")
     public ResponseEntity<Void> removePatient(@Valid @RequestBody AssignAndRemoveRequest request, Authentication auth) {
-        personalService.removePatient(
+        doctorPatientService.removePatient(
                 request, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth));
         return ResponseEntity.noContent().build();
     }
@@ -142,7 +148,7 @@ public class PersonalController {
             summary =
                     "GET /api/personal/{doctorId}/patients — list all patients assigned to a doctor; a DOCTOR only its own")
     public ResponseEntity<List<PatientResponse>> getPatients(@PathVariable Long doctorId, Authentication auth) {
-        return ResponseEntity.ok(personalService.getPatientsOfDoctor(
+        return ResponseEntity.ok(doctorPatientService.getPatientsOfDoctor(
                 doctorId, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth)));
     }
 }

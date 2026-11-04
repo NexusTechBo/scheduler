@@ -37,9 +37,14 @@ public class AppointmentController {
 
     @PostMapping
     @PreAuthorize(RoleExpressions.STAFF)
-    @Operation(summary = "POST /api/appointments — book an appointment; every appointment starts PENDING")
-    public ResponseEntity<AppointmentResponse> bookAppointment(@Valid @RequestBody AppointmentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(appointmentService.bookAppointment(request));
+    @Operation(
+            summary =
+                    "POST /api/appointments — book an appointment; every appointment starts PENDING; a DOCTOR only for itself")
+    public ResponseEntity<AppointmentResponse> bookAppointment(
+            @Valid @RequestBody AppointmentRequest request, Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(appointmentService.bookAppointment(
+                        request, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth)));
     }
 
     @GetMapping("/{appointmentId}")

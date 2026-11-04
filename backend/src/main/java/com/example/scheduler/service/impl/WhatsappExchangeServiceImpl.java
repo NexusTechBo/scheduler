@@ -1,15 +1,12 @@
 package com.example.scheduler.service.impl;
 
 import com.example.scheduler.dto.whatsapp.WhatsappStatusResponse;
-import com.example.scheduler.entity.Clinic;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.MessageKeys;
-import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.exception.ServiceUnavailableException;
 import com.example.scheduler.exchange.WhatsappExchange;
 import com.example.scheduler.exchange.contract.MessageRequest;
 import com.example.scheduler.exchange.contract.SessionStatus;
-import com.example.scheduler.repository.ClinicRepository;
 import com.example.scheduler.service.WhatsappExchangeService;
 import com.example.scheduler.tenant.TenantContext;
 import com.example.scheduler.util.Utils;
@@ -27,7 +24,7 @@ import org.springframework.web.client.RestClientResponseException;
 @RequiredArgsConstructor
 public class WhatsappExchangeServiceImpl implements WhatsappExchangeService {
     private final WhatsappExchange whatsappExchange;
-    private final ClinicRepository clinicRepository;
+    private final CurrentClinicProvider currentClinicProvider;
 
     @Override
     public Optional<byte[]> getSessionQr() {
@@ -100,14 +97,8 @@ public class WhatsappExchangeServiceImpl implements WhatsappExchangeService {
     }
 
     private WhatsappStatusResponse toStatusResponse(String sessionId, SessionStatus status) {
-        return new WhatsappStatusResponse(sessionId, status, getCurrentClinic().getPhoneNumber());
-    }
-
-    private Clinic getCurrentClinic() {
-        var clinicId = TenantContext.getCurrentClinicId();
-        return clinicRepository
-                .findById(clinicId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.CLINIC_NOT_FOUND, clinicId));
+        return new WhatsappStatusResponse(
+                sessionId, status, currentClinicProvider.getCurrentClinic().getPhoneNumber());
     }
 
     private static boolean hasStatus(RestClientResponseException e, HttpStatus status) {

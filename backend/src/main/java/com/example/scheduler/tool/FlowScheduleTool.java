@@ -36,14 +36,9 @@ public class FlowScheduleTool {
 
     @Tool(description = "Step3: Return the doctors by specialtyId", name = "findAllDoctors")
     public List<PersonalResponse> findAllDoctors(Long specialtyId) {
-        if (specialtyId != null) getSpecialtyOrThrowById(specialtyId);
+        if (specialtyId != null && !specialtyRepository.existsById(specialtyId))
+            throw new ResourceNotFoundException(MessageKeys.SPECIALTY_NOT_FOUND, specialtyId);
         return personalMapper.toResponseList(personalRepository.findAllDoctorsActive(specialtyId));
-    }
-
-    private void getSpecialtyOrThrowById(Long specialtyId) {
-        specialtyRepository
-                .findById(specialtyId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.SPECIALTY_NOT_FOUND, specialtyId));
     }
 
     private Patient getPatientOrThrowByPhoneNumber(String phoneNumber) {

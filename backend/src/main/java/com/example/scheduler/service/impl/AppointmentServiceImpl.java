@@ -15,6 +15,7 @@ import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.AppointmentMapper;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.NotificationChannel;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.tenant.TenantContext;
@@ -31,9 +32,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,6 +51,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     private static final DateTimeFormatter CALENDAR_KEY_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy");
     private static final String CHANNEL_STAFF = "staff";
     private static final String CHANNEL_GUEST = "guest";
+    private static final List<AppointmentStatus> EXCLUDED_FROM_OVERLAP = List.of(AppointmentStatus.CANCELLED);
+    private static final List<AppointmentStatus> ACTIVE_STATUSES =
+            List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
 
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
@@ -54,13 +61,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentMapper appointmentMapper;
     private final ScheduleExceptionRepository scheduleExceptionRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
-    private final ClinicRepository clinicRepository;
+    private final CurrentClinicProvider currentClinicProvider;
     private final ApplicationEventPublisher eventPublisher;
+    private final MessageSource messageSource;
     private final Clock clock;
 
     @Override
     @Transactional
-    public AppointmentResponse bookAppointment(AppointmentRequest request) {
+    public AppointmentResponse bookAppointment(AppointmentRequest request, Long userId, boolean restrictToOwn) {
+        if (restrictToOwn && !request.doctorId().equals(userId))
+            throw new ForbiddenException(MessageKeys.APPOINTMENT_UNAUTHORIZED);
         return book(request, CHANNEL_STAFF);
     }
 
@@ -78,15 +88,16 @@ public class AppointmentServiceImpl implements AppointmentService {
                         () -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, request.doctorId()));
         var endTime = verifySlotBookable(doctor, request.startTime());
         var patient = patientRepository
-                .findById(patientId)
+                .findByIdForShare(patientId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
-        if (!patient.isActive()) throw new BusinessException(MessageKeys.AUTH_USER_NOT_ACTIVE);
+        if (!patient.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_PATIENT_INACTIVE);
         var appointment = Appointment.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .startTime(request.startTime())
                 .endTime(endTime)
                 .status(AppointmentStatus.PENDING)
+                .createdAt(LocalDateTime.now(clock))
                 .build();
         var saved = saveAndNotify(appointment);
         log.atInfo()
@@ -101,15 +112,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentMapper.toResponse(saved);
     }
 
-    @Override
-    @Transactional
-    public LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime) {
-        var endTime = findSlotEnd(doctor.getId(), startTime)
-                .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
+    private LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime) {
         if (!doctor.isDoctor()) throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
-        if (!doctor.isActive()) throw new BusinessException(MessageKeys.AUTH_USER_NOT_ACTIVE);
+        if (!doctor.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
         if (startTime.isBefore(LocalDateTime.now(clock)))
             throw new BadRequestException(MessageKeys.APPOINTMENT_PAST_DATE);
+        var endTime = findSlotEnd(doctor.getId(), startTime)
+                .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
         if (isBlocked(doctor.getId(), startTime, endTime))
             throw new BusinessException(MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED);
         if (isSlotTaken(doctor.getId(), startTime, endTime))
@@ -134,48 +143,86 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional
-    public AppointmentResponse confirmAppointmentById(Long AppointmentId, Long userId, boolean restrictToOwn) {
-        var appointment = getAppointmentOrThrowById(AppointmentId);
+    public AppointmentResponse confirmAppointmentById(Long appointmentId, Long userId, boolean restrictToOwn) {
+        var appointment = getAppointmentOrThrowById(appointmentId);
         verifyPermission(appointment, userId, restrictToOwn);
         if (appointment.getStatus() != AppointmentStatus.PENDING)
             throw new BusinessException(MessageKeys.APPOINTMENT_CONFIRM_ONLY_PENDING);
+        verifyNotStarted(appointment);
         appointment.setStatus(AppointmentStatus.CONFIRMED);
         var saved = saveAndNotify(appointment);
         logStatusChange(saved, AppointmentStatus.PENDING);
-        publishPatientNotification(saved, getCurrentClinic());
+        publishPatientNotification(
+                saved, currentClinicProvider.getCurrentClinic(), AppointmentNotificationEvent.ALL_CHANNELS);
         return appointmentMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
     public AppointmentResponse cancelAppointmentById(
-            Long AppointmentId, CancelAppointmentRequest request, Long userId, boolean restrictToOwn) {
-        var appointment = getAppointmentOrThrowById(AppointmentId);
+            Long appointmentId, CancelAppointmentRequest request, Long userId, boolean restrictToOwn) {
+        var appointment = getAppointmentOrThrowById(appointmentId);
         verifyPermission(appointment, userId, restrictToOwn);
         if (appointment.getStatus() == AppointmentStatus.CANCELLED)
             throw new BusinessException(MessageKeys.APPOINTMENT_ALREADY_CANCELLED);
-        var previousStatus = appointment.getStatus();
-        appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointment.setCancellationReason(request.reason());
-        var saved = saveAndNotify(appointment);
-        logStatusChange(saved, previousStatus);
-        publishPatientNotification(saved, getCurrentClinic());
+        verifyNotStarted(appointment);
+        var saved = cancel(appointment, request.reason());
+        publishPatientNotification(
+                saved, currentClinicProvider.getCurrentClinic(), AppointmentNotificationEvent.ALL_CHANNELS);
         return appointmentMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
-    public void cancelAppointments(List<Appointment> appointments, String reason) {
-        if (appointments.isEmpty()) return;
-        var clinic = getCurrentClinic();
+    public int cancelDoctorAppointmentsInRange(Long doctorId, LocalDateTime from, LocalDateTime to, String reason) {
+        var appointments = appointmentRepository.findOverlappingAppointments(doctorId, from, to, EXCLUDED_FROM_OVERLAP);
+        return cancelAll(appointments, reason, AppointmentNotificationEvent.ALL_CHANNELS);
+    }
+
+    @Override
+    @Transactional
+    public int cancelUpcomingAppointmentsOfDeactivatedDoctor(Long doctorId) {
+        var appointments = appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
+                doctorId, ACTIVE_STATUSES, LocalDateTime.now(clock));
+        var cancelled = cancelAll(
+                appointments,
+                resolveMessage(MessageKeys.APPOINTMENT_DOCTOR_DEACTIVATED_CANCELLATION_REASON),
+                AppointmentNotificationEvent.WHATSAPP_ONLY);
+        if (cancelled > 0) log.info("{} upcoming appointments of deactivated doctor {} cancelled", cancelled, doctorId);
+        return cancelled;
+    }
+
+    @Override
+    @Transactional
+    public int cancelUpcomingAppointmentsOfDeactivatedPatient(Long patientId) {
+        var appointments = appointmentRepository.findByPatientIdAndStatusInAndStartTimeAfterOrderByIdAsc(
+                patientId, ACTIVE_STATUSES, LocalDateTime.now(clock));
+        var cancelled = cancelAll(
+                appointments,
+                resolveMessage(MessageKeys.APPOINTMENT_PATIENT_DEACTIVATED_CANCELLATION_REASON),
+                AppointmentNotificationEvent.WHATSAPP_ONLY);
+        if (cancelled > 0)
+            log.info("{} upcoming appointments of deactivated patient {} cancelled", cancelled, patientId);
+        return cancelled;
+    }
+
+    private int cancelAll(List<Appointment> appointments, String reason, Set<NotificationChannel> channels) {
+        if (appointments.isEmpty()) return 0;
+        var clinic = currentClinicProvider.getCurrentClinic();
         for (Appointment appointment : appointments) {
-            var previousStatus = appointment.getStatus();
-            appointment.setStatus(AppointmentStatus.CANCELLED);
-            appointment.setCancellationReason(reason);
-            var saved = saveAndNotify(appointment);
-            logStatusChange(saved, previousStatus);
-            publishPatientNotification(saved, clinic);
+            var saved = cancel(appointment, reason);
+            publishPatientNotification(saved, clinic, channels);
         }
+        return appointments.size();
+    }
+
+    private Appointment cancel(Appointment appointment, String reason) {
+        var previousStatus = appointment.getStatus();
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointment.setCancellationReason(reason);
+        var saved = saveAndNotify(appointment);
+        logStatusChange(saved, previousStatus);
+        return saved;
     }
 
     private static void logStatusChange(Appointment appointment, AppointmentStatus from) {
@@ -239,11 +286,13 @@ public class AppointmentServiceImpl implements AppointmentService {
     private Appointment saveAndNotify(Appointment appointment) {
         var saved = appointmentRepository.save(appointment);
         eventPublisher.publishEvent(new AppointmentChangedEvent(
-                TenantContext.getCurrentClinicId(), new BoardEvent(saved.getId(), saved.getStatus())));
+                TenantContext.getCurrentClinicId(),
+                saved.getDoctor().getId(),
+                new BoardEvent(saved.getId(), saved.getStatus())));
         return saved;
     }
 
-    private void publishPatientNotification(Appointment appointment, Clinic clinic) {
+    private void publishPatientNotification(Appointment appointment, Clinic clinic, Set<NotificationChannel> channels) {
         var doctor = appointment.getDoctor();
         var patient = appointment.getPatient();
         var specialty = doctor.getSpecialty();
@@ -259,7 +308,12 @@ public class AppointmentServiceImpl implements AppointmentService {
                 patient.getPhoneNumber(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
-                appointment.getCancellationReason()));
+                appointment.getCancellationReason(),
+                channels));
+    }
+
+    private String resolveMessage(String key) {
+        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
     }
 
     private Appointment getAppointmentOrThrowById(Long appointmentId) {
@@ -271,6 +325,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void verifyPermission(Appointment appointment, Long userId, boolean restrictToOwn) {
         if (restrictToOwn && !appointment.getDoctor().getId().equals(userId))
             throw new ForbiddenException(MessageKeys.APPOINTMENT_UNAUTHORIZED);
+    }
+
+    private void verifyNotStarted(Appointment appointment) {
+        if (appointment.getStartTime().isBefore(LocalDateTime.now(clock)))
+            throw new BusinessException(MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE);
     }
 
     private boolean isBlocked(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
@@ -296,14 +355,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private boolean isSlotTaken(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
-        return appointmentRepository.existsOverlappingAppointment(
-                doctorId, startTime, endTime, List.of(AppointmentStatus.CANCELLED));
-    }
-
-    private Clinic getCurrentClinic() {
-        var clinicId = TenantContext.getCurrentClinicId();
-        return clinicRepository
-                .findById(clinicId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.CLINIC_NOT_FOUND, clinicId));
+        return appointmentRepository.existsOverlappingAppointment(doctorId, startTime, endTime, EXCLUDED_FROM_OVERLAP);
     }
 }
