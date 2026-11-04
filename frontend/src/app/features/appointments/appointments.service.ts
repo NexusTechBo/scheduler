@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentFilters } from '../../core/models/api.models';
+import { canCancelAppointment, canConfirmAppointment } from '../../core/utils/appointment.util';
 import { datePart, formatDayLabel, formatTimeRange } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { AppointmentRow, AppointmentStatusFilter } from './appointments.model';
@@ -31,6 +32,8 @@ export class AppointmentsService {
       ...appointment,
       dayLabel: formatDayLabel(datePart(appointment.startTime)),
       timeLabel: formatTimeRange(appointment.startTime, appointment.endTime),
+      canConfirm: canConfirmAppointment(appointment.status, appointment.startTime),
+      canCancel: canCancelAppointment(appointment.status, appointment.startTime),
     })),
   );
   readonly pagination = computed(() =>

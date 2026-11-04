@@ -32,11 +32,11 @@ export class AppointmentDetailService {
   });
   readonly canConfirm = computed(() => {
     const appointment = this.appointment();
-    return !!appointment && canConfirmAppointment(appointment.status);
+    return !!appointment && canConfirmAppointment(appointment.status, appointment.startTime);
   });
   readonly canCancel = computed(() => {
     const appointment = this.appointment();
-    return !!appointment && canCancelAppointment(appointment.status);
+    return !!appointment && canCancelAppointment(appointment.status, appointment.startTime);
   });
 
   get changed(): boolean {

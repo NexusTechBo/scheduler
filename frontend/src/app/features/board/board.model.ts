@@ -5,4 +5,5 @@ export interface BoardColumn {
   title: string;
   accentClass: string;
   appointments: AppointmentSummaryItem[];
+  pastIds: Readonly<Record<number, true>>;
 }

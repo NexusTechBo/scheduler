@@ -1,9 +1,18 @@
 <app-page-header [title]="calendar.monthLabel()">
-  <app-calendar-nav
-    (previous)="calendar.shiftMonth(-1)"
-    (next)="calendar.shiftMonth(1)"
-    (today)="calendar.goToday()"
-  />
+  <div class="flex flex-wrap items-center gap-3">
+    @if (calendar.canFilterMine()) {
+      <app-segmented-tabs
+        [items]="scopeTabs"
+        [selectedId]="calendar.scope()"
+        (select)="setScope($event)"
+      />
+    }
+    <app-calendar-nav
+      (previous)="calendar.shiftMonth(-1)"
+      (next)="calendar.shiftMonth(1)"
+      (today)="calendar.goToday()"
+    />
+  </div>
 </app-page-header>
 
 <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto xl:flex-row xl:overflow-visible">
@@ -22,12 +31,12 @@
     <div
       class="-m-2 grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-1 p-2 sm:gap-2.5 xl:overflow-y-auto"
     >
-      @for (week of calendar.weeks(); track $index) {
-        @for (day of week; track day.iso) {
+      @for (week of calendar.cells(); track $index) {
+        @for (cell of week; track cell.day.iso) {
           <app-calendar-day-cell
-            [day]="day"
-            [appointments]="calendar.appointmentsFor(day.iso)"
-            [selected]="day.iso === calendar.selectedDate()"
+            [day]="cell.day"
+            [appointments]="cell.appointments"
+            [selected]="cell.day.iso === calendar.selectedDate()"
             (select)="calendar.select($event)"
           />
         }

@@ -16,6 +16,7 @@ import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component
 export class BoardCardComponent {
   appointment = input.required<AppointmentSummaryItem>();
   showDate = input(false);
+  past = input(false);
 
   protected readonly dayLabel = computed(() => formatDayLabel(this.appointment().appointmentDate));
 }

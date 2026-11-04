@@ -3,8 +3,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,7 +14,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, fromEvent } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { navItemsFor } from '../../core/navigation/navigation';
-import { ROLE_LABEL } from '../../core/utils/labels.util';
+import { rolesLabel } from '../../core/utils/labels.util';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { SidebarNavComponent } from './components/sidebar-nav/sidebar-nav.component';
 import { TopbarComponent } from './components/topbar/topbar.component';
@@ -37,17 +39,20 @@ export class ShellComponent {
   private readonly drawerTrap = viewChild.required(CdkTrapFocus);
   private focusBeforeOpen: HTMLElement | null = null;
 
-  protected readonly navItems = computed(() => navItemsFor(this.auth.role()));
+  protected readonly navItems = computed(() => navItemsFor(this.auth.roles()));
   protected readonly userName = this.auth.displayName;
-  protected readonly roleLabel = computed(() => {
-    const role = this.auth.role();
-    return role ? ROLE_LABEL[role] : '';
-  });
+  protected readonly roleLabel = computed(() => rolesLabel(this.auth.roles()));
   protected readonly clinicName = computed(() => this.auth.clinic()?.name ?? '');
 
   constructor() {
-    inject(Router)
-      .events.pipe(
+    const router = inject(Router);
+
+    effect(() => {
+      if (!this.auth.session()) untracked(() => router.navigate(['/login']).finally()).finally();
+    });
+
+    router.events
+      .pipe(
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),
       )

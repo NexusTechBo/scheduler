@@ -33,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
     private final PersonalMapper personalMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final CurrentClinicProvider currentClinicProvider;
     private final String dummyPasswordHash;
 
     public AuthServiceImpl(
@@ -40,12 +41,14 @@ public class AuthServiceImpl implements AuthService {
             PersonalRepository personalRepository,
             PersonalMapper personalMapper,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            CurrentClinicProvider currentClinicProvider) {
         this.clinicRepository = clinicRepository;
         this.personalRepository = personalRepository;
         this.personalMapper = personalMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.currentClinicProvider = currentClinicProvider;
         this.dummyPasswordHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
@@ -85,8 +88,8 @@ public class AuthServiceImpl implements AuthService {
                 throw loginFailed(
                         username, "clinic_not_active", new ForbiddenException(MessageKeys.AUTH_CLINIC_NOT_ACTIVATED));
             log.info("Login succeeded for user {} in clinic {}", personal.getId(), clinic.getId());
-            return new LoginResponse(
-                    jwtUtil.generate(personal.getId(), personal.getRole().name(), clinic, personal.getName()));
+            return new LoginResponse(jwtUtil.generate(
+                    personal.getId(), personal.getRole(), personal.getRoles(), clinic, personal.getName()));
         } finally {
             TenantContext.restore(previousTenant);
         }
@@ -99,6 +102,18 @@ public class AuthServiceImpl implements AuthService {
                 .findById(userId)
                 .map(personalMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_NOT_FOUND, userId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LoginResponse issueToken(Long userId) {
+        var personal = personalRepository
+                .findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_NOT_FOUND, userId));
+        if (!personal.isActive()) throw new UnauthorizedException(MessageKeys.AUTH_USER_NOT_ACTIVE);
+        var clinic = currentClinicProvider.getCurrentClinic();
+        return new LoginResponse(jwtUtil.generate(
+                personal.getId(), personal.getRole(), personal.getRoles(), clinic, personal.getName()));
     }
 
     private static ApiException loginFailed(String username, String reason, ApiException exception) {

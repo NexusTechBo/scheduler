@@ -1,8 +1,8 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, filter, finalize, map, startWith, take } from 'rxjs';
+import { Observable, finalize, startWith } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { Role, Staff } from '../../../../core/models/api.models';
@@ -27,6 +27,11 @@ const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
 
 export interface StaffFormData {
   staff?: Staff;
+}
+
+function initialRole(staff: Staff | undefined): Role {
+  if (!staff) return 'DOCTOR';
+  return staff.alsoDoctor ? 'DOCTOR' : staff.role;
 }
 
 @Component({
@@ -60,7 +65,7 @@ export class StaffFormDialogComponent {
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    role: [this.staff?.role ?? ('DOCTOR' as Role)],
+    role: [initialRole(this.staff)],
     name: [this.staff?.name ?? '', notBlank],
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],
@@ -70,7 +75,7 @@ export class StaffFormDialogComponent {
       '',
       this.staff ? [Validators.minLength(8)] : [Validators.required, Validators.minLength(8)],
     ],
-    specialtyId: [this.staffService.specialtyIdOf(this.staff?.specialtyName), specialtyForDoctor],
+    specialtyId: [this.staff?.specialtyId ?? null, specialtyForDoctor],
   });
 
   private readonly role = toSignal(this.form.controls.role.valueChanges, {
@@ -82,17 +87,6 @@ export class StaffFormDialogComponent {
   );
 
   constructor() {
-    toObservable(this.staffService.specialties)
-      .pipe(
-        map(() => this.staffService.specialtyIdOf(this.staff?.specialtyName)),
-        filter((id) => id !== null),
-        take(1),
-        takeUntilDestroyed(),
-      )
-      .subscribe((id) => {
-        const control = this.form.controls.specialtyId;
-        if (control.pristine) control.setValue(id);
-      });
     this.form.controls.role.valueChanges
       .pipe(startWith(null), takeUntilDestroyed())
       .subscribe(() => this.form.controls.specialtyId.updateValueAndValidity());

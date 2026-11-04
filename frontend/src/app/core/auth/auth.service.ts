@@ -1,17 +1,20 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { NavigationExtras, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, NavigationExtras, Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
 import { Role, Staff, TokenPayload } from '../models/api.models';
+import { HOME_URL, SESSION_ACCESS, SessionAccess } from '../navigation/navigation';
 
 const TOKEN_KEY = 'scheduler.token';
+const MAX_TIMER_MS = 2_147_483_647;
 
 interface Session {
   token: string;
   userId: number;
   role: Role;
+  roles: Role[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
@@ -34,6 +37,10 @@ function writeStorage(key: string, value: string | null): void {
   } catch {}
 }
 
+function isExpired(session: Session): boolean {
+  return session.expiresAt <= Date.now();
+}
+
 function decodeSession(token: string | null): Session | null {
   if (!token) return null;
   try {
@@ -42,13 +49,14 @@ function decodeSession(token: string | null): Session | null {
       token,
       userId: Number(payload.sub),
       role: payload.role,
+      roles: payload.roles?.length ? payload.roles : [payload.role],
       clinicId: Number(payload.clinicId),
       clinicName: payload.clinicName,
       clinicSlug: payload.clinicSlug,
       username: payload.username,
       expiresAt: payload.exp * 1000,
     };
-    return session.expiresAt > Date.now() ? session : null;
+    return isExpired(session) ? null : session;
   } catch {
     return null;
   }
@@ -58,11 +66,17 @@ function decodeSession(token: string | null): Session | null {
 export class AuthService {
   private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
+  private readonly zone = inject(NgZone);
 
   private readonly _session = signal<Session | null>(decodeSession(readStorage(TOKEN_KEY)));
+  private expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
   readonly session = this._session.asReadonly();
   readonly role = computed(() => this._session()?.role ?? null);
+  readonly roles = computed<readonly Role[]>(() => this._session()?.roles ?? []);
+  readonly restrictedToOwnData = computed(
+    () => this.hasRole('DOCTOR') && !this.hasRole('ADMINISTRATOR'),
+  );
   readonly userId = computed(() => this._session()?.userId ?? null);
 
   private readonly me = rxResource({
@@ -81,6 +95,17 @@ export class AuthService {
     return session ? { name: session.clinicName, slug: session.clinicSlug } : null;
   });
 
+  constructor() {
+    this.scheduleExpiry(this._session());
+
+    const onStorage = (event: StorageEvent) => this.onStorage(event);
+    window.addEventListener('storage', onStorage);
+    inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('storage', onStorage);
+      clearTimeout(this.expiryTimer);
+    });
+  }
+
   setProfile(profile: Staff): void {
     this.me.set(profile);
   }
@@ -90,31 +115,31 @@ export class AuthService {
   }
 
   token(): string | null {
+    return this._session()?.token ?? null;
+  }
+
+  isAuthenticated(): boolean {
     const session = this._session();
-    if (session && session.expiresAt <= Date.now()) {
-      this.clearSession();
-      return null;
-    }
-    return session?.token ?? null;
+    return !!session && !isExpired(session);
   }
 
   hasRole(...roles: Role[]): boolean {
-    const role = this.role();
-    return role !== null && roles.includes(role);
+    const current = this.roles();
+    return roles.some((role) => current.includes(role));
   }
 
   login(username: string, password: string): Observable<Session> {
-    return this.authApi.login({ username, password }).pipe(
-      map(({ token }) => {
-        const session = decodeSession(token);
-        if (!session) throw new Error('Token inválido');
-        return session;
-      }),
-      tap((session) => {
-        writeStorage(TOKEN_KEY, session.token);
-        this._session.set(session);
-      }),
-    );
+    return this.authApi
+      .login({ username, password })
+      .pipe(map(({ token }) => this.replaceToken(token)));
+  }
+
+  replaceToken(token: string): Session {
+    const session = decodeSession(token);
+    if (!session) throw new Error('Token inválido');
+    writeStorage(TOKEN_KEY, session.token);
+    this.setSession(session);
+    return session;
   }
 
   logout(extras: NavigationExtras = {}): void {
@@ -122,8 +147,63 @@ export class AuthService {
     this.router.navigate(['/login'], extras).finally();
   }
 
+  expireSession(token: string): void {
+    if (this._session()?.token !== token) return;
+    this.clearSession();
+  }
+
+  private setSession(session: Session | null): void {
+    this._session.set(session);
+    this.scheduleExpiry(session);
+  }
+
   private clearSession(): void {
     writeStorage(TOKEN_KEY, null);
-    this._session.set(null);
+    this.setSession(null);
+  }
+
+  private scheduleExpiry(session: Session | null): void {
+    clearTimeout(this.expiryTimer);
+    this.expiryTimer = undefined;
+    if (!session) return;
+    const delay = Math.min(Math.max(session.expiresAt - Date.now(), 0), MAX_TIMER_MS);
+    this.expiryTimer = this.zone.runOutsideAngular(() =>
+      setTimeout(
+        () =>
+          this.zone.run(() => {
+            if (isExpired(session)) this.expireSession(session.token);
+            else this.scheduleExpiry(session);
+          }),
+        delay,
+      ),
+    );
+  }
+
+  private onStorage(event: StorageEvent): void {
+    if (event.key !== TOKEN_KEY && event.key !== null) return;
+    const current = this._session();
+    const next = decodeSession(readStorage(TOKEN_KEY));
+    if (current?.token === next?.token) return;
+
+    const access = this.currentSessionAccess();
+    if (next && current && access === 'required') {
+      const sameUser = current.userId === next.userId && current.clinicId === next.clinicId;
+      if (!sameUser) {
+        location.assign(HOME_URL);
+        return;
+      }
+    }
+    this.setSession(next);
+    if (next && access === 'guestOnly') this.router.navigateByUrl(HOME_URL).finally();
+  }
+
+  private currentSessionAccess(): SessionAccess | null {
+    let route: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
+    let access: SessionAccess | null = null;
+    while (route) {
+      access = (route.data[SESSION_ACCESS] as SessionAccess | undefined) ?? access;
+      route = route.firstChild;
+    }
+    return access;
   }
 }

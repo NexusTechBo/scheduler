@@ -20,6 +20,8 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -29,6 +31,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @RequiredArgsConstructor
 public class ClinicServiceImpl implements ClinicService {
+    private static final String SLUG_CONSTRAINT = "uq_clinics_slug";
+
     private final ClinicRepository clinicRepository;
     private final PersonalRepository personalRepository;
     private final PasswordEncoder passwordEncoder;
@@ -47,12 +51,8 @@ public class ClinicServiceImpl implements ClinicService {
             throw new BusinessException(MessageKeys.CLINIC_ALREADY_EXISTS);
         if (clinicRepository.existsBySlug(slug)) throw new BusinessException(MessageKeys.CLINIC_SLUG_TAKEN, slug);
         var encodedPassword = passwordEncoder.encode(request.adminPassword());
-        var clinic = tx.execute(_ -> clinicRepository.save(Clinic.builder()
-                .name(request.name())
-                .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
-                .slug(slug)
-                .status(ClinicStatus.PENDING_ACTIVATION)
-                .build()));
+        var adminEmail = Utils.normalizeEmail(request.adminEmail());
+        var clinic = saveNewClinic(request, slug, tx);
         try {
             schemaProvisioningService.createTenantSchema(TenantContext.schemaName(clinic.getSlug()));
             TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
@@ -61,7 +61,8 @@ public class ClinicServiceImpl implements ClinicService {
                         .username(request.adminUsername() + Utils.usernameSuffix(clinic.getSlug()))
                         .name(request.adminName())
                         .password(encodedPassword)
-                        .email(request.adminEmail())
+                        .email(adminEmail)
+                        .phoneNumber(clinic.getPhoneNumber())
                         .ci(request.adminCi())
                         .role(ERole.ADMINISTRATOR)
                         .build());
@@ -81,6 +82,27 @@ public class ClinicServiceImpl implements ClinicService {
         } finally {
             TenantContext.clear();
         }
+    }
+
+    private Clinic saveNewClinic(ClinicRequest request, String slug, TransactionTemplate tx) {
+        try {
+            return tx.execute(_ -> clinicRepository.saveAndFlush(Clinic.builder()
+                    .name(request.name())
+                    .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
+                    .slug(slug)
+                    .status(ClinicStatus.PENDING_ACTIVATION)
+                    .build()));
+        } catch (DataIntegrityViolationException e) {
+            var constraint = constraintName(e);
+            log.info("Clinic registration rejected by unique constraint {}", constraint);
+            if (SLUG_CONSTRAINT.equalsIgnoreCase(constraint))
+                throw new BusinessException(MessageKeys.CLINIC_SLUG_TAKEN, slug);
+            throw new BusinessException(MessageKeys.CLINIC_ALREADY_EXISTS);
+        }
+    }
+
+    private static String constraintName(DataIntegrityViolationException e) {
+        return e.getCause() instanceof ConstraintViolationException cve ? cve.getConstraintName() : null;
     }
 
     private void discardFailedClinic(Clinic clinic, TransactionTemplate tx) {

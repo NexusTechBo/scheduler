@@ -2,6 +2,11 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import {
+  SegmentedTabItem,
+  SegmentedTabsComponent,
+} from '../../shared/ui/segmented-tabs/segmented-tabs.component';
+import { CalendarScope } from './calendar.model';
 import { CalendarService } from './calendar.service';
 import { CalendarDayCellComponent } from './components/calendar-day-cell/calendar-day-cell.component';
 import { CalendarNavComponent } from './components/calendar-nav/calendar-nav.component';
@@ -13,6 +18,7 @@ import { DayAgendaPanelComponent } from './components/day-agenda-panel/day-agend
     LoadErrorComponent,
     CalendarDayCellComponent,
     PageHeaderComponent,
+    SegmentedTabsComponent,
     CalendarNavComponent,
     DayAgendaPanelComponent,
   ],
@@ -24,4 +30,12 @@ import { DayAgendaPanelComponent } from './components/day-agenda-panel/day-agend
 export class CalendarPageComponent {
   protected readonly calendar = inject(CalendarService);
   protected readonly weekdays = DAYS_OF_WEEK;
+  protected readonly scopeTabs: SegmentedTabItem[] = [
+    { id: 'all', label: 'Toda la clínica' },
+    { id: 'mine', label: 'Mi agenda' },
+  ];
+
+  protected setScope(scope: string): void {
+    this.calendar.setScope(scope as CalendarScope);
+  }
 }

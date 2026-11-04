@@ -10,7 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,11 +33,12 @@ public class JwtUtil {
         this.clock = clock;
     }
 
-    public String generate(Long userId, String role, Clinic clinic, String userName) {
+    public String generate(Long userId, ERole role, Collection<ERole> roles, Clinic clinic, String userName) {
         var now = clock.instant();
         return Jwts.builder()
                 .subject(userId.toString())
-                .claim(JwtClaims.ROLE, role)
+                .claim(JwtClaims.ROLE, role.name())
+                .claim(JwtClaims.ROLES, roles.stream().map(ERole::name).sorted().toList())
                 .claim(JwtClaims.CLINIC_ID, clinic.getId())
                 .claim(JwtClaims.CLINIC_NAME, clinic.getName())
                 .claim(JwtClaims.CLINIC_SLUG, clinic.getSlug())
@@ -56,6 +60,13 @@ public class JwtUtil {
                 .expiration(Date.from(expiresAt))
                 .signWith(key)
                 .compact();
+    }
+
+    public static List<String> extractRoles(Claims claims) {
+        var role = claims.get(JwtClaims.ROLE, String.class);
+        if (!(claims.get(JwtClaims.ROLES) instanceof Collection<?> roles) || roles.isEmpty())
+            return role == null ? List.of() : List.of(role);
+        return roles.stream().filter(Objects::nonNull).map(Object::toString).toList();
     }
 
     public Optional<Claims> parse(String token) {

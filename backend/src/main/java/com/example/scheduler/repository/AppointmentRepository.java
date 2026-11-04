@@ -3,6 +3,7 @@ package com.example.scheduler.repository;
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.enums.AppointmentStatus;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.NullMarked;
@@ -52,12 +53,31 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("SELECT a FROM Appointment a " + "WHERE a.doctor.id = :doctorId "
             + "AND a.status NOT IN :excludedStatuses "
             + "AND a.startTime < :endTime "
-            + "AND a.endTime > :startTime")
+            + "AND a.endTime > :startTime "
+            + "ORDER BY a.id")
     List<Appointment> findOverlappingAppointments(
             @Param("doctorId") Long doctorId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
             @Param("excludedStatuses") List<AppointmentStatus> excludedStatuses);
+
+    @Query("SELECT COUNT(a) FROM Appointment a " + "WHERE a.doctor.id = :doctorId "
+            + "AND a.status NOT IN :excludedStatuses "
+            + "AND a.startTime < :endTime "
+            + "AND a.endTime > :startTime")
+    long countOverlappingAppointments(
+            @Param("doctorId") Long doctorId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("excludedStatuses") List<AppointmentStatus> excludedStatuses);
+
+    @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
+    List<Appointment> findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
+            Long doctorId, Collection<AppointmentStatus> statuses, LocalDateTime time);
+
+    @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
+    List<Appointment> findByPatientIdAndStatusInAndStartTimeAfterOrderByIdAsc(
+            Long patientId, Collection<AppointmentStatus> statuses, LocalDateTime time);
 
     boolean existsByDoctorIdAndStatusNotAndStartTimeAfter(Long doctorId, AppointmentStatus status, LocalDateTime time);
 

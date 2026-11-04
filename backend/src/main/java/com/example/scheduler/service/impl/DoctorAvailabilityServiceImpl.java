@@ -6,7 +6,6 @@ import com.example.scheduler.dto.doctoravailability.DoctorAvailabilitySlotsRespo
 import com.example.scheduler.dto.doctoravailability.SlotResponse;
 import com.example.scheduler.entity.DoctorAvailability;
 import com.example.scheduler.enums.AppointmentStatus;
-import com.example.scheduler.enums.ERole;
 import com.example.scheduler.exception.BusinessException;
 import com.example.scheduler.exception.ForbiddenException;
 import com.example.scheduler.exception.MessageKeys;
@@ -45,7 +44,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
         var doctor = personalRepository
                 .findByIdForUpdate(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctorId));
-        if (doctor.getRole() != ERole.DOCTOR || !doctor.isActive())
+        if (!doctor.isDoctor() || !doctor.isActive())
             throw new ForbiddenException(MessageKeys.PERSONAL_DOCTOR_ONLY_ACTIVE);
         var overlaps =
                 doctorAvailabilityRepository
@@ -73,9 +72,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     public DoctorAvailabilitySlotsResponse getDoctorAvailableSlots(Long doctorId, LocalDate date) {
         var now = LocalDateTime.now(clock);
         var dayOfWeek = date.getDayOfWeek();
-        var isActiveDoctor = personalRepository
-                .findByIdAndRoleAndActiveIsTrue(doctorId, ERole.DOCTOR)
-                .isPresent();
+        var isActiveDoctor = personalRepository.findActiveDoctorById(doctorId).isPresent();
         if (!isActiveDoctor || date.isBefore(now.toLocalDate()))
             return new DoctorAvailabilitySlotsResponse(date, doctorId, List.of());
         var availabilities = doctorAvailabilityRepository.findByDoctorIdAndDayOfWeekAndActiveTrue(doctorId, dayOfWeek);

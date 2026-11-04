@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
 import { ROLES } from './core/auth/roles';
-import { GUEST_BOOKING_PATH, PAGE_TITLES } from './core/navigation/navigation';
+import { GUEST_BOOKING_PATH, PAGE_TITLES, SESSION_ACCESS } from './core/navigation/navigation';
 
 export const routes: Routes = [
   {
@@ -15,6 +15,7 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
+    data: { [SESSION_ACCESS]: 'required' },
     children: [
       {
         path: 'dashboard',
@@ -97,12 +98,14 @@ export const routes: Routes = [
     path: 'login',
     title: 'Iniciar sesión',
     canActivate: [guestGuard],
+    data: { [SESSION_ACCESS]: 'guestOnly' },
     loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'register',
     title: 'Registrar clínica',
     canActivate: [guestGuard],
+    data: { [SESSION_ACCESS]: 'guestOnly' },
     loadComponent: () =>
       import('./features/register/register.component').then((m) => m.RegisterComponent),
   },

@@ -6,7 +6,7 @@ import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
 import { apiErrorMessage } from '../../core/http/api-error';
-import { ROLE_LABEL, initials } from '../../core/utils/labels.util';
+import { initials, rolesLabel } from '../../core/utils/labels.util';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
@@ -19,6 +19,7 @@ import {
   notBlank,
   phoneValidator,
 } from '../../shared/utils/validation-messages.util';
+import { DoctorModeCardComponent } from './components/doctor-mode-card/doctor-mode-card.component';
 import { WhatsappQrComponent } from './components/whatsapp-qr/whatsapp-qr.component';
 import { ProfileService } from './profile.service';
 
@@ -26,6 +27,7 @@ import { ProfileService } from './profile.service';
   selector: 'app-profile-page',
   imports: [
     AlertComponent,
+    DoctorModeCardComponent,
     SkeletonComponent,
     ReactiveFormsModule,
     FormFieldComponent,
@@ -45,7 +47,8 @@ export class ProfilePageComponent {
   protected readonly me = this.profile.me;
   protected readonly roleLabel = computed(() => {
     const profile = this.me();
-    return profile ? ROLE_LABEL[profile.role] : '';
+    if (!profile) return '';
+    return rolesLabel(profile.alsoDoctor ? [profile.role, 'DOCTOR'] : [profile.role]);
   });
   protected readonly avatar = computed(() => initials(this.me()?.name));
   protected readonly phoneErrors = PHONE_ERRORS;

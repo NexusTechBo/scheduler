@@ -7,6 +7,7 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface PersonalMapper {
+    @Mapping(target = "specialtyId", source = "specialty.id")
     @Mapping(target = "specialtyName", source = "specialty.name")
     PersonalResponse toResponse(Personal personal);
 

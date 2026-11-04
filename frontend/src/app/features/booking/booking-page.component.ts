@@ -4,18 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Patient } from '../../core/models/api.models';
 import { formatLongDate } from '../../core/utils/calendar.util';
-import { initials } from '../../core/utils/labels.util';
+import { DoctorPickerComponent } from '../../shared/components/doctor-picker/doctor-picker.component';
 import {
   PatientFormData,
   PatientFormDialogComponent,
 } from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
-import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
+import { SlotGridComponent } from '../../shared/components/slot-grid/slot-grid.component';
+import { SpecialtyFilterComponent } from '../../shared/components/specialty-filter/specialty-filter.component';
+import { InitialsPipe } from '../../shared/pipes/initials.pipe';
 import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { DatePickerComponent } from '../../shared/ui/forms/date-picker/date-picker.component';
 import { DateStripComponent } from '../../shared/ui/forms/date-strip/date-strip.component';
-import { SlotGridComponent } from '../../shared/ui/forms/slot-grid/slot-grid.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
@@ -25,13 +26,15 @@ import { BookingService } from './booking.service';
 @Component({
   selector: 'app-booking-page',
   imports: [
-    SpecialtyLabelPipe,
+    InitialsPipe,
     TimeRangePipe,
     SkeletonComponent,
     FormsModule,
     DatePickerComponent,
     DateStripComponent,
     SlotGridComponent,
+    SpecialtyFilterComponent,
+    DoctorPickerComponent,
     RouterLink,
     PageHeaderComponent,
     EmptyStateComponent,
@@ -47,7 +50,6 @@ export class BookingPageComponent {
   private readonly dialog = inject(Dialog);
   protected readonly booking = inject(BookingService);
 
-  protected readonly initials = initials;
   protected readonly dateLabel = computed(() => formatLongDate(this.booking.selectedDate()));
 
   protected registerPatient(): void {

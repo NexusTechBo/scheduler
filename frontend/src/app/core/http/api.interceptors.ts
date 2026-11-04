@@ -12,10 +12,19 @@ import { AuthService } from '../auth/auth.service';
 import { GuestSessionService } from '../auth/guest-session.service';
 
 const GUEST_PATH = 'guest/';
-const GUEST_SESSION_PATH = 'public/guest/session';
+const PUBLIC_PATHS = ['public/', 'auth/login', 'clinics/activate', 'clinics/activation/resend'];
+const REGISTER_PATH = 'clinics';
 
 function hasPath(url: string, path: string): boolean {
   return url.startsWith(path) || url.startsWith(environment.apiUrl + path);
+}
+
+function isPublicRequest(req: HttpRequest<unknown>): boolean {
+  const path = req.url.startsWith(environment.apiUrl)
+    ? req.url.slice(environment.apiUrl.length)
+    : req.url;
+  if (req.method === 'POST' && path === REGISTER_PATH) return true;
+  return PUBLIC_PATHS.some((publicPath) => hasPath(req.url, publicPath));
 }
 
 function isGuestRequest(url: string): boolean {
@@ -27,16 +36,21 @@ export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req.clone({ url: environment.apiUrl + req.url }));
 };
 
-function withHeaders(req: HttpRequest<unknown>, token: string | null): HttpRequest<unknown> {
-  const currentLang = localStorage.getItem('lang') || navigator.language.slice(0, 2) || 'es';
-  const headers: Record<string, string> = { 'Accept-Language': currentLang };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return req.clone({ setHeaders: headers });
+function withToken(req: HttpRequest<unknown>, token: string | null): HttpRequest<unknown> {
+  return token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+}
+
+function unauthorized(req: HttpRequest<unknown>): HttpErrorResponse {
+  return new HttpErrorResponse({
+    status: HttpStatusCode.Unauthorized,
+    statusText: 'Unauthorized',
+    url: req.url,
+  });
 }
 
 function guestRequest(req: HttpRequest<unknown>, next: HttpHandlerFn) {
   const guest = inject(GuestSessionService);
-  const send = () => guest.ensureToken().pipe(switchMap((token) => next(withHeaders(req, token))));
+  const send = () => guest.ensureToken().pipe(switchMap((token) => next(withToken(req, token))));
   return send().pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status !== HttpStatusCode.Unauthorized) return throwError(() => error);
@@ -53,14 +67,20 @@ function guestRequest(req: HttpRequest<unknown>, next: HttpHandlerFn) {
 }
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (hasPath(req.url, GUEST_SESSION_PATH)) return next(withHeaders(req, null));
+  if (isPublicRequest(req)) return next(req);
   if (isGuestRequest(req.url)) return guestRequest(req, next);
 
   const auth = inject(AuthService);
   const token = auth.token();
-  return next(withHeaders(req, token)).pipe(
-    catchError((error: HttpErrorResponse) => {
-      if (error.status === HttpStatusCode.Unauthorized && token) auth.logout();
+  if (token && !auth.isAuthenticated()) {
+    auth.expireSession(token);
+    return throwError(() => unauthorized(req));
+  }
+  return next(withToken(req, token)).pipe(
+    catchError((error: unknown) => {
+      if (token && error instanceof HttpErrorResponse && error.status === 401) {
+        auth.expireSession(token);
+      }
       return throwError(() => error);
     }),
   );

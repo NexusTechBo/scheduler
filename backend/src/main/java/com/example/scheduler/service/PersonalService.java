@@ -1,13 +1,11 @@
 package com.example.scheduler.service;
 
-import com.example.scheduler.dto.patient.PatientResponse;
-import com.example.scheduler.dto.personal.AssignAndRemoveRequest;
+import com.example.scheduler.dto.personal.DoctorModeRequest;
 import com.example.scheduler.dto.personal.PersonalProfileUpdateRequest;
 import com.example.scheduler.dto.personal.PersonalRequest;
 import com.example.scheduler.dto.personal.PersonalResponse;
 import com.example.scheduler.dto.personal.PersonalUpdateRequest;
 import com.example.scheduler.enums.ERole;
-import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -24,13 +22,9 @@ public interface PersonalService {
 
     PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request);
 
+    void updateDoctorMode(Long userId, DoctorModeRequest request);
+
     void deactivatePersonalById(Long personalId, Long userId);
 
     PersonalResponse activatePersonalById(Long personalId);
-
-    void assignPatient(AssignAndRemoveRequest request, Long userId, String role);
-
-    void removePatient(AssignAndRemoveRequest request, Long userId, String role);
-
-    List<PatientResponse> getPatientsOfDoctor(Long doctorId, Long userId, String role);
 }

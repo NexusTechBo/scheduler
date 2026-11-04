@@ -2,11 +2,11 @@ import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Patient } from '../../core/models/api.models';
-import { initials } from '../../core/utils/labels.util';
 import {
   PatientFormData,
   PatientFormDialogComponent,
 } from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
+import { InitialsPipe } from '../../shared/pipes/initials.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
@@ -29,6 +29,7 @@ import { PatientsService } from './patients.service';
 @Component({
   selector: 'app-patients-page',
   imports: [
+    InitialsPipe,
     LoadErrorComponent,
     SkeletonComponent,
     FormsModule,
@@ -49,7 +50,6 @@ export class PatientsPageComponent {
   protected readonly patients = inject(PatientsService);
   private readonly focusRow = focusAfterLoad(this.patients.isLoading);
 
-  protected readonly initials = initials;
   protected readonly tabs: SegmentedTabItem[] = [
     { id: 'mine', label: 'Mis pacientes' },
     { id: 'all', label: 'Todos' },
@@ -72,10 +72,15 @@ export class PatientsPageComponent {
   }
 
   protected manageDoctors(patient: Patient): void {
-    this.dialog.open<void, AssignDoctorData>(AssignDoctorDialogComponent, {
-      ...labelledByFrame(),
-      data: { patient },
-    });
+    this.dialog
+      .open<boolean, AssignDoctorData>(AssignDoctorDialogComponent, {
+        ...labelledByFrame(),
+        data: { patient },
+        disableClose: true,
+      })
+      .closed.subscribe((changed) => {
+        if (changed && this.patients.ownListEnabled) this.patients.reloadMine();
+      });
   }
 
   protected deactivate(patient: Patient): void {

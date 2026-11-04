@@ -1,123 +1,82 @@
-# Scheduler
+# Scheduler (ClinicFlow)
 
-Multi-tenant medical appointment scheduler. Each **clinic** is a tenant; its staff (administrators, doctors, assistants) manage patients, doctor availability, schedule exceptions and appointments. Appointment changes are pushed live to a board over WebSocket, and patients can book from a public guest page (shareable link) or a chatbot (Spring AI / Gemini).
+Multi-tenant medical appointment scheduler. Each clinic is a tenant with its own PostgreSQL schema. Staff (administrators, doctors, assistants) manage appointments, availability, patients and staff; patients can book as guests through a public link; changes are pushed in realtime and notified by email and WhatsApp.
 
-## Repository layout
+## Project structure
 
-```
-scheduler/
-├── backend/        Spring Boot REST API (Gradle)
-├── frontend/       Angular SPA (npm)
-├── docker-compose.yml  local stack: backend (8080, uses the host PostgreSQL via host.docker.internal) + frontend/nginx (4200); `docker compose up -d --build`
-├── .githooks/      git hooks (pre-commit.js: Prettier check); enable with `git config core.hooksPath .githooks`
-└── .claude/        project skills, agents and hooks (settings.json + hooks/*.js)
-```
+| Path                 | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `backend/`           | Spring Boot 4, Java 26, Gradle. Layered MVC under `com.example.scheduler`: `controller`, `service` + `service/impl`, `repository`, `entity`, `dto/<feature>`, `mapper` (MapStruct), `validator`, `exception`, `config`, `middleware` (JWT, rate limit, access log), `security`, `tenant`, `websocket`, `notification`, `exchange` (WhatsApp service client), `ratelimiting`, `tool` (Spring AI). Flyway migrations in `src/main/resources/db/migration/{public,tenant}`; messages in `messages*.properties`. |
+| `frontend/`          | Angular 22 standalone app with signals, Angular CDK and Tailwind 4. `src/app/core` (API classes, auth, catalog stores, HTTP interceptors, models, navigation, utils), `features/<feature>` (page, feature service, model, private components), `shared` (UI primitives, shared domain components, services, pipes), `layout/shell`. Unit tests with Vitest.                                                                                                                                                  |
+| `docker-compose.yml` | Backend on 8080 and frontend (nginx) on 4200; PostgreSQL is expected on the host.                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `.claude/agents/`    | Development, review and testing agents (see the workflow below).                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `.claude/skills/`    | Project conventions. Backend: `spring-mvc-architecture`, `spring-jpa`, `spring-multitenancy`, `spring-mappers`, `spring-validation`, `spring-exceptions`, `spring-i18n`, `spring-websocket`, `spring-rate-limiting`. Frontend: `angular-architecture`, `angular-component-modularization`, `angular-developer`.                                                                                                                                                                                              |
 
-Claude Code hooks: Prettier runs on every edited `frontend/src` file; editing an existing Flyway migration asks first; `.env` files can't be written (reading asks); `git commit` / `git push` are always denied — the user commits after reviewing.
+## Commands
 
-## Backend — `backend/`
+- Backend (from `backend/`): `gradlew.bat spotlessApply`, `gradlew.bat build`, `gradlew.bat test`, `gradlew.bat bootRun` (needs `backend/.env` and PostgreSQL).
+- Frontend (from `frontend/`): `npm start` (port 4200, proxies `/api` and `/ws` to 8080), `npm run build`, `npm run test:ci`, `npm run format`.
 
-- **Stack:** Java 26, Spring Boot 4, Spring Data JPA / Hibernate, PostgreSQL, Flyway, Spring Security + jjwt (JWT), Spring WebSocket (STOMP), springdoc OpenAPI, MapStruct, Lombok, Spring AI (Google GenAI), Spring Mail, Bucket4j + Caffeine (rate limiting), Actuator + Micrometer Tracing (Brave, no exporter), libphonenumber (phones stored as E.164 via `Utils.normalizePhoneNumber`, default region `BO`).
-- **Package:** `com.example.scheduler` → `config` (+ `config/async`, `config/jackson`, `config/ratelimiting`), `controller`, `dto/<feature>` (lowercase package names), `entity`, `enums`, `exception`, `mapper`, `middleware`, `notification` (+ `notification/event`, `notification/template`), `repository`, `security` (+ `security/jwt`), `seeder`, `service` + `service/impl`, `tenant`, `tool`, `util`, `validator`, `websocket` (+ `websocket/event`).
-- **Domain:** `Clinic` (public schema, `PENDING_ACTIVATION | ACTIVE`; activated by an emailed link, tokens in `ClinicActivationToken`) · `Personal` (staff, roles `ADMINISTRATOR | DOCTOR | ASSISTANT`, optional `Specialty`) · `Patient` (many-to-many with doctors via `doctor_patient`) · `DoctorAvailability` · `ScheduleException` · `Appointment` (`PENDING | CONFIRMED | CANCELLED`).
-- **Multi-tenancy (schema per clinic):** the `public` schema holds `clinics`; each clinic has its own schema `clinic_<slug>`. Everything lives in the `tenant` package (`HibernateConfig` wires it). `TenantContext` (ThreadLocal, clinic id + schema) is set from the JWT `clinicId` + `clinicSlug` claims in `JwtAuthFilter` / `JwtChannelInterceptor` and always cleared in `finally`; `CustomTenantResolver` falls back to `public`. New tenant schemas are created by `SchemaProvisioningService`. Any code that runs outside a request (seeders, schedulers, async) must set and clear the tenant itself.
-- **Migrations:** `src/main/resources/db/migration/public` (public schema) and `.../tenant` (applied to every clinic schema). `ddl-auto: none`; never edit an applied migration, add `V{n}__description.sql`.
-- **Auth:** login `POST /api/auth/login` with username `<user>@<clinic-slug>.com`; the token carries `sub` (user id), `role`, `clinicId`, `clinicName`, `clinicSlug`, `username`. Every request re-checks the user is active with the same role (`ActiveUserChecker`). Public paths come from `security.public-paths`; the rest of `/actuator/**` is `denyAll` in `SecurityConfig`. `security.system-paths` lists path prefixes excluded from the access log.
-- **Guest booking:** role `GUEST` (never stored in `personal`) is a 30-min JWT (`sub` `"0"`, `clinicId`, `clinicName`, `clinicSlug`) issued to anyone by the public `POST /api/public/guest/session {slug}` for an ACTIVE clinic. `SecurityConfig` allows GUEST only on `/api/guest/**` and staff roles everywhere else; GUEST is refused on STOMP CONNECT.
-- **Rate limiting:** `middleware/ratelimit/RateLimitFilter` (in the security chain right after `JwtAuthFilter`) applies the `rate-limit.policies` from `application.yaml` (first match wins; key `IP` for public/guest routes, `USER` = `clinicId:userId` for staff) with Bucket4j buckets in Caffeine caches (in memory, single instance). Exceeding a limit returns 429 `ErrorResponse` + `Retry-After`. Limits overridable via `RATE_LIMIT_*` env vars, `RATE_LIMIT_ENABLED=false` disables it. The client IP comes from `X-Forwarded-For` only via trusted proxies (`server.forward-headers-strategy`, `SERVER_TOMCAT_REMOTEIP_INTERNAL_PROXIES`, see `.env.example`).
-- **WebSocket:** STOMP endpoint `/ws`, topic `/topic/clinic/{clinicId}/board`; events are published with `@TransactionalEventListener(AFTER_COMMIT)`.
-- **Email:** `notification` events (staff credentials, clinic activation/welcome, appointment confirmed/canceled to the patient) are sent after commit, `@Async` on the `mailTaskExecutor` pool, via `EmailService`; sender from `app.mail.from` / `app.mail.from-name` (`MAIL_FROM`, `MAIL_FROM_NAME`); links point to `app.frontend-url` (`APP_FRONTEND_URL`). Send failures are logged and never fail the request.
-- **WhatsApp:** external Node service (sibling project `../whatsapp`, Baileys) called through the `exchange/WhatsappExchange` HTTP interface (`WhatsappExchangeConfig`, `whatsapp.service.base-url` / `api-key` → `WHATSAPP_SERVICE_URL`, `WHATSAPP_SERVICE_KEY`, header `x-api-key`). The session id is the clinic phone in E.164 without `+`. ADMINISTRATOR links/unlinks it via `/api/whatsapp/{qr,status,logout}`; service errors map to 503 (`ServiceUnavailableException`). `WhatsappNotificationListener` sends appointment confirmed/cancelled messages from the same `AppointmentNotificationEvent` after commit, `@Async` on `whatsappTaskExecutor`; failures are logged and never fail the request.
-- **Errors:** services throw `ApiException` subclasses; `GlobalExceptionHandler` returns the `ErrorResponse` JSON (includes `traceId`); `ApiException` is logged at WARN without stack trace, unexpected errors at ERROR with it.
-- **Logging:** structured ECS JSON by default (`LOG_FORMAT`, empty = readable; `LOG_LEVEL`, default `INFO`), readable in `dev`. `middleware/AccessLogFilter` logs one line per request (2xx INFO, 4xx WARN, 5xx ERROR) and returns the trace id in `X-Request-Id`. MDC keys (`util/LogKeys`): `clinicId`/`clinicSlug` set by `TenantContext`, `userId`/`role` by `JwtAuthFilter`; `MdcTaskDecorator` copies the MDC to `mailTaskExecutor`. Never log passwords, tokens, request bodies or patient PII (ids only). Actuator: only `/actuator/health` exposed and public, the rest `denyAll`.
-- **Config:** `application.yaml` + `application-dev.yaml`; secrets from env vars / git-ignored `.env` (template in `backend/.env.example`). Business time zone via `app.zone` and an injected `Clock`.
-- **Dev data:** `seeder/DataSeeder` seeds two clinics with staff and patients when the DB is empty (credentials are in that class).
-- **Commands (from `backend/`):** `./gradlew bootRun` · `./gradlew build` · `./gradlew test` · `./gradlew spotlessApply` / `spotlessCheck` (Spotless + Palantir Java Format) (Windows: `gradlew.bat`). Swagger UI at `http://localhost:8080/swagger-ui/index.html`. Requires PostgreSQL.
+## Agents
 
-## Frontend — `frontend/`
+| Agent                       | Role                                                                                          |
+|-----------------------------|-----------------------------------------------------------------------------------------------|
+| `spring-feature-developer`  | Implements new backend requirements.                                                          |
+| `angular-feature-developer` | Implements new frontend requirements.                                                         |
+| `spring-reviewer`           | Read-only review of backend changes: SOLID, design patterns, modularity, project conventions. |
+| `angular-reviewer`          | Read-only review of frontend changes: same criteria for components, services and stores.      |
+| `spring-tester`             | Unit tests for services and controllers (JUnit 5, Mockito, MockMvc).                          |
+| `angular-tester`            | Unit tests for feature services, components and core pieces (Vitest, TestBed).                |
+| `ui-e2e-tester`             | End-to-end test cases from the browser with the Playwright MCP against the running app.       |
 
-- **Stack:** Angular 22 (standalone components, signals, `rxResource` with `params`/`stream`, zone.js change detection, `@angular/build` builder), TypeScript 6, Angular CDK (dialogs, overlays), RxJS, Tailwind CSS 4, `@stomp/rx-stomp`, `jwt-decode`, Prettier (`printWidth: 100`, single quotes, `prettier-plugin-organize-imports` sorts and prunes imports).
-- **Structure:** `src/app/core` · `features/<feature>` (page + `<feature>.service.ts` + `<feature>.model.ts` + `components/`) · `layout/shell` · `shared`.
-- **API access:** relative URLs (`'patients'`) prefixed by `apiUrlInterceptor` with `environment.apiUrl` (`/api/`); `authInterceptor` adds the bearer token and logs out on 401. Types mirroring backend DTOs live in `core/models/api.models.ts`.
-- **Auth & roles:** `AuthService` keeps the session (decoded JWT) in a signal + `localStorage`; routes use `authGuard`, `guestGuard`, `roleGuard(...ROLES.x)`; menu items per role in `core/navigation/navigation.ts`.
-- **Guest page:** public route `clinic/guest/appointment/clinic?slug=<slug>` (outside the shell, `features/guest-booking`, shareable link); `GuestSessionService` gets/renews the guest token and keeps it in `sessionStorage`, never in `AuthService`; `authInterceptor` sends it only to `guest/*` URLs (none to `public/guest/session`). Only ADMINISTRATOR sees the "Enlace de reserva" button that copies the link.
-- **UI language:** Spanish (texts, `LOCALE_ID = 'es'`). Code, identifiers and comments in English.
-- **Dev proxy:** `proxy.conf.js` forwards `/api` and `/ws` to `BACKEND_URL` (default `http://localhost:8080`).
-- **Commands (from `frontend/`):** `npm start` (http://localhost:4200) · `npx ng build` · `npm run format` / `npm run format:check`.
+## Development workflow
 
-## Generated artifacts (repository root, git-ignored)
+Every task that implements or changes a feature follows this loop. The main session is the orchestrator: subagents cannot launch other agents, so the main session launches each one, passes context between them and decides when the loop ends.
 
-- `qa-reports/` — API QA reports from `java-tester`.
-- `playwright-mcp/` — screenshots and UI reports from `ui-tester`.
+### 1. Analysis (main session)
 
-## Skills and agents
+- Read the request and the affected code. Split it into concrete requirements with acceptance criteria.
+- Classify each requirement as backend, frontend or both, and define the API contract (endpoints, request and response fields, errors, roles) before any implementation when both sides are involved.
+- If something is ambiguous and changes the design, ask the user before continuing.
+- Present the short task breakdown to the user, then continue.
 
-| Area     | Skills                                                                                                                                               | Agents                                                            |
-|----------|------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------|
-| Backend  | `java-mvc-project-structure`, `java-entity-modeling`, `java-jpa-query-strategies`, `java-jwt-security`, `java-websocket-stomp`, `java-common-config` | `java-expert-developer`, `code-reviewer-backend`, `java-tester`   |
-| Frontend | `angular-developer`, `angular-project-structure`                                                                                                     | `angular-expert-developer`, `code-reviewer-frontend`, `ui-tester` |
+### 2. Implementation
 
-The skills are generic (fictional examples); when they differ from this project's existing code, the existing code wins.
+- Launch `spring-feature-developer` and/or `angular-feature-developer` with their requirements, acceptance criteria and the shared contract. If both are needed and the contract is fixed, run them in parallel; otherwise backend first.
+- Each developer must leave the code building (`gradlew.bat build -x test`, `npm run build`) and report the files changed.
 
-## Orchestration
+### 3. Verification (in parallel)
 
-The main session is the **orchestrator**: it analyzes, delegates, consolidates and decides. Subagents cannot spawn other subagents, so every delegation happens from the main session. Apply this flow to any implementation task; trivial questions or one-line fixes don't need it.
+Launch in a single step, in parallel, only the agents relevant to the sides that changed:
 
-### 1. Analyze the requirement (always first, done by the orchestrator)
+- `spring-reviewer` and/or `angular-reviewer`, with the list of changed files and the requirements.
+- `spring-tester` and/or `angular-tester`, with the classes and components to cover.
+- `ui-e2e-tester`, with the acceptance criteria as test cases, when the change is visible in the UI and the app is running (backend on 8080, frontend on 4200). If the app is not running, ask the user to start it or skip this agent and say so.
 
-- Restate the goal and identify the affected area: backend, frontend or both.
-- Read the relevant code (controllers, services, entities, pages, routes) to find what exists and what must change.
-- Define **acceptance criteria** and the cases that must work (roles, validations, edge cases).
-- Ask the user only for decisions that can't be inferred; otherwise choose sensible defaults and state them.
-- For full-stack tasks, run the **backend flow first** (it defines the API contract), then the **frontend flow** with the final contract.
+### 4. Consolidation (main session)
 
-### 2. Backend flow
+Merge all results into a single list of observations, removing duplicates:
 
-```
-analyze ─▶ java-expert-developer ─▶ ┬─ code-reviewer-backend ─┐
-                 ▲                  └─ java-tester ───────────┤ (parallel)
-                 │                                            ▼
-                 └──────── consolidated issues ◀──── orchestrator evaluates
-```
+- Reviewer findings: Critical and Major must be fixed; Minor is fixed when cheap; Nit is optional.
+- Failing unit tests: if the failure exposes a production bug, it goes to the developer; if the test itself is wrong, it goes back to the tester.
+- E2E failures: assigned to the backend or frontend developer according to the evidence.
 
-1. **Implement** — delegate to `java-expert-developer` with: the goal, acceptance criteria, affected files/endpoints, and any constraints (tenant handling, migrations, roles).
-2. **Verify in parallel** — when the developer finishes, launch **in the same message** (so they run concurrently):
-   - `code-reviewer-backend` with the scope of the change (files / diff) and the acceptance criteria.
-   - `java-tester` with the endpoints to test and the acceptance criteria.
-3. **Consolidate** — wait for both. Merge review findings and failed test cases into one deduplicated list, ordered by severity (Critical → Major → Minor), each with `path:line` and the evidence (report path for tests).
-4. **Fix loop** — send the consolidated list back to `java-expert-developer` (continue the same agent with `SendMessage` so it keeps its context; start a new one only if it is no longer available). Then repeat step 2 on the new changes.
-5. **Stop** when the issue count is at its minimum:
-   - no Critical or Major findings, **and**
-   - no FAIL test cases (BLOCKED only for documented environment reasons), **and**
-   - remaining Minor items/suggestions are either fixed or consciously accepted.
-   Also stop after **3 fix iterations** if issues stop decreasing, and report what remains and why.
+### 5. Loop
 
-### 3. Frontend flow
+- If there are observations to fix, send them to the corresponding developer (and to the tester for broken tests), then repeat step 3 only for the affected sides, giving the reviewers the previous findings so they verify each one.
+- The loop ends when there are no Critical or Major findings, all unit tests pass and all E2E cases pass or are justified as blocked.
+- Safety limit: at most 5 iterations. If observations remain after that, or the same observation reappears twice, stop and ask the user how to proceed.
 
-Same loop with the frontend agents:
+### 6. Final report (main session)
 
-```
-analyze ─▶ angular-expert-developer ─▶ ┬─ code-reviewer-frontend ─┐
-                 ▲                     └─ ui-tester ──────────────┤ (parallel)
-                 │                                                ▼
-                 └──────── consolidated issues ◀──── orchestrator evaluates
-```
+Summarize for the user: requirements implemented, files changed, tests added and their results, E2E results, observations fixed, observations accepted or pending, and any manual step (migrations, environment variables). Do not commit or push unless the user asks.
 
-1. **Implement** — delegate to `angular-expert-developer` with the goal, acceptance criteria, affected pages/routes and the backend contract (endpoints, DTOs, error cases).
-2. **Verify in parallel** — in the same message launch `code-reviewer-frontend` (scope of the change) and `ui-tester` (pages/flows, roles and acceptance criteria). The backend must be running for `ui-tester`.
-3. **Consolidate** findings + failed UI cases (with screenshot paths) into one prioritized list.
-4. **Fix loop** — send it to `angular-expert-developer` via `SendMessage`, then verify again in parallel.
-5. **Stop** with the same criteria as the backend flow (no Critical/Major, no FAIL, max 3 iterations without improvement).
+### When not to run the full loop
 
-### 4. Keep this file up to date
+Questions, explanations, small fixes of a few lines, configuration or documentation changes are handled directly in the main session without agents. For a bug fix, use the matching developer plus the matching tester to reproduce it with a test first, and a reviewer only when the fix touches design.
 
-After the loop ends, the orchestrator checks whether the changes made by the agents invalidate anything in this `CLAUDE.md`, and updates it **only if needed**:
+## General rules
 
-- **Update** when a change affects the documented context: new or removed module/package/feature folder, new domain entity, role or status, changes to multi-tenancy, auth/JWT claims, WebSocket endpoints/topics, migration layout, new dependency or version bump of the main stack, new env vars, commands, ports, generated folders, or new/renamed skills and agents.
-- **Don't update** for ordinary work that fits the existing description (a new endpoint, page, DTO, bug fix, refactor inside the same structure).
-- Keep edits minimal: change the affected lines, don't rewrite sections, keep the same style, never add secrets.
-- Mention in the final report whether `CLAUDE.md` was updated and what changed.
-
-### 5. Final report to the user
-
-Summarize: what was implemented, iterations run, issues found and fixed, remaining accepted issues (with reason), whether `CLAUDE.md` was updated, and the paths of the generated reports (`qa-reports/…`, `playwright-mcp/…`). Don't commit or push unless the user asks.
+- Follow the project skills; when existing code differs from a skill, existing code wins and the difference is reported.
+- Never edit an applied Flyway migration; never hardcode secrets; every user-facing backend message is a key in both message bundles; UI text is in Spanish.
+- Do not commit or push without an explicit request.

@@ -2,7 +2,6 @@ package com.example.scheduler.service.impl;
 
 import com.example.scheduler.dto.scheduleexception.ScheduleExceptionRequest;
 import com.example.scheduler.dto.scheduleexception.ScheduleExceptionResponse;
-import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.ScheduleException;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.exception.BadRequestException;
@@ -20,6 +19,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -30,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
+    private static final List<AppointmentStatus> EXCLUDED_FROM_OVERLAP = List.of(AppointmentStatus.CANCELLED);
+
     private final ScheduleExceptionRepository scheduleExceptionRepository;
     private final PersonalRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
@@ -37,6 +39,8 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     private final ScheduleExceptionMapper mapper;
     private final Clock clock;
     private final MessageSource messageSource;
+
+    private record BlockedRange(LocalDateTime from, LocalDateTime to) {}
 
     @Override
     @Transactional
@@ -46,9 +50,13 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctorId));
         if (request.date().isBefore(LocalDate.now(clock)))
             throw new BadRequestException(MessageKeys.SCHEDULE_EXCEPTION_DATE_PAST);
-        var affected = findAffectedAppointments(doctorId, request);
-        if (!affected.isEmpty() && !Boolean.TRUE.equals(request.cancelAppointments()))
-            throw new BusinessException(MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT, affected.size());
+        var futureRange = futureBlockedRange(request);
+        var affected = futureRange
+                .map(r -> appointmentRepository.countOverlappingAppointments(
+                        doctorId, r.from(), r.to(), EXCLUDED_FROM_OVERLAP))
+                .orElse(0L);
+        if (affected > 0 && !Boolean.TRUE.equals(request.cancelAppointments()))
+            throw new BusinessException(MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT, affected);
         var fullDay = request.isFullDayBlock();
         var scheduleException = scheduleExceptionRepository.save(ScheduleException.builder()
                 .doctor(doctor)
@@ -58,7 +66,11 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
                 .isFullDayBlock(fullDay)
                 .reason(request.reason())
                 .build());
-        if (!affected.isEmpty()) appointmentService.cancelAppointments(affected, cancellationReason(request.reason()));
+        if (affected > 0) {
+            var range = futureRange.orElseThrow();
+            appointmentService.cancelDoctorAppointmentsInRange(
+                    doctorId, range.from(), range.to(), cancellationReason(request.reason()));
+        }
         return mapper.toResponse(scheduleException);
     }
 
@@ -82,15 +94,13 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
         scheduleExceptionRepository.delete(scheduleException);
     }
 
-    private List<Appointment> findAffectedAppointments(Long doctorId, ScheduleExceptionRequest request) {
+    private Optional<BlockedRange> futureBlockedRange(ScheduleExceptionRequest request) {
         var date = request.date();
         var from = request.isFullDayBlock() ? date.atStartOfDay() : date.atTime(request.startTime());
         var to = request.isFullDayBlock() ? date.plusDays(1).atStartOfDay() : date.atTime(request.endTime());
         var now = LocalDateTime.now(clock);
         if (from.isBefore(now)) from = now;
-        if (!from.isBefore(to)) return List.of();
-        return appointmentRepository.findOverlappingAppointments(
-                doctorId, from, to, List.of(AppointmentStatus.CANCELLED));
+        return from.isBefore(to) ? Optional.of(new BlockedRange(from, to)) : Optional.empty();
     }
 
     private String cancellationReason(String reason) {

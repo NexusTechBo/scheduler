@@ -16,13 +16,18 @@ public class BoardPublisher {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentChanged(AppointmentChangedEvent event) {
-        var appointmentId = event.payload().appointmentId();
+        send(AppointmentChangedEvent.boardTopic(event.clinicId()), event);
+        send(AppointmentChangedEvent.doctorBoardTopic(event.clinicId(), event.doctorId()), event);
+    }
+
+    private void send(String topic, AppointmentChangedEvent event) {
         try {
-            messagingTemplate.convertAndSend(AppointmentChangedEvent.boardTopic(event.clinicId()), event.payload());
+            messagingTemplate.convertAndSend(topic, event.payload());
         } catch (RuntimeException e) {
             log.error(
-                    "Board event for appointment {} could not be published to clinic {}",
-                    appointmentId,
+                    "Board event for appointment {} could not be published to {} of clinic {}",
+                    event.payload().appointmentId(),
+                    topic,
                     event.clinicId(),
                     e);
         }

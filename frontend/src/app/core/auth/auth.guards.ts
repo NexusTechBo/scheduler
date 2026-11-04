@@ -5,11 +5,11 @@ import { HOME_URL } from '../navigation/navigation';
 import { AuthService } from './auth.service';
 
 export const authGuard: CanActivateFn = () => {
-  return inject(AuthService).token() ? true : inject(Router).createUrlTree(['/login']);
+  return inject(AuthService).isAuthenticated() ? true : inject(Router).createUrlTree(['/login']);
 };
 
 export const guestGuard: CanActivateFn = () =>
-  inject(AuthService).token() ? inject(Router).createUrlTree([HOME_URL]) : true;
+  inject(AuthService).isAuthenticated() ? inject(Router).createUrlTree([HOME_URL]) : true;
 
 export function roleGuard(...roles: Role[]): CanActivateFn {
   return () =>

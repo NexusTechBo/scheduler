@@ -5,6 +5,7 @@ import { StaffApi } from '../../../core/api/staff.api';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiErrorMessage } from '../../../core/http/api-error';
 import { Patient, PatientRequest } from '../../../core/models/api.models';
+import { PATIENT_ASSIGNMENT_ENABLED } from '../../../core/utils/feature-flags.util';
 import { NotificationService } from '../../services/notification.service';
 
 @Injectable({ providedIn: 'root' })
@@ -20,7 +21,7 @@ export class PatientFormService {
       : this.patientsApi.create(request);
     return save$.pipe(
       switchMap((saved) =>
-        !patient && this.auth.hasRole('DOCTOR')
+        !patient && PATIENT_ASSIGNMENT_ENABLED && this.auth.restrictedToOwnData()
           ? this.staffApi
               .assignPatient({ patientId: saved.id, doctorId: this.auth.userId()! })
               .pipe(

@@ -2,8 +2,8 @@ import { LowerCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { canCancelAppointment, canConfirmAppointment } from '../../core/utils/appointment.util';
 import { APPOINTMENT_STATUSES, STATUS_PLURAL_LABEL } from '../../core/utils/labels.util';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
@@ -14,7 +14,6 @@ import {
   SegmentedTabsComponent,
 } from '../../shared/ui/segmented-tabs/segmented-tabs.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import { AppointmentRow, AppointmentStatusFilter } from './appointments.model';
@@ -43,14 +42,12 @@ import { GuestLinkButtonComponent } from './components/guest-link-button/guest-l
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppointmentsPageComponent {
-  private readonly isDoctor = inject(AuthService).hasRole('DOCTOR');
+  private readonly ownDataOnly = inject(AuthService).restrictedToOwnData();
   protected readonly appointments = inject(AppointmentsService);
   private readonly focusRow = focusAfterLoad(this.appointments.isLoading);
 
-  protected readonly canConfirm = canConfirmAppointment;
-  protected readonly canCancel = canCancelAppointment;
-  protected readonly showDoctor = !this.isDoctor;
-  protected readonly subtitle = this.isDoctor ? 'Tus citas' : 'Todas las citas de la clínica';
+  protected readonly showDoctor = !this.ownDataOnly;
+  protected readonly subtitle = this.ownDataOnly ? 'Tus citas' : 'Todas las citas de la clínica';
   protected readonly tabs: SegmentedTabItem[] = [
     { id: 'ALL', label: 'Todas' },
     ...APPOINTMENT_STATUSES.map((status) => ({ id: status, label: STATUS_PLURAL_LABEL[status] })),

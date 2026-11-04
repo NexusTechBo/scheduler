@@ -3,7 +3,8 @@ import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { Staff } from '../../core/models/api.models';
-import { ROLE_LABEL, initials } from '../../core/utils/labels.util';
+import { ROLE_LABEL } from '../../core/utils/labels.util';
+import { InitialsPipe } from '../../shared/pipes/initials.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
@@ -26,6 +27,7 @@ import { StaffService } from './staff.service';
 @Component({
   selector: 'app-staff-page',
   imports: [
+    InitialsPipe,
     LoadErrorComponent,
     SkeletonComponent,
     FormsModule,
@@ -47,7 +49,6 @@ export class StaffPageComponent {
   private readonly focusRow = focusAfterLoad(this.staffService.isLoading);
 
   protected readonly roleLabel = ROLE_LABEL;
-  protected readonly initials = initials;
   protected readonly myId = inject(AuthService).userId();
   protected readonly tabs: SegmentedTabItem[] = [
     { id: 'all', label: 'Todos' },

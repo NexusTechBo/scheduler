@@ -30,7 +30,7 @@ public class Clinic {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default
-    private ClinicStatus status = ClinicStatus.ACTIVE;
+    private ClinicStatus status = ClinicStatus.PENDING_ACTIVATION;
 
     private LocalDateTime activatedAt;
 }

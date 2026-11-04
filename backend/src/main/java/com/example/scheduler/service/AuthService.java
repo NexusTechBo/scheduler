@@ -8,4 +8,6 @@ public interface AuthService {
     LoginResponse login(LoginRequest request);
 
     PersonalResponse findProfile(Long userId);
+
+    LoginResponse issueToken(Long userId);
 }
