@@ -1,8 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, finalize, tap } from 'rxjs';
-import { CatalogsApi } from '../../core/api/catalogs.api';
 import { StaffApi } from '../../core/api/staff.api';
+import { DoctorsStore } from '../../core/catalogs/doctors.store';
+import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
 import { resourceError } from '../../core/http/api-error';
 import {
   Staff,
@@ -20,7 +21,8 @@ const PAGE_SIZE = 12;
 @Injectable()
 export class StaffService {
   private readonly staffApi = inject(StaffApi);
-  private readonly catalogsApi = inject(CatalogsApi);
+  private readonly specialtiesStore = inject(SpecialtiesStore);
+  private readonly doctorsStore = inject(DoctorsStore);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
 
@@ -35,16 +37,11 @@ export class StaffService {
     params: () => this.filters(),
     stream: ({ params }) => this.staffApi.list(params),
   });
-  private readonly specialtiesResource = rxResource({
-    stream: () => this.catalogsApi.specialties(),
-  });
 
   readonly staff = computed(() =>
     this.staffResource.hasValue() ? this.staffResource.value().content : [],
   );
-  readonly specialties = computed(() =>
-    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
-  );
+  readonly specialties = this.specialtiesStore.specialties;
   readonly pagination = computed(() =>
     this.staffResource.hasValue() ? this.staffResource.value().page : null,
   );
@@ -52,6 +49,10 @@ export class StaffService {
   readonly onlyActive = computed(() => this.filters().isActive === true);
   readonly isLoading = this.staffResource.isLoading;
   readonly errorMessage = resourceError(this.staffResource, 'No se pudo cargar el personal');
+
+  constructor() {
+    this.specialtiesStore.load();
+  }
 
   reload(): void {
     this.staffResource.reload();
@@ -94,7 +95,7 @@ export class StaffService {
         'Cuenta desactivada',
         'No se pudo desactivar la cuenta',
       )
-      .pipe(tap(() => this.reload()));
+      .pipe(tap(() => this.afterChange()));
   }
 
   activate(staff: Staff): Observable<unknown> {
@@ -109,14 +110,22 @@ export class StaffService {
         'Cuenta reactivada',
         'No se pudo reactivar la cuenta',
       )
-      .pipe(tap(() => this.reload()));
+      .pipe(tap(() => this.afterChange()));
   }
 
   private afterSave(request: Observable<Staff>, message: string): Observable<Staff> {
     return request.pipe(
-      tap(() => this.notifications.success(message)),
+      tap(() => {
+        this.notifications.success(message);
+        this.doctorsStore.invalidate();
+      }),
       finalize(() => this.reload()),
     );
+  }
+
+  private afterChange(): void {
+    this.reload();
+    this.doctorsStore.invalidate();
   }
 
   private updateFilters(patch: Partial<StaffFilters>): void {

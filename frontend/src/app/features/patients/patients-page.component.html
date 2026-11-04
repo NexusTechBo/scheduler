@@ -120,12 +120,7 @@
                   @if (patients.isDoctor) {
                     <button
                       type="button"
-                      class="btn btn-sm min-h-10"
-                      [class]="
-                        patients.isMine(patient)
-                          ? 'btn-ghost'
-                          : 'bg-primary/10 text-primary hover:bg-primary/20'
-                      "
+                      class="btn btn-sm min-h-10btn-ghost"
                       [id]="'patient-toggle-' + patient.id"
                       [attr.aria-label]="
                         (patients.isMine(patient) ? 'Quitar de mi lista: ' : 'Asignarme: ') +

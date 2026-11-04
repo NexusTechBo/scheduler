@@ -4,10 +4,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, finalize, map } from 'rxjs';
 import { AgendaApi } from '../../core/api/agenda.api';
 import { AppointmentsApi } from '../../core/api/appointments.api';
-import { CatalogsApi } from '../../core/api/catalogs.api';
 import { PatientsApi } from '../../core/api/patients.api';
-import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { DoctorsStore } from '../../core/catalogs/doctors.store';
+import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
 import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
 import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
@@ -22,9 +22,9 @@ export class BookingService {
   private readonly auth = inject(AuthService);
   private readonly appointmentsApi = inject(AppointmentsApi);
   private readonly agendaApi = inject(AgendaApi);
-  private readonly staffApi = inject(StaffApi);
   private readonly patientsApi = inject(PatientsApi);
-  private readonly catalogsApi = inject(CatalogsApi);
+  private readonly specialtiesStore = inject(SpecialtiesStore);
+  private readonly doctorsStore = inject(DoctorsStore);
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
 
@@ -65,30 +65,17 @@ export class BookingService {
   );
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
   private readonly selectedDoctorId = computed(() => this.selectedDoctor()?.id);
-  private readonly specialtiesResource = rxResource({
-    params: () => (this.ownDataOnly ? undefined : true),
-    stream: () => this.catalogsApi.specialties(),
+  readonly specialties = this.specialtiesStore.specialties;
+  readonly doctors = computed(() => {
+    const all = this.doctorsStore.doctors();
+    const id = this._specialtyId();
+    if (id === null) return all;
+    const name = this.specialties().find((s) => s.id === id)?.name;
+    return name ? all.filter((doctor) => doctor.specialtyName === name) : [];
   });
-  private readonly doctorsResource = rxResource({
-    params: () =>
-      this.ownDataOnly ? undefined : { specialtyId: this._specialtyId() ?? undefined },
-    stream: ({ params }) =>
-      this.staffApi
-        .doctors({ specialtyId: params.specialtyId, isActive: true, size: 100 })
-        .pipe(map((page) => page.content)),
-  });
-  readonly specialties = computed(() =>
-    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
-  );
-  readonly doctors = computed(() =>
-    this.doctorsResource.hasValue() ? this.doctorsResource.value() : [],
-  );
-  readonly doctorsLoading = this.doctorsResource.isLoading;
-  readonly specialtiesErrorMessage = resourceError(
-    this.specialtiesResource,
-    LOAD_ERROR.specialties,
-  );
-  readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
+  readonly doctorsLoading = this.doctorsStore.isLoading;
+  readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
+  readonly doctorsErrorMessage = this.doctorsStore.errorMessage;
 
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
@@ -134,6 +121,12 @@ export class BookingService {
       !this.submitting(),
   );
 
+  constructor() {
+    if (this.ownDataOnly) return;
+    this.specialtiesStore.load();
+    this.doctorsStore.load();
+  }
+
   setPatientSearch(search: string): void {
     this._patientSearch.set(search);
   }
@@ -170,11 +163,11 @@ export class BookingService {
   }
 
   reloadSpecialties(): void {
-    this.specialtiesResource.reload();
+    this.specialtiesStore.reload();
   }
 
   reloadDoctors(): void {
-    this.doctorsResource.reload();
+    this.doctorsStore.reload();
   }
 
   reloadSlots(): void {

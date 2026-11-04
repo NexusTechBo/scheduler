@@ -1,20 +1,20 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, tap } from 'rxjs';
-import { CatalogsApi } from '../../core/api/catalogs.api';
 import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
+import { DoctorsStore } from '../../core/catalogs/doctors.store';
+import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
 import { resourceError } from '../../core/http/api-error';
 import { DoctorModeRequest, ProfileUpdateRequest, Staff } from '../../core/models/api.models';
-import { LOAD_ERROR } from '../../core/utils/messages.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
 export class ProfileService {
   private readonly staffApi = inject(StaffApi);
-  private readonly catalogsApi = inject(CatalogsApi);
+  private readonly specialtiesStore = inject(SpecialtiesStore);
+  private readonly doctorsStore = inject(DoctorsStore);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly auth = inject(AuthService);
@@ -29,25 +29,20 @@ export class ProfileService {
   readonly canToggleDoctorMode = computed(() => this.auth.hasRole(...ROLES.admin));
   readonly doctorMode = computed(() => this.auth.hasRole('DOCTOR'));
 
-  private readonly specialtiesResource = rxResource({
-    params: () => (this.canToggleDoctorMode() ? true : undefined),
-    stream: () => this.catalogsApi.specialties(),
-  });
-  readonly specialties = computed(() =>
-    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
-  );
-  readonly specialtiesLoading = this.specialtiesResource.isLoading;
-  readonly specialtiesErrorMessage = resourceError(
-    this.specialtiesResource,
-    LOAD_ERROR.specialties,
-  );
+  readonly specialties = this.specialtiesStore.specialties;
+  readonly specialtiesLoading = this.specialtiesStore.isLoading;
+  readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
+
+  constructor() {
+    if (this.canToggleDoctorMode()) this.specialtiesStore.load();
+  }
 
   reload(): void {
     this.auth.reloadProfile();
   }
 
   reloadSpecialties(): void {
-    this.specialtiesResource.reload();
+    this.specialtiesStore.reload();
   }
 
   update(request: ProfileUpdateRequest): Observable<Staff> {
@@ -55,6 +50,7 @@ export class ProfileService {
       tap((profile) => {
         this.notifications.success('Perfil actualizado');
         this.auth.setProfile(profile);
+        if (this.doctorMode()) this.doctorsStore.invalidate();
       }),
     );
   }
@@ -85,6 +81,7 @@ export class ProfileService {
       tap(({ token }) => {
         this.auth.replaceToken(token);
         this.auth.reloadProfile();
+        this.doctorsStore.invalidate();
       }),
     );
   }
