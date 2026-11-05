@@ -75,6 +75,7 @@
         <thead>
           <tr>
             <th>Paciente</th>
+            <th class="hidden md:table-cell">CI</th>
             <th class="hidden md:table-cell">Teléfono</th>
             <th class="hidden sm:table-cell">Estado</th>
             <th class="text-right">Acciones</th>
@@ -92,6 +93,7 @@
                   >
                   <div class="min-w-0">
                     <p class="font-bold wrap-break-word text-gray-900">{{ patient.name }}</p>
+                    <p class="text-xs text-gray-500 md:hidden">CI {{ patient.ci }}</p>
                     @if (patient.email) {
                       <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
                     }
@@ -101,6 +103,7 @@
                   </div>
                 </div>
               </td>
+              <td class="hidden whitespace-nowrap md:table-cell">{{ patient.ci }}</td>
               <td class="hidden whitespace-nowrap md:table-cell">
                 {{ patient.phoneNumber }}
               </td>
