@@ -1,23 +1,20 @@
 package com.example.scheduler.service.impl;
 
 import com.example.scheduler.notification.EmailContent;
+import com.example.scheduler.notification.OutgoingEmail;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.notification.event.ClinicActivatedEvent;
 import com.example.scheduler.notification.event.ClinicActivationEvent;
 import com.example.scheduler.notification.event.StaffCreatedEvent;
 import com.example.scheduler.notification.template.EmailTemplates;
+import com.example.scheduler.notification.transport.MailTransport;
 import com.example.scheduler.service.EmailService;
 import com.example.scheduler.util.LogUtils;
-import jakarta.mail.MessagingException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -32,19 +29,11 @@ public class EmailServiceImpl implements EmailService {
     static final String CLINIC_WELCOME = "CLINIC_WELCOME";
     private static final Pattern TRAILING_SLASHES = Pattern.compile("/+$");
 
-    private final JavaMailSender mailSender;
-    private final String from;
-    private final String fromName;
+    private final MailTransport mailTransport;
     private final String frontendUrl;
 
-    public EmailServiceImpl(
-            JavaMailSender mailSender,
-            @Value("${app.mail.from}") String from,
-            @Value("${app.mail.from-name:Scheduler}") String fromName,
-            @Value("${app.frontend-url}") String frontendUrl) {
-        this.mailSender = mailSender;
-        this.from = from;
-        this.fromName = fromName;
+    public EmailServiceImpl(MailTransport mailTransport, @Value("${app.frontend-url}") String frontendUrl) {
+        this.mailTransport = mailTransport;
         this.frontendUrl = TRAILING_SLASHES.matcher(frontendUrl.strip()).replaceAll("");
     }
 
@@ -102,15 +91,9 @@ public class EmailServiceImpl implements EmailService {
         var maskedTo = LogUtils.maskEmail(to);
         try {
             var content = contentSupplier.get();
-            var message = mailSender.createMimeMessage();
-            var helper = new MimeMessageHelper(message, false, StandardCharsets.UTF_8.name());
-            helper.setFrom(from, fromName);
-            helper.setTo(to);
-            helper.setSubject(content.subject());
-            helper.setText(content.html(), true);
-            mailSender.send(message);
+            mailTransport.send(new OutgoingEmail(to, content.subject(), content.html()));
             log.info("Email {} sent to {} [{}]", type, maskedTo, ref);
-        } catch (MessagingException | UnsupportedEncodingException | RuntimeException e) {
+        } catch (RuntimeException e) {
             logFailure(type, maskedTo, ref, e);
         }
     }

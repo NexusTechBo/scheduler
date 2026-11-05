@@ -137,8 +137,12 @@ app:
   zone: ${APP_ZONE:America/La_Paz}
   frontend-url: ${APP_FRONTEND_URL:http://localhost:4200}
   mail:
-    from: ${MAIL_FROM:${MAIL_USERNAME:${MAIL_USERNAME:}}}
+    provider: ${MAIL_PROVIDER:brevo} # brevo | smtp
+    from: ${MAIL_FROM:${MAIL_USERNAME:}}
     from-name: ${MAIL_FROM_NAME:Scheduler}
+    brevo:
+      base-url: ${BREVO_BASE_URL:https://api.brevo.com}
+      api-key: ${BREVO_API_KEY:}
 
 logging:
   structured:
