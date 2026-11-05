@@ -20,16 +20,15 @@ public class WhatsappNotificationListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentNotification(AppointmentNotificationEvent event) {
         if (!event.targets(NotificationChannel.WHATSAPP)) return;
-        var message = switch (event.status()) {
+        var message = switch (event.type()) {
             case CONFIRMED -> WhatsappTemplates.appointmentConfirmed(event);
             case CANCELLED -> WhatsappTemplates.appointmentCancelled(event);
-            default -> null;
+            case RESCHEDULED -> WhatsappTemplates.appointmentRescheduled(event);
         };
-        if (message == null) return;
         whatsappExchangeService.sendMessage(
                 event.clinicSlug(),
                 event.patientPhoneNumber(),
                 message,
-                "appointment=" + event.appointmentId() + " status=" + event.status());
+                "appointment=" + event.appointmentId() + " type=" + event.type() + " status=" + event.status());
     }
 }

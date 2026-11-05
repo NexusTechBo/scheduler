@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
@@ -56,7 +57,8 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
                         doctorId, r.from(), r.to(), EXCLUDED_FROM_OVERLAP))
                 .orElse(0L);
         if (affected > 0 && !Boolean.TRUE.equals(request.cancelAppointments()))
-            throw new BusinessException(MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT, affected);
+            throw BusinessException.withDetails(
+                    Map.of("count", affected), MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT, affected);
         var fullDay = request.isFullDayBlock();
         var scheduleException = scheduleExceptionRepository.save(ScheduleException.builder()
                 .doctor(doctor)

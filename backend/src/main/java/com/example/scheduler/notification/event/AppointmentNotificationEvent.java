@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public record AppointmentNotificationEvent(
+        AppointmentNotificationType type,
         AppointmentStatus status,
         Long appointmentId,
         String clinicName,
@@ -23,6 +24,7 @@ public record AppointmentNotificationEvent(
     public static final Set<NotificationChannel> WHATSAPP_ONLY = Set.of(NotificationChannel.WHATSAPP);
 
     public AppointmentNotificationEvent {
+        Objects.requireNonNull(type, "type");
         channels = Set.copyOf(Objects.requireNonNull(channels, "channels"));
     }
 

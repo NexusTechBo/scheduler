@@ -4,6 +4,7 @@ import com.example.scheduler.dto.appointment.AppointmentRequest;
 import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
+import com.example.scheduler.dto.appointment.RescheduleAppointmentRequest;
 import com.example.scheduler.enums.AppointmentStatus;
 import com.example.scheduler.security.RoleExpressions;
 import com.example.scheduler.security.SecurityUtils;
@@ -78,6 +79,19 @@ public class AppointmentController {
             @PathVariable Long appointmentId, Authentication auth) {
         return ResponseEntity.ok(appointmentService.confirmAppointmentById(
                 appointmentId, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth)));
+    }
+
+    @PatchMapping("/{appointmentId}/reschedule")
+    @PreAuthorize(RoleExpressions.STAFF)
+    @Operation(
+            summary =
+                    "PATCH /api/appointments/{id}/reschedule — move a pending or confirmed appointment to a new {startTime}; it returns to PENDING and a confirmed patient is notified")
+    public ResponseEntity<AppointmentResponse> rescheduleAppointmentById(
+            @PathVariable Long appointmentId,
+            @Valid @RequestBody RescheduleAppointmentRequest request,
+            Authentication auth) {
+        return ResponseEntity.ok(appointmentService.rescheduleAppointmentById(
+                appointmentId, request, SecurityUtils.extractUserId(auth), SecurityUtils.isRestrictedToOwnData(auth)));
     }
 
     @PatchMapping("/{appointmentId}/cancel")

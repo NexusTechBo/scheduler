@@ -47,9 +47,10 @@ public class EmailNotificationListener {
             log.info("Appointment {} email notification skipped: patient has no email", event.appointmentId());
             return;
         }
-        switch (event.status()) {
+        switch (event.type()) {
             case CONFIRMED -> emailService.sendAppointmentConfirmed(event);
             case CANCELLED -> emailService.sendAppointmentCancelled(event);
+            case RESCHEDULED -> emailService.sendAppointmentRescheduled(event);
         }
     }
 }

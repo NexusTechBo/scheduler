@@ -23,6 +23,15 @@ public final class WhatsappTemplates {
                 %s%s""".formatted(event.patientName(), clinicLabel(event.clinicName()), appointmentDetails(event), reason);
     }
 
+    public static String appointmentRescheduled(AppointmentNotificationEvent event) {
+        return """
+                Hola %s, tu cita en *%s* fue *reprogramada*.
+
+                %s
+
+                La cita queda *pendiente de confirmación*; te avisaremos cuando la clínica la confirme.""".formatted(event.patientName(), clinicLabel(event.clinicName()), appointmentDetails(event));
+    }
+
     private static String appointmentDetails(AppointmentNotificationEvent event) {
         var time = EmailTemplates.formatTime(event.startTime())
                 + (event.endTime() != null ? " - " + EmailTemplates.formatTime(event.endTime()) : "");

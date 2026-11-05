@@ -39,15 +39,18 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
 
+    /** {@code excludeId} skips one appointment (the one being rescheduled); pass null to check every appointment. */
     @Query("SELECT COUNT(a) > 0 FROM Appointment a " + "WHERE a.doctor.id = :doctorId "
             + "AND a.status NOT IN :excludedStatuses "
             + "AND a.startTime < :endTime "
-            + "AND a.endTime > :startTime")
+            + "AND a.endTime > :startTime "
+            + "AND (:excludeId IS NULL OR a.id <> :excludeId)")
     boolean existsOverlappingAppointment(
             @Param("doctorId") Long doctorId,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
-            @Param("excludedStatuses") List<AppointmentStatus> excludedStatuses);
+            @Param("excludedStatuses") List<AppointmentStatus> excludedStatuses,
+            @Param("excludeId") Long excludeId);
 
     @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
     @Query("SELECT a FROM Appointment a " + "WHERE a.doctor.id = :doctorId "
@@ -78,6 +81,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @EntityGraph(attributePaths = {"doctor.specialty", "patient"})
     List<Appointment> findByPatientIdAndStatusInAndStartTimeAfterOrderByIdAsc(
             Long patientId, Collection<AppointmentStatus> statuses, LocalDateTime time);
+
+    @Query("SELECT a.doctor.id FROM Appointment a WHERE a.id = :id")
+    Optional<Long> findDoctorIdById(@Param("id") Long id);
+
+    Optional<Appointment> findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
+            Long patientId, Long doctorId, Collection<AppointmentStatus> statuses, LocalDateTime time);
 
     boolean existsByDoctorIdAndStatusNotAndStartTimeAfter(Long doctorId, AppointmentStatus status, LocalDateTime time);
 

@@ -24,11 +24,14 @@ Add a new subclass only for a status not covered above; never create one excepti
 
 ## Error contract
 
-`ErrorResponse` is a record with timestamp, status, reason phrase, localized message, path, optional field errors and the trace id from the MDC. Null fields are omitted. The frontend reads `message` and `errors[].message`, so changes to this record are breaking changes.
+`ErrorResponse` is a record with timestamp, status, reason phrase, `code`, localized message, optional `details`, path, optional field errors and the trace id from the MDC. Null fields are omitted. The frontend reads `message`, `errors[].message`, `code` and `details`, so changes to this record are breaking changes.
+
+- `code` is always the message key of the `ApiException` (for example `appointment.slotTaken`); other handlers leave it null. The frontend branches on it, so a message key is part of the API contract: renaming or removing a key thrown from a service is a breaking change.
+- `details` is optional structured data for the client (counts, ids, ISO date-times). When the frontend needs a value, put it in `details` instead of making it parse the message text. Use `BusinessException.withDetails(details, key, args...)` (or the protected `ApiException` constructor that takes a details map in a subclass). Never put personal data in `details` that the caller would not see through REST.
 
 ## Global handler responsibilities
 
-- `ApiException`: log at warn with status, key, method and path; resolve the key with arguments for the current locale.
+- `ApiException`: log at warn with status, key, method and path; resolve the key with arguments for the current locale; set `code` to the key and copy `details` when present.
 - Validation (body, method parameters, constraint violations): 400 with the list of field errors.
 - Malformed body, type mismatch, missing parameter, invalid sort property: 400 with a specific key.
 - Unknown route, method not supported, unsupported media type: 404, 405, 415.

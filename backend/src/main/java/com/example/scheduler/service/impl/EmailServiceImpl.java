@@ -27,6 +27,7 @@ public class EmailServiceImpl implements EmailService {
     static final String STAFF_CREDENTIALS = "STAFF_CREDENTIALS";
     static final String APPOINTMENT_CONFIRMED = "APPOINTMENT_CONFIRMED";
     static final String APPOINTMENT_CANCELLED = "APPOINTMENT_CANCELLED";
+    static final String APPOINTMENT_RESCHEDULED = "APPOINTMENT_RESCHEDULED";
     static final String CLINIC_ACTIVATION = "CLINIC_ACTIVATION";
     static final String CLINIC_WELCOME = "CLINIC_WELCOME";
     private static final Pattern TRAILING_SLASHES = Pattern.compile("/+$");
@@ -60,6 +61,11 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendAppointmentCancelled(AppointmentNotificationEvent event) {
         sendToPatient(APPOINTMENT_CANCELLED, event, EmailTemplates::appointmentCancelled);
+    }
+
+    @Override
+    public void sendAppointmentRescheduled(AppointmentNotificationEvent event) {
+        sendToPatient(APPOINTMENT_RESCHEDULED, event, EmailTemplates::appointmentRescheduled);
     }
 
     @Override

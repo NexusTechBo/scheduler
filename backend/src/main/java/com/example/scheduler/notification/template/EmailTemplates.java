@@ -7,6 +7,7 @@ import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.notification.event.ClinicActivatedEvent;
 import com.example.scheduler.notification.event.ClinicActivationEvent;
 import com.example.scheduler.notification.event.StaffCreatedEvent;
+import com.example.scheduler.util.DateTimeFormats;
 import com.example.scheduler.util.Utils;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +18,6 @@ import org.springframework.util.StringUtils;
 public final class EmailTemplates {
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", LocaleConfig.SPANISH);
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", LocaleConfig.SPANISH);
 
     private EmailTemplates() {}
 
@@ -102,12 +102,23 @@ public final class EmailTemplates {
         return new EmailContent(subject, layout(body));
     }
 
+    public static EmailContent appointmentRescheduled(AppointmentNotificationEvent event, String recipientName) {
+        var subject = "Cita reprogramada - " + clinicLabel(event.clinicName());
+        var body = """
+                <p>Hola %s,</p>
+                <p>Tu cita fue <strong>reprogramada</strong>. Estos son los nuevos datos:</p>
+                %s
+                <p>La cita queda <strong>pendiente de confirmación</strong>; te avisaremos cuando la clínica la confirme.</p>
+                """.formatted(Utils.escapeHtml(recipientName), appointmentDetails(event));
+        return new EmailContent(subject, layout(body));
+    }
+
     public static String formatDate(LocalDateTime dateTime) {
         return dateTime.format(DATE_FORMATTER);
     }
 
     public static String formatTime(LocalDateTime dateTime) {
-        return dateTime.format(TIME_FORMATTER);
+        return dateTime.format(DateTimeFormats.TIME);
     }
 
     private static String appointmentDetails(AppointmentNotificationEvent event) {

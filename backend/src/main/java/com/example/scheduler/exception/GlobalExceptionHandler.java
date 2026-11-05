@@ -48,7 +48,8 @@ public class GlobalExceptionHandler {
                 req.getRequestURI());
         String resolvedMessage = msg(ex.getMessageKey(), ex.getArgs());
         return ResponseEntity.status(ex.getStatus())
-                .body(ErrorResponse.of(ex.getStatus(), resolvedMessage, req.getRequestURI()));
+                .body(ErrorResponse.ofCode(
+                        ex.getStatus(), ex.getMessageKey(), resolvedMessage, ex.getDetails(), req.getRequestURI()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

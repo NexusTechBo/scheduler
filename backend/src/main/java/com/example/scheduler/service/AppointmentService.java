@@ -4,6 +4,7 @@ import com.example.scheduler.dto.appointment.AppointmentRequest;
 import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
+import com.example.scheduler.dto.appointment.RescheduleAppointmentRequest;
 import com.example.scheduler.enums.AppointmentStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,6 +24,9 @@ public interface AppointmentService {
             Long doctorId, Long patientId, AppointmentStatus status, Pageable pageable);
 
     AppointmentResponse confirmAppointmentById(Long appointmentId, Long userId, boolean restrictToOwn);
+
+    AppointmentResponse rescheduleAppointmentById(
+            Long appointmentId, RescheduleAppointmentRequest request, Long userId, boolean restrictToOwn);
 
     AppointmentResponse cancelAppointmentById(
             Long appointmentId, CancelAppointmentRequest request, Long userId, boolean restrictToOwn);

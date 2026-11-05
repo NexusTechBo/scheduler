@@ -4,6 +4,7 @@ import com.example.scheduler.dto.appointment.AppointmentRequest;
 import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.appointment.AppointmentSummaryItem;
 import com.example.scheduler.dto.appointment.CancelAppointmentRequest;
+import com.example.scheduler.dto.appointment.RescheduleAppointmentRequest;
 import com.example.scheduler.entity.Appointment;
 import com.example.scheduler.entity.Clinic;
 import com.example.scheduler.entity.Personal;
@@ -15,10 +16,12 @@ import com.example.scheduler.exception.MessageKeys;
 import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.AppointmentMapper;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.AppointmentNotificationType;
 import com.example.scheduler.notification.event.NotificationChannel;
 import com.example.scheduler.repository.*;
 import com.example.scheduler.service.AppointmentService;
 import com.example.scheduler.tenant.TenantContext;
+import com.example.scheduler.util.DateTimeFormats;
 import com.example.scheduler.websocket.event.AppointmentChangedEvent;
 import com.example.scheduler.websocket.event.BoardEvent;
 import java.time.Clock;
@@ -49,8 +52,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AppointmentServiceImpl implements AppointmentService {
     private static final DateTimeFormatter CALENDAR_KEY_FORMATTER = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-    private static final String CHANNEL_STAFF = "staff";
-    private static final String CHANNEL_GUEST = "guest";
     private static final List<AppointmentStatus> EXCLUDED_FROM_OVERLAP = List.of(AppointmentStatus.CANCELLED);
     private static final List<AppointmentStatus> ACTIVE_STATUSES =
             List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
@@ -66,31 +67,51 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final MessageSource messageSource;
     private final Clock clock;
 
+    /**
+     * Who is booking. Staff see the existing appointment's id and status in the conflict; guests only see its start
+     * time, so a public caller cannot learn more about the appointment.
+     */
+    private enum BookingChannel {
+        STAFF("staff", MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE, true),
+        GUEST("guest", MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE_GUEST, false);
+
+        private final String label;
+        private final String conflictMessageKey;
+        private final boolean exposesAppointmentState;
+
+        BookingChannel(String label, String conflictMessageKey, boolean exposesAppointmentState) {
+            this.label = label;
+            this.conflictMessageKey = conflictMessageKey;
+            this.exposesAppointmentState = exposesAppointmentState;
+        }
+    }
+
     @Override
     @Transactional
     public AppointmentResponse bookAppointment(AppointmentRequest request, Long userId, boolean restrictToOwn) {
         if (restrictToOwn && !request.doctorId().equals(userId))
             throw new ForbiddenException(MessageKeys.APPOINTMENT_UNAUTHORIZED);
-        return book(request, CHANNEL_STAFF);
+        return book(request, BookingChannel.STAFF);
     }
 
     @Override
     @Transactional
     public AppointmentResponse bookGuestAppointment(AppointmentRequest request) {
-        return book(request, CHANNEL_GUEST);
+        return book(request, BookingChannel.GUEST);
     }
 
-    private AppointmentResponse book(AppointmentRequest request, String channel) {
+    private AppointmentResponse book(AppointmentRequest request, BookingChannel channel) {
         var patientId = request.patientId();
         var doctor = personalRepository
                 .findByIdForUpdate(request.doctorId())
                 .orElseThrow(
                         () -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, request.doctorId()));
-        var endTime = verifySlotBookable(doctor, request.startTime());
+        var endTime = verifySlotBookable(doctor, request.startTime(), null);
         var patient = patientRepository
                 .findByIdForShare(patientId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
         if (!patient.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_PATIENT_INACTIVE);
+        verifyNoActiveAppointmentWithDoctor(patientId, doctor.getId(), channel);
         var appointment = Appointment.builder()
                 .doctor(doctor)
                 .patient(patient)
@@ -101,18 +122,51 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .build();
         var saved = saveAndNotify(appointment);
         log.atInfo()
-                .addKeyValue("channel", channel)
+                .addKeyValue("channel", channel.label)
                 .log(
                         "Appointment {} created via {} for doctor {} and patient {} with status {}",
                         saved.getId(),
-                        channel,
+                        channel.label,
                         doctor.getId(),
                         patientId,
                         saved.getStatus());
         return appointmentMapper.toResponse(saved);
     }
 
-    private LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime) {
+    /**
+     * Rejects a booking when the patient already has an upcoming active appointment with the same doctor. The caller
+     * holds the pessimistic lock on the doctor ({@code findByIdForUpdate}), which serializes every booking for that
+     * doctor; since the rule is per doctor, no extra lock or unique index is needed.
+     */
+    private void verifyNoActiveAppointmentWithDoctor(Long patientId, Long doctorId, BookingChannel channel) {
+        appointmentRepository
+                .findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
+                        patientId, doctorId, ACTIVE_STATUSES, LocalDateTime.now(clock))
+                .ifPresent(existing -> {
+                    throw patientHasActiveConflict(existing, channel);
+                });
+    }
+
+    private static BusinessException patientHasActiveConflict(Appointment existing, BookingChannel channel) {
+        var startTime = existing.getStartTime();
+        var date = startTime.format(DateTimeFormats.SHORT_DATE);
+        var time = startTime.format(DateTimeFormats.TIME);
+        var details = new LinkedHashMap<String, Object>();
+        details.put("startTime", startTime);
+        if (!channel.exposesAppointmentState)
+            return BusinessException.withDetails(details, channel.conflictMessageKey, date, time);
+        details.put("appointmentId", existing.getId());
+        details.put("status", existing.getStatus());
+        return BusinessException.withDetails(
+                details, channel.conflictMessageKey, date, time, statusChoice(existing.getStatus()));
+    }
+
+    /** Selector for the {@code choice} format of the status label in the message bundles (0 pending, 1 confirmed). */
+    private static int statusChoice(AppointmentStatus status) {
+        return status == AppointmentStatus.CONFIRMED ? 1 : 0;
+    }
+
+    private LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime, Long excludeAppointmentId) {
         if (!doctor.isDoctor()) throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
         if (!doctor.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
         if (startTime.isBefore(LocalDateTime.now(clock)))
@@ -121,7 +175,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
         if (isBlocked(doctor.getId(), startTime, endTime))
             throw new BusinessException(MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED);
-        if (isSlotTaken(doctor.getId(), startTime, endTime))
+        if (isSlotTaken(doctor.getId(), startTime, endTime, excludeAppointmentId))
             throw new BusinessException(MessageKeys.APPOINTMENT_SLOT_TAKEN);
         return endTime;
     }
@@ -153,7 +207,54 @@ public class AppointmentServiceImpl implements AppointmentService {
         var saved = saveAndNotify(appointment);
         logStatusChange(saved, AppointmentStatus.PENDING);
         publishPatientNotification(
-                saved, currentClinicProvider.getCurrentClinic(), AppointmentNotificationEvent.ALL_CHANNELS);
+                saved,
+                currentClinicProvider.getCurrentClinic(),
+                AppointmentNotificationType.CONFIRMED,
+                AppointmentNotificationEvent.ALL_CHANNELS);
+        return appointmentMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse rescheduleAppointmentById(
+            Long appointmentId, RescheduleAppointmentRequest request, Long userId, boolean restrictToOwn) {
+        // Lock the doctor before reading anything else, as book() does: bookings and reschedules of the same doctor are
+        // serialized, so the doctor checks and the slot checks below see committed, locked state. The appointment row
+        // itself is protected by its @Version column against a concurrent confirm or cancel.
+        var doctorId = appointmentRepository
+                .findDoctorIdById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.APPOINTMENT_NOT_FOUND, appointmentId));
+        var doctor = personalRepository
+                .findByIdForUpdate(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctorId));
+        var appointment = getAppointmentOrThrowById(appointmentId);
+        verifyPermission(appointment, userId, restrictToOwn);
+        var previousStatus = appointment.getStatus();
+        if (!ACTIVE_STATUSES.contains(previousStatus))
+            throw new BusinessException(MessageKeys.APPOINTMENT_RESCHEDULE_ONLY_ACTIVE);
+        verifyNotStarted(appointment);
+        var previousStart = appointment.getStartTime();
+        var newStart = request.startTime();
+        if (newStart.equals(previousStart)) throw new BusinessException(MessageKeys.APPOINTMENT_RESCHEDULE_SAME_TIME);
+        var newEnd = verifySlotBookable(doctor, newStart, appointment.getId());
+        appointment.setStartTime(newStart);
+        appointment.setEndTime(newEnd);
+        appointment.setStatus(AppointmentStatus.PENDING);
+        var saved = saveAndNotify(appointment);
+        log.info(
+                "Appointment {} of doctor {} rescheduled {} -> {} (status {} -> {})",
+                saved.getId(),
+                doctorId,
+                previousStart,
+                newStart,
+                previousStatus,
+                saved.getStatus());
+        if (previousStatus == AppointmentStatus.CONFIRMED)
+            publishPatientNotification(
+                    saved,
+                    currentClinicProvider.getCurrentClinic(),
+                    AppointmentNotificationType.RESCHEDULED,
+                    AppointmentNotificationEvent.ALL_CHANNELS);
         return appointmentMapper.toResponse(saved);
     }
 
@@ -168,7 +269,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         verifyNotStarted(appointment);
         var saved = cancel(appointment, request.reason());
         publishPatientNotification(
-                saved, currentClinicProvider.getCurrentClinic(), AppointmentNotificationEvent.ALL_CHANNELS);
+                saved,
+                currentClinicProvider.getCurrentClinic(),
+                AppointmentNotificationType.CANCELLED,
+                AppointmentNotificationEvent.ALL_CHANNELS);
         return appointmentMapper.toResponse(saved);
     }
 
@@ -211,7 +315,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         var clinic = currentClinicProvider.getCurrentClinic();
         for (Appointment appointment : appointments) {
             var saved = cancel(appointment, reason);
-            publishPatientNotification(saved, clinic, channels);
+            publishPatientNotification(saved, clinic, AppointmentNotificationType.CANCELLED, channels);
         }
         return appointments.size();
     }
@@ -292,11 +396,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         return saved;
     }
 
-    private void publishPatientNotification(Appointment appointment, Clinic clinic, Set<NotificationChannel> channels) {
+    private void publishPatientNotification(
+            Appointment appointment,
+            Clinic clinic,
+            AppointmentNotificationType type,
+            Set<NotificationChannel> channels) {
         var doctor = appointment.getDoctor();
         var patient = appointment.getPatient();
         var specialty = doctor.getSpecialty();
         eventPublisher.publishEvent(new AppointmentNotificationEvent(
+                type,
                 appointment.getStatus(),
                 appointment.getId(),
                 clinic.getName(),
@@ -354,7 +463,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .map(a -> startTime.plusMinutes(a.getSlotDurationMinutes()));
     }
 
-    private boolean isSlotTaken(Long doctorId, LocalDateTime startTime, LocalDateTime endTime) {
-        return appointmentRepository.existsOverlappingAppointment(doctorId, startTime, endTime, EXCLUDED_FROM_OVERLAP);
+    private boolean isSlotTaken(
+            Long doctorId, LocalDateTime startTime, LocalDateTime endTime, Long excludeAppointmentId) {
+        return appointmentRepository.existsOverlappingAppointment(
+                doctorId, startTime, endTime, EXCLUDED_FROM_OVERLAP, excludeAppointmentId);
     }
 }

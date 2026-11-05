@@ -18,7 +18,7 @@ A standalone-component Angular application (no NgModules) organized by feature, 
 | `core/models`                  | Backend contract types in a single models file (requests, responses, filters, pagination, error shape).                                           | nothing                     |
 | `core/navigation`              | Routes constants, page titles, sidebar navigation definitions by role.                                                                            | `core`                      |
 | `core/utils`                   | Pure functions and constant maps (dates, labels, sorting, messages).                                                                              | `core/models`               |
-| `features/<feature>`           | One folder per page or flow: page component, feature service, feature model, and a `components` folder with the feature's private components.     | `core`, `shared`            |
+| `features/<feature>`           | One folder per page or flow: page component, feature service, feature model, optional feature util, and a `components` folder with private components. | `core`, `shared`            |
 | `shared/ui`                    | Generic, domain-agnostic UI building blocks (dialog frame, form fields, select, pickers, pagination, skeleton, empty state, icons).               | nothing domain-specific     |
 | `shared/components`            | Reusable domain components used by two or more features (appointment detail dialog, patient form dialog, status badge, slot grid, doctor picker). | `core`, `shared/ui`         |
 | `shared/services`              | Cross-feature UI services (notifications, confirmation, appointment actions).                                                                     | `core`, `shared`            |
@@ -59,5 +59,6 @@ Dependency direction is one way: features depend on shared and core; shared depe
 - File names in kebab case with a role suffix: `.component`, `.service`, `.api`, `.store`, `.socket`, `.model`, `.util`, `.pipe`, `.directive`, `.guards`, `.interceptors`.
 - Page components end in `-page.component`; their feature service shares the feature name.
 - Feature-specific types live in `<feature>.model.ts`; backend contract types live in `core/models`.
+- Pure functions (formatters, text builders for dialogs or messages, form validators) used by a single feature live in `<feature>.util.ts` next to the model; when two or more features need them, they move to `core/utils` (data and dates) or `shared/utils` (UI helpers). Extract a function only when it is duplicated, when it bloats the service or component, or when it deserves its own unit tests; one- or two-line helpers used by a single file stay private in that file. Anything that touches the DOM, injects services or holds state is not a util.
 - Formatting with Prettier (with organized imports): run `npm run format` in `frontend`. Validate with `npm run build`.
 - Environment values only through the `environments` files; secrets never reach the frontend.

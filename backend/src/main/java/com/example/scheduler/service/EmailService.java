@@ -12,6 +12,8 @@ public interface EmailService {
 
     void sendAppointmentCancelled(AppointmentNotificationEvent event);
 
+    void sendAppointmentRescheduled(AppointmentNotificationEvent event);
+
     void sendClinicActivation(ClinicActivationEvent event);
 
     void sendClinicWelcome(ClinicActivatedEvent event);

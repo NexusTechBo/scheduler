@@ -61,6 +61,10 @@ public final class MessageKeys {
     public static final String APPOINTMENT_PAST_NOT_MODIFIABLE = "appointment.pastNotModifiable";
     public static final String APPOINTMENT_PATIENT_INACTIVE = "appointment.patientInactive";
     public static final String APPOINTMENT_DOCTOR_INACTIVE = "appointment.doctorInactive";
+    public static final String APPOINTMENT_PATIENT_HAS_ACTIVE = "appointment.patientHasActive";
+    public static final String APPOINTMENT_PATIENT_HAS_ACTIVE_GUEST = "appointment.patientHasActiveGuest";
+    public static final String APPOINTMENT_RESCHEDULE_ONLY_ACTIVE = "appointment.rescheduleOnlyActive";
+    public static final String APPOINTMENT_RESCHEDULE_SAME_TIME = "appointment.rescheduleSameTime";
     public static final String APPOINTMENT_DOCTOR_DEACTIVATED_CANCELLATION_REASON =
             "appointment.doctorDeactivatedCancellationReason";
     public static final String APPOINTMENT_PATIENT_DEACTIVATED_CANCELLATION_REASON =
