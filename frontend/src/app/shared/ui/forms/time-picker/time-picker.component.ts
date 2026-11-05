@@ -28,6 +28,8 @@ export class TimePickerComponent implements ControlValueAccessor {
 
   protected readonly value = signal<string | null>(null);
   protected readonly disabled = signal(false);
+  private onChange: (value: string) => void = () => {};
+  protected onTouched: () => void = () => {};
 
   protected readonly options = computed<SelectOption<string>[]>(() => {
     const min = this.min();
@@ -40,9 +42,6 @@ export class TimePickerComponent implements ControlValueAccessor {
       disabled: !!min && time < min,
     }));
   });
-
-  private onChange: (value: string) => void = () => {};
-  protected onTouched: () => void = () => {};
 
   writeValue(value: string | null): void {
     this.value.set(value ? formatTime(value) : null);

@@ -12,7 +12,6 @@ import {
   signal,
 } from '@angular/core';
 import {
-  CalendarDay,
   addDays,
   buildMonthMatrix,
   formatLongDate,
@@ -24,12 +23,34 @@ import {
 import { DAYS_OF_WEEK } from '../../../../core/utils/labels.util';
 import { UiIconComponent } from '../../ui-icon/ui-icon.component';
 
+interface MonthGridDay {
+  iso: string;
+  inCurrentMonth: boolean;
+  dayNumber: number;
+  label: string;
+  edge: boolean;
+  inRange: boolean;
+  isToday: boolean;
+  disabled: boolean;
+}
+
 const ARROW_DAYS: Record<string, number> = {
   ArrowLeft: -1,
   ArrowRight: 1,
   ArrowUp: -7,
   ArrowDown: 7,
 };
+
+function keyTarget(event: KeyboardEvent, date: Date): Date | null {
+  if (ARROW_DAYS[event.key]) return addDays(date, ARROW_DAYS[event.key]);
+  if (event.key === 'Home') return startOfWeek(date);
+  if (event.key === 'End') return addDays(startOfWeek(date), 6);
+  if (event.key !== 'PageUp' && event.key !== 'PageDown') return null;
+  const months = (event.key === 'PageUp' ? -1 : 1) * (event.shiftKey ? 12 : 1);
+  const year = date.getFullYear();
+  const month = date.getMonth() + months;
+  return new Date(year, month, Math.min(date.getDate(), new Date(year, month + 1, 0).getDate()));
+}
 
 @Component({
   selector: 'app-month-grid',
@@ -46,11 +67,11 @@ export class MonthGridComponent {
   readonly pick = output<string>();
   readonly hover = output<string | null>();
 
-  protected readonly weekdays = DAYS_OF_WEEK;
-  protected readonly formatLongDate = formatLongDate;
-  private readonly today = toIso(new Date());
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+
+  protected readonly weekdays = DAYS_OF_WEEK;
+  private readonly today = toIso(new Date());
   private readonly active = signal<string | null>(null);
 
   protected readonly focusIso = computed(() => {
@@ -60,9 +81,30 @@ export class MonthGridComponent {
   });
 
   protected readonly monthLabel = computed(() => formatMonthLabel(this.month()));
-  protected readonly weeks = computed(() =>
-    buildMonthMatrix(this.month().getFullYear(), this.month().getMonth()),
+  private readonly baseWeeks = computed(() =>
+    buildMonthMatrix(this.month().getFullYear(), this.month().getMonth()).map((week) =>
+      week.map((day) => ({
+        iso: day.iso,
+        inCurrentMonth: day.inCurrentMonth,
+        dayNumber: day.date.getDate(),
+        label: formatLongDate(day.iso),
+      })),
+    ),
   );
+  protected readonly weeks = computed<MonthGridDay[][]>(() => {
+    const start = this.start();
+    const end = this.end();
+    const [lo, hi] = start && end ? [start, end].sort() : [null, null];
+    return this.baseWeeks().map((week) =>
+      week.map((day) => ({
+        ...day,
+        edge: day.iso === start || day.iso === end,
+        inRange: !!lo && !!hi && day.iso > lo && day.iso < hi,
+        isToday: day.iso === this.today,
+        disabled: this.outOfBounds(day.iso),
+      })),
+    );
+  });
 
   protected shiftMonth(delta: number): void {
     this.month.update((date) => new Date(date.getFullYear(), date.getMonth() + delta, 1));
@@ -87,27 +129,4 @@ export class MonthGridComponent {
     const min = this.min();
     return !!min && iso < min;
   }
-
-  protected dayState(day: CalendarDay) {
-    const start = this.start();
-    const end = this.end();
-    const [lo, hi] = start && end ? [start, end].sort() : [null, null];
-    return {
-      edge: day.iso === start || day.iso === end,
-      inRange: !!lo && !!hi && day.iso > lo && day.iso < hi,
-      isToday: day.iso === this.today,
-      disabled: this.outOfBounds(day.iso),
-    };
-  }
-}
-
-function keyTarget(event: KeyboardEvent, date: Date): Date | null {
-  if (ARROW_DAYS[event.key]) return addDays(date, ARROW_DAYS[event.key]);
-  if (event.key === 'Home') return startOfWeek(date);
-  if (event.key === 'End') return addDays(startOfWeek(date), 6);
-  if (event.key !== 'PageUp' && event.key !== 'PageDown') return null;
-  const months = (event.key === 'PageUp' ? -1 : 1) * (event.shiftKey ? 12 : 1);
-  const year = date.getFullYear();
-  const month = date.getMonth() + months;
-  return new Date(year, month, Math.min(date.getDate(), new Date(year, month + 1, 0).getDate()));
 }

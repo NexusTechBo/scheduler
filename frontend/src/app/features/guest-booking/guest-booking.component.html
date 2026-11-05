@@ -32,8 +32,15 @@
             </h1>
             <app-load-error
               [message]="session.message() ?? 'Ocurrió un error inesperado'"
+              [retryDisabled]="session.coolingDown()"
+              [retryLabel]="sessionRetryLabel()"
               (retry)="session.retry()"
             />
+            <span class="sr-only" aria-live="polite">
+              @if (session.cooldownFinished()) {
+                Ya puedes intentarlo de nuevo
+              }
+            </span>
           }
           @default {
             <h1
@@ -51,14 +58,18 @@
     } @else {
       <header class="mb-5">
         <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Reserva tu cita en</p>
-        <p class="text-2xl font-extrabold tracking-tight text-gray-900">
-          @if (booking.clinicName(); as clinicName) {
-            {{ clinicName }}
-          } @else {
-            <span class="inline-block h-7 w-48 animate-pulse rounded-lg bg-gray-900/10"></span>
-            <span class="sr-only">Cargando clínica…</span>
-          }
-        </p>
+        @if (!booking.clinicName() && booking.clinicErrorMessage(); as error) {
+          <app-load-error class="mt-2" [message]="error" (retry)="booking.reloadClinic()" />
+        } @else {
+          <p class="text-2xl font-extrabold tracking-tight text-gray-900">
+            @if (booking.clinicName(); as clinicName) {
+              {{ clinicName }}
+            } @else {
+              <span class="inline-block h-7 w-48 animate-pulse rounded-lg bg-gray-900/10"></span>
+              <span class="sr-only">Cargando clínica…</span>
+            }
+          </p>
+        }
       </header>
 
       <section
@@ -102,88 +113,26 @@
                 (retry)="booking.reloadSpecialties()"
               />
             }
-            <div class="mb-4 flex flex-wrap gap-2" role="group" aria-label="Especialidad">
-              <button
-                type="button"
-                class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
-                [class]="
-                  booking.specialtyId() === null
-                    ? 'bg-primary text-white'
-                    : 'bg-white/60 text-gray-600 hover:bg-white'
-                "
-                [attr.aria-pressed]="booking.specialtyId() === null"
-                (click)="booking.selectSpecialty(null)"
-              >
-                Todas
-              </button>
-              @for (specialty of booking.specialties(); track specialty.id) {
-                <button
-                  type="button"
-                  class="chip cursor-pointer px-3.5 py-1.5 text-sm transition-colors"
-                  [class]="
-                    booking.specialtyId() === specialty.id
-                      ? 'bg-primary text-white'
-                      : 'bg-white/60 text-gray-600 hover:bg-white'
-                  "
-                  [attr.aria-pressed]="booking.specialtyId() === specialty.id"
-                  (click)="booking.selectSpecialty(specialty.id)"
-                >
-                  {{ specialty.name }}
-                </button>
-              }
-            </div>
+            <app-specialty-filter
+              class="mb-4"
+              [specialties]="booking.specialties()"
+              [selectedId]="booking.specialtyId()"
+              (select)="booking.selectSpecialty($event)"
+            />
 
-            <div class="grid gap-2.5 sm:grid-cols-2">
-              @if (booking.doctorsLoading()) {
-                <app-skeleton [rows]="3" heightClass="h-17" />
-              } @else {
-                @if (booking.doctorsErrorMessage(); as error) {
-                  <app-load-error
-                    class="col-span-full"
-                    [message]="error"
-                    (retry)="booking.reloadDoctors()"
-                  />
-                } @else {
-                  @for (doctor of booking.doctors(); track doctor.id) {
-                    <button
-                      type="button"
-                      class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 px-3.5 py-3 text-left transition-all"
-                      [class]="
-                        booking.selectedDoctor()?.id === doctor.id
-                          ? 'border-primary bg-white shadow-md'
-                          : 'border-transparent bg-white/50 hover:bg-white/80'
-                      "
-                      [attr.aria-label]="
-                        'Elegir ' + doctor.name + ', ' + (doctor.specialtyName | specialtyLabel)
-                      "
-                      (click)="booking.selectDoctor(doctor)"
-                    >
-                      <span
-                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary"
-                        aria-hidden="true"
-                        >{{ initials(doctor.name) }}</span
-                      >
-                      <span class="min-w-0">
-                        <span class="line-clamp-2 text-sm font-bold text-gray-900">{{
-                          doctor.name
-                        }}</span>
-                        <span class="block truncate text-xs font-medium text-gray-500">{{
-                          doctor.specialtyName | specialtyLabel
-                        }}</span>
-                      </span>
-                    </button>
-                  } @empty {
-                    <p class="col-span-full text-sm text-gray-500">
-                      {{
-                        booking.specialtyId() === null
-                          ? 'No hay doctores disponibles.'
-                          : 'No hay doctores disponibles para esta especialidad.'
-                      }}
-                    </p>
-                  }
-                }
-              }
-            </div>
+            <app-doctor-picker
+              [doctors]="booking.doctors()"
+              [selectedId]="booking.selectedDoctor()?.id"
+              [loading]="booking.doctorsLoading()"
+              [errorMessage]="booking.doctorsErrorMessage()"
+              [emptyMessage]="
+                booking.specialtyId() === null
+                  ? 'No hay doctores disponibles.'
+                  : 'No hay doctores disponibles para esta especialidad.'
+              "
+              (select)="booking.selectDoctor($event)"
+              (retry)="booking.reloadDoctors()"
+            />
           }
 
           @case ('slot') {
@@ -271,7 +220,7 @@
               <button
                 type="button"
                 class="btn btn-primary"
-                [disabled]="booking.submitting()"
+                [attr.aria-disabled]="booking.submitting() || booking.coolingDown() || null"
                 (click)="booking.book()"
               >
                 @if (booking.submitting()) {
@@ -280,9 +229,18 @@
                     aria-hidden="true"
                   ></span>
                 }
-                Confirmar reserva
+                @if (booking.coolingDown()) {
+                  Reintenta en {{ booking.retryInLabel() }}
+                } @else {
+                  Confirmar reserva
+                }
               </button>
             </div>
+            <span class="sr-only" aria-live="polite">
+              @if (booking.cooldownFinished()) {
+                Ya puedes intentarlo de nuevo
+              }
+            </span>
           }
 
           @case ('done') {

@@ -2,9 +2,8 @@ package com.example.scheduler.entity;
 
 import com.example.scheduler.enums.AppointmentStatus;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
+import lombok.*;
 
 @Getter
 @Setter
@@ -46,9 +45,4 @@ public class Appointment {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @PrePersist
-    private void prePersist() {
-        this.createdAt = LocalDateTime.now();
-    }
 }

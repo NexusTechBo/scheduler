@@ -4,27 +4,27 @@ import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
-
 import java.lang.annotation.*;
 import java.time.LocalTime;
 
 @Documented
 @Constraint(validatedBy = TimeRange.TimeRangeValidator.class)
-@Target({ ElementType.TYPE })
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TimeRange {
     String message() default "{validation.timeRange.endAfterStart}";
 
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     interface Request {
         LocalTime startTime();
+
         LocalTime endTime();
     }
 
     class TimeRangeValidator implements ConstraintValidator<TimeRange, Request> {
-
         @Override
         public boolean isValid(Request value, ConstraintValidatorContext context) {
             if (value == null) return true;

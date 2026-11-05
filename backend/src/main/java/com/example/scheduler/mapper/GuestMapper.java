@@ -4,10 +4,9 @@ import com.example.scheduler.dto.appointment.AppointmentResponse;
 import com.example.scheduler.dto.guest.GuestAppointmentResponse;
 import com.example.scheduler.dto.guest.GuestDoctorResponse;
 import com.example.scheduler.entity.Personal;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface GuestMapper {

@@ -1,8 +1,9 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
+import { AuthService } from '../../core/auth/auth.service';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
 import {
@@ -15,6 +16,7 @@ import {
   toIso,
 } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
+import { CalendarCell, CalendarScope } from './calendar.model';
 
 @Injectable()
 export class CalendarService {
@@ -22,7 +24,14 @@ export class CalendarService {
   private readonly actions = inject(AppointmentActionsService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
   private readonly today = toIso(new Date());
+  private readonly _scope = signal<CalendarScope>('all');
+
+  readonly canFilterMine = computed(
+    () => this.auth.hasRole('ADMINISTRATOR') && this.auth.hasRole('DOCTOR'),
+  );
+  readonly scope = computed<CalendarScope>(() => (this.canFilterMine() ? this._scope() : 'all'));
 
   private readonly dateParam = toSignal(
     this.route.queryParamMap.pipe(map((params) => params.get('date'))),
@@ -35,16 +44,17 @@ export class CalendarService {
   private readonly viewDate = computed(() => parseIso(`${this.monthKey()}-01`));
 
   readonly monthLabel = computed(() => formatMonthLabel(this.viewDate()));
-  readonly weeks = computed(() =>
+  private readonly weeks = computed(() =>
     buildMonthMatrix(this.viewDate().getFullYear(), this.viewDate().getMonth()),
   );
 
   private readonly resource = rxResource({
-    request: () => {
+    params: () => {
       const [year, month] = this.monthKey().split('-').map(Number);
-      return { month, year };
+      const doctorId = this.scope() === 'mine' ? (this.auth.userId() ?? undefined) : undefined;
+      return { month, year, doctorId };
     },
-    loader: ({ request }) => this.api.calendar(request),
+    stream: ({ params }) => this.api.calendar(params),
   });
   readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el calendario');
@@ -61,17 +71,26 @@ export class CalendarService {
     return result;
   });
 
-  readonly selectedDayLabel = computed(() => formatDayLabel(this.selectedDate()));
-  readonly selectedDayAppointments = computed(() => this.appointmentsFor(this.selectedDate()));
-  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today);
+  readonly cells = computed<CalendarCell[][]>(() => {
+    const loaded = this.resource.hasValue();
+    const byDay = this.byDay();
+    return this.weeks().map((week) =>
+      week.map((day) => ({ day, appointments: loaded ? (byDay.get(day.iso) ?? []) : null })),
+    );
+  });
 
-  appointmentsFor(iso: string): AppointmentSummaryItem[] | null {
-    if (!this.resource.hasValue()) return null;
-    return this.byDay().get(iso) ?? [];
-  }
+  readonly selectedDayLabel = computed(() => formatDayLabel(this.selectedDate()));
+  readonly selectedDayAppointments = computed(() =>
+    this.resource.hasValue() ? (this.byDay().get(this.selectedDate()) ?? []) : null,
+  );
+  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today);
 
   reload(): void {
     this.resource.reload();
+  }
+
+  setScope(scope: CalendarScope): void {
+    this._scope.set(scope);
   }
 
   select(iso: string): void {

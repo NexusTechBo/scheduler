@@ -8,8 +8,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { BannerComponent } from '../../shared/components/banner/banner.component';
 import { ResendActivationComponent } from '../../shared/components/resend-activation/resend-activation.component';
-import { BannerComponent } from '../../shared/ui/banner/banner.component';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { ActivationService } from './activation.service';
@@ -28,12 +28,13 @@ import { ActivationService } from './activation.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActivationComponent implements OnInit {
+  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly activation = inject(ActivationService);
 
   private readonly token = this.route.snapshot.queryParamMap.get('token');
-  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 
   constructor() {
     afterRenderEffect(() => {

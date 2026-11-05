@@ -5,6 +5,9 @@ export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 export type DayOfWeek =
   'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
+export type WhatsappSessionStatus =
+  'IDLE' | 'INITIALIZING' | 'QR_PENDING' | 'READY' | 'DISCONNECTED';
+
 export interface Page<T> {
   content: T[];
   page: {
@@ -24,7 +27,21 @@ export interface PageQuery {
 export interface ApiError {
   status: number;
   message: string;
+  code?: string;
+  details?: Record<string, unknown>;
   errors?: { field: string; message: string }[] | null;
+}
+
+export type ActiveAppointmentStatus = Exclude<AppointmentStatus, 'CANCELLED'>;
+
+export interface PatientActiveAppointmentConflict {
+  appointmentId?: number;
+  startTime: string;
+  status: ActiveAppointmentStatus;
+}
+
+export interface StaffActiveAppointmentConflict extends PatientActiveAppointmentConflict {
+  appointmentId: number;
 }
 
 export interface LoginRequest {
@@ -39,6 +56,7 @@ export interface LoginResponse {
 export interface TokenPayload {
   sub: string;
   role: Role;
+  roles?: Role[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
@@ -90,6 +108,10 @@ export interface ResendActivationRequest {
 export interface AppointmentRequest {
   doctorId: number;
   patientId: number;
+  startTime: string;
+}
+
+export interface RescheduleAppointmentRequest {
   startTime: string;
 }
 
@@ -172,7 +194,9 @@ export interface Staff {
   email: string;
   phoneNumber: string | null;
   active: boolean;
+  alsoDoctor: boolean;
   role: Role;
+  specialtyId: number | null;
   specialtyName: string | null;
 }
 
@@ -193,6 +217,11 @@ export interface StaffUpdateRequest {
   phoneNumber?: string | null;
   password?: string | null;
   role: Role;
+  specialtyId: number | null;
+}
+
+export interface DoctorModeRequest {
+  enabled: boolean;
   specialtyId: number | null;
 }
 
@@ -318,4 +347,10 @@ export interface GuestAppointmentResponse {
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
+}
+
+export interface WhatsappSessionStatusResponse {
+  id: string;
+  status: WhatsappSessionStatus;
+  clinicPhoneNumber: string | null;
 }

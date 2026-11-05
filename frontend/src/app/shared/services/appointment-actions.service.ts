@@ -5,9 +5,6 @@ import { AppointmentsApi } from '../../core/api/appointments.api';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { AppointmentResponse } from '../../core/models/api.models';
 import { datePart, formatDayLabel, formatTime } from '../../core/utils/calendar.util';
-import { ConfirmService } from './confirm.service';
-import { NotificationService } from './notification.service';
-import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
 import {
   AppointmentDetailData,
   AppointmentDetailDialogComponent,
@@ -17,6 +14,13 @@ import {
   CancelAppointmentDialogComponent,
   CancelAppointmentResult,
 } from '../components/cancel-appointment-dialog/cancel-appointment-dialog.component';
+import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
+import { ConfirmService } from './confirm.service';
+import { NotificationService } from './notification.service';
+
+function dayTime(startTime: string): string {
+  return `${formatDayLabel(datePart(startTime)).toLowerCase()} ${formatTime(startTime)}`;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentActionsService {
@@ -76,8 +80,4 @@ export class AppointmentActionsService {
       }),
     );
   }
-}
-
-function dayTime(startTime: string): string {
-  return `${formatDayLabel(datePart(startTime)).toLowerCase()} ${formatTime(startTime)}`;
 }

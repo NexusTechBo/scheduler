@@ -1,11 +1,14 @@
+import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { ROLES } from '../../core/auth/roles';
 import { apiErrorMessage } from '../../core/http/api-error';
-import { ROLE_LABEL, initials } from '../../core/utils/labels.util';
+import { initials, rolesLabel } from '../../core/utils/labels.util';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
@@ -16,12 +19,15 @@ import {
   notBlank,
   phoneValidator,
 } from '../../shared/utils/validation-messages.util';
+import { DoctorModeCardComponent } from './components/doctor-mode-card/doctor-mode-card.component';
+import { WhatsappQrComponent } from './components/whatsapp-qr/whatsapp-qr.component';
 import { ProfileService } from './profile.service';
 
 @Component({
   selector: 'app-profile-page',
   imports: [
     AlertComponent,
+    DoctorModeCardComponent,
     SkeletonComponent,
     ReactiveFormsModule,
     FormFieldComponent,
@@ -34,15 +40,11 @@ import { ProfileService } from './profile.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfilePageComponent {
-  protected readonly profileService = inject(ProfileService);
-  protected readonly clinic = inject(AuthService).clinic;
+  private readonly dialog = inject(Dialog);
+  protected readonly profile = inject(ProfileService);
+  protected readonly auth = inject(AuthService);
 
-  protected readonly profile = this.profileService.profile;
-  protected readonly roleLabel = computed(() => {
-    const profile = this.profile();
-    return profile ? ROLE_LABEL[profile.role] : '';
-  });
-  protected readonly avatar = computed(() => initials(this.profile()?.name));
+  protected readonly me = this.profile.me;
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -55,8 +57,16 @@ export class ProfilePageComponent {
     newPassword: ['', Validators.minLength(8)],
   });
 
+  protected readonly roleLabel = computed(() => {
+    const profile = this.me();
+    if (!profile) return '';
+    return rolesLabel(profile.alsoDoctor ? [profile.role, 'DOCTOR'] : [profile.role]);
+  });
+  protected readonly avatar = computed(() => initials(this.me()?.name));
+  protected readonly canLinkWhatsapp = computed(() => this.auth.hasRole(...ROLES.admin));
+
   constructor() {
-    toObservable(this.profile)
+    toObservable(this.me)
       .pipe(filter(Boolean), takeUntilDestroyed())
       .subscribe((profile) =>
         this.form.reset({
@@ -79,7 +89,7 @@ export class ProfilePageComponent {
     }
     const { name, email, phoneNumber, currentPassword, newPassword } = this.form.getRawValue();
     this.saving.set(true);
-    this.profileService
+    this.profile
       .update({
         name: name.trim(),
         email: email.trim(),
@@ -90,5 +100,9 @@ export class ProfilePageComponent {
       .subscribe({
         error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo actualizar el perfil')),
       });
+  }
+
+  protected openWhatsapp(): void {
+    this.dialog.open(WhatsappQrComponent, labelledByFrame());
   }
 }

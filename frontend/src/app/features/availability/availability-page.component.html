@@ -80,7 +80,7 @@
               </span>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-sm font-bold text-gray-900">
-                  {{ formatLongDate(exception.date) }}
+                  {{ exception.date | longDate }}
                 </p>
                 <p class="truncate text-xs text-gray-500">
                   {{
@@ -101,7 +101,7 @@
                 (click)="removeException(exception)"
                 [attr.aria-label]="
                   'Quitar bloqueo del ' +
-                  (formatLongDate(exception.date) | lowercase) +
+                  (exception.date | longDate | lowercase) +
                   (exception.isFullDayBlock
                     ? ''
                     : ' ' +

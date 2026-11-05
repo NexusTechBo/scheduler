@@ -36,6 +36,17 @@ export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] 
   { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
 ];
 
+export function rolesLabel(roles: readonly Role[]): string {
+  return (Object.keys(ROLE_LABEL) as Role[])
+    .filter((role) => roles.includes(role))
+    .map((role) => ROLE_LABEL[role])
+    .join(' · ');
+}
+
+export function specialtyLabel(name: string | null | undefined): string {
+  return name ?? 'Sin especialidad';
+}
+
 function nameWords(name: string): string[] {
   return name
     .replace(/^(dr|dra)\.?\s+/i, '')

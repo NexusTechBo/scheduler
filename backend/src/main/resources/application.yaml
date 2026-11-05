@@ -54,6 +54,12 @@ spring:
 
 server:
   port: ${PORT}
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:native}
+
+whatsapp:
+  service:
+    base-url: ${WHATSAPP_SERVICE_URL:http://localhost:3000}
+    api-key: ${WHATSAPP_SERVICE_KEY}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
@@ -62,7 +68,70 @@ jwt:
   secret: ${JWT_SECRET}
 
 security:
-  public-paths: /api/auth/login, /api/clinics, /api/clinics/activate, /api/clinics/activation/resend, /swagger-ui/**, /v3/api-docs/**, /api/public/guest/session
+  public-paths: /api/auth/login, /api/clinics, /api/clinics/activate, /api/clinics/activation/resend, /api/public/guest/session, /ws/**, /actuator/health, /swagger-ui/**, /v3/api-docs/**
+  system-paths: /ws, /actuator/health, /swagger-ui, /v3/api-docs, /favicon.ico
+
+rate-limit:
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  cache-max-size: ${RATE_LIMIT_CACHE_MAX_SIZE:100000}
+  excluded-paths: [/actuator/**, /swagger-ui/**, /v3/api-docs/**, /ws/**, /favicon.ico]
+  policies:
+    - name: login
+      methods: [POST]
+      paths: [/api/auth/login]
+      key: IP
+      limits:
+        - capacity: ${RATE_LIMIT_LOGIN_PER_MINUTE:5}
+          period: 1m
+        - capacity: ${RATE_LIMIT_LOGIN_PER_HOUR:20}
+          period: 1h
+    - name: activation-resend
+      methods: [POST]
+      paths: [/api/clinics/activation/resend]
+      key: IP
+      limits:
+        - capacity: ${RATE_LIMIT_ACTIVATION_RESEND_PER_15_MINUTES:3}
+          period: 15m
+        - capacity: ${RATE_LIMIT_ACTIVATION_RESEND_PER_DAY:10}
+          period: 24h
+    - name: clinic-registration
+      methods: [POST]
+      paths: [/api/clinics, /api/clinics/activate]
+      key: IP
+      limits:
+        - capacity: ${RATE_LIMIT_CLINIC_REGISTRATION_PER_15_MINUTES:5}
+          period: 15m
+        - capacity: ${RATE_LIMIT_CLINIC_REGISTRATION_PER_DAY:20}
+          period: 24h
+    - name: guest-session
+      methods: [POST]
+      paths: [/api/public/guest/session]
+      key: IP
+      limits:
+        - capacity: ${RATE_LIMIT_GUEST_SESSION_PER_MINUTE:10}
+          period: 1m
+    - name: guest-booking
+      methods: [POST]
+      paths: [/api/guest/appointments, /api/guest/appointments/new-patient]
+      key: IP
+      limits:
+        - capacity: ${RATE_LIMIT_GUEST_BOOKING_PER_15_MINUTES:5}
+          period: 15m
+        - capacity: ${RATE_LIMIT_GUEST_BOOKING_PER_DAY:15}
+          period: 24h
+    - name: guest-read
+      methods: [GET, HEAD]
+      paths: [/api/guest/**]
+      key: IP
+      limits:
+        - capacity: ${RATE_LIMIT_GUEST_READ_PER_MINUTE:60}
+          period: 1m
+    - name: staff
+      paths: [/api/**]
+      key: USER
+      limits:
+        - capacity: ${RATE_LIMIT_STAFF_PER_MINUTE:300}
+          period: 1m
 
 app:
   zone: ${APP_ZONE:America/La_Paz}
@@ -70,3 +139,22 @@ app:
   mail:
     from: ${MAIL_FROM}
     from-name: ${MAIL_FROM_NAME:Scheduler}
+
+logging:
+  structured:
+    format:
+      console: ${LOG_FORMAT:ecs}
+  level:
+    com.example.scheduler: ${LOG_LEVEL:INFO}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  health:
+    mail:
+      enabled: false

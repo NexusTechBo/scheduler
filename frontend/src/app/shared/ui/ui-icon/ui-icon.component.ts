@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+export type UiIconName = keyof typeof PATHS;
+
 const PATHS = {
   home: 'M3 10.5 12 3l9 7.5M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9',
   board: 'M9 3v18M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z',
@@ -34,8 +36,6 @@ const PATHS = {
   menu: 'M4 6h16M4 12h16M4 18h16',
   login: 'M15 3h4a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3',
 } as const;
-
-export type UiIconName = keyof typeof PATHS;
 
 @Component({
   selector: 'app-ui-icon',

@@ -1,8 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-
-export function specialtyLabel(name: string | null | undefined): string {
-  return name ?? 'Sin especialidad';
-}
+import { specialtyLabel } from '../../core/utils/labels.util';
 
 @Pipe({ name: 'specialtyLabel' })
 export class SpecialtyLabelPipe implements PipeTransform {

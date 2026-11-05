@@ -21,13 +21,25 @@ import {
   LinearScale,
   Tooltip,
 } from 'chart.js';
-import { WeekDayStats } from '../../dashboard.service';
+import { capitalize } from '../../../../core/utils/calendar.util';
+import { STATUS_PLURAL_LABEL } from '../../../../core/utils/labels.util';
+import { WeekDayStats } from '../../dashboard.model';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const GRAY = '#9ca3af';
 const TEXT = '#6b7280';
 const GRID = 'rgba(17, 24, 39, 0.06)';
+
+function themeColors() {
+  const style = getComputedStyle(document.documentElement);
+  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
+  return {
+    primary: read('--color-primary', '#0056b3'),
+    tertiary: read('--color-tertiary', '#973c00'),
+    font: read('--font-sans', 'Inter, sans-serif'),
+  };
+}
 
 @Component({
   selector: 'app-week-chart',
@@ -83,9 +95,9 @@ export class WeekChartComponent {
     return {
       labels: days.map((day) => `${capitalize(day.weekday)} ${day.day}`),
       datasets: [
-        dataset('Confirmadas', colors.primary, (day) => day.confirmed),
-        dataset('Pendientes', colors.tertiary, (day) => day.pending),
-        dataset('Canceladas', GRAY, (day) => day.cancelled),
+        dataset(STATUS_PLURAL_LABEL.CONFIRMED, colors.primary, (day) => day.confirmed),
+        dataset(STATUS_PLURAL_LABEL.PENDING, colors.tertiary, (day) => day.pending),
+        dataset(STATUS_PLURAL_LABEL.CANCELLED, GRAY, (day) => day.cancelled),
       ],
     };
   }
@@ -133,18 +145,4 @@ export class WeekChartComponent {
       },
     };
   }
-}
-
-function themeColors() {
-  const style = getComputedStyle(document.documentElement);
-  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
-  return {
-    primary: read('--color-primary', '#0056b3'),
-    tertiary: read('--color-tertiary', '#973c00'),
-    font: read('--font-sans', 'Inter, sans-serif'),
-  };
-}
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

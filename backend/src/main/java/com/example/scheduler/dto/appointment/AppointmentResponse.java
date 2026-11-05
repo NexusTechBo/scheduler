@@ -1,7 +1,6 @@
 package com.example.scheduler.dto.appointment;
 
 import com.example.scheduler.enums.AppointmentStatus;
-
 import java.time.LocalDateTime;
 
 public record AppointmentResponse(
@@ -21,5 +20,4 @@ public record AppointmentResponse(
 
         AppointmentStatus status,
         String cancellationReason,
-        LocalDateTime createdAt
-) {}
+        LocalDateTime createdAt) {}

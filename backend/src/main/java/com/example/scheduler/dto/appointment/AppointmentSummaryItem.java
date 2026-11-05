@@ -1,7 +1,6 @@
 package com.example.scheduler.dto.appointment;
 
 import com.example.scheduler.enums.AppointmentStatus;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -16,5 +15,4 @@ public record AppointmentSummaryItem(
         LocalDateTime endTime,
         AppointmentStatus status,
         Long doctorId,
-        Long patientId
-) {}
+        Long patientId) {}

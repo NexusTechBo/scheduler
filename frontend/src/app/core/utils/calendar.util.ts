@@ -10,7 +10,7 @@ function pad(value: number): string {
   return value.toString().padStart(2, '0');
 }
 
-function capitalize(text: string): string {
+export function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 

@@ -1,29 +1,39 @@
 package com.example.scheduler.websocket;
 
-import com.example.scheduler.config.tenant.TenantContext;
 import com.example.scheduler.enums.ERole;
 import com.example.scheduler.security.ActiveUserChecker;
-import com.example.scheduler.security.JwtUtil;
+import com.example.scheduler.security.SecurityUtils;
+import com.example.scheduler.security.jwt.JwtClaims;
+import com.example.scheduler.security.jwt.JwtUtil;
+import com.example.scheduler.tenant.TenantContext;
+import com.example.scheduler.websocket.event.AppointmentChangedEvent;
+import java.time.Clock;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.http.HttpHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
+    private static final String INVALID_TOKEN = "Invalid token";
+    private static final String FORBIDDEN_DESTINATION = "Forbidden destination";
+    static final String CLINIC_ID_ATTRIBUTE = "clinicId";
+    static final String TOKEN_EXPIRES_AT_ATTRIBUTE = "tokenExpiresAt";
 
     private final JwtUtil jwtUtil;
     private final ActiveUserChecker activeUserChecker;
+    private final Clock clock;
 
     @Override
     public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
@@ -33,42 +43,62 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
             case CONNECT -> authenticate(accessor);
             case SUBSCRIBE -> authorizeSubscription(accessor);
             case SEND -> throw new MessageDeliveryException("Sending is not supported");
-            default -> { }
+            default -> {}
         }
         return message;
     }
 
     private void authenticate(StompHeaderAccessor accessor) {
-        var header = accessor.getFirstNativeHeader("Authorization");
+        var token = SecurityUtils.extractBearerToken(accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION));
         var attrs = accessor.getSessionAttributes();
-        if (header == null || !header.startsWith("Bearer "))
-            throw new MessageDeliveryException("Missing bearer token");
-        var claims = jwtUtil.parse(header.substring(7))
-                .orElseThrow(() -> new MessageDeliveryException("Invalid token"));
-        if (ERole.GUEST.name().equals(claims.get("role", String.class)))
+        if (token == null) throw new MessageDeliveryException("Missing bearer token");
+        var claims = jwtUtil.parse(token).orElseThrow(() -> new MessageDeliveryException(INVALID_TOKEN));
+        if (ERole.GUEST.name().equals(claims.get(JwtClaims.ROLE, String.class)))
             throw new MessageDeliveryException("Guests cannot connect");
-        var clinicId = claims.get("clinicId", Long.class);
-        TenantContext.setCurrentTenant(clinicId, claims.get("clinicSlug", String.class));
+        if (claims.getExpiration() == null) throw new MessageDeliveryException(INVALID_TOKEN);
+        var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
+        var role = claims.get(JwtClaims.ROLE, String.class);
+        var roles = JwtUtil.extractRoles(claims);
+        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class));
         try {
-            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), claims.get("role", String.class)))
-                throw new MessageDeliveryException("Invalid token");
+            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role, roles)) {
+                log.warn(
+                        "STOMP CONNECT rejected: user {} with role {} in clinic {} is inactive or its role changed",
+                        claims.getSubject(),
+                        role,
+                        clinicId);
+                throw new MessageDeliveryException(INVALID_TOKEN);
+            }
         } finally {
             TenantContext.clear();
         }
-        if (attrs == null)
-            throw new MessageDeliveryException("Invalid token");
-        attrs.put("clinicId", clinicId);
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + claims.get("role", String.class)));
-        accessor.setUser(
-                new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities)
-        );
+        if (attrs == null) throw new MessageDeliveryException(INVALID_TOKEN);
+        attrs.put(CLINIC_ID_ATTRIBUTE, clinicId);
+        attrs.put(TOKEN_EXPIRES_AT_ATTRIBUTE, claims.getExpiration().toInstant());
+        accessor.setUser(SecurityUtils.authenticated(claims.getSubject(), roles));
     }
 
     private void authorizeSubscription(StompHeaderAccessor accessor) {
         var attrs = accessor.getSessionAttributes();
-        if (accessor.getUser() == null || attrs == null || !(attrs.get("clinicId") instanceof Long clinicId))
+        if (!(accessor.getUser() instanceof Authentication auth)
+                || attrs == null
+                || !(attrs.get(CLINIC_ID_ATTRIBUTE) instanceof Long clinicId))
             throw new MessageDeliveryException("Not authenticated");
-        if (!AppointmentChangedEvent.boardTopic(clinicId).equals(accessor.getDestination()))
-            throw new MessageDeliveryException("Forbidden destination");
+        if (!(attrs.get(TOKEN_EXPIRES_AT_ATTRIBUTE) instanceof Instant expiresAt)
+                || !clock.instant().isBefore(expiresAt)) {
+            log.info("STOMP SUBSCRIBE rejected: token of user {} in clinic {} expired", auth.getName(), clinicId);
+            throw new MessageDeliveryException(INVALID_TOKEN);
+        }
+        if (!isAllowedDestination(auth, clinicId, accessor.getDestination()))
+            throw new MessageDeliveryException(FORBIDDEN_DESTINATION);
+    }
+
+    private static boolean isAllowedDestination(Authentication auth, Long clinicId, String destination) {
+        if (destination == null) return false;
+        if (SecurityUtils.isRestrictedToOwnData(auth))
+            return AppointmentChangedEvent.doctorBoardTopic(clinicId, SecurityUtils.extractUserId(auth))
+                    .equals(destination);
+        return AppointmentChangedEvent.boardTopic(clinicId).equals(destination)
+                || AppointmentChangedEvent.isDoctorBoardTopicOfClinic(clinicId, destination);
     }
 }

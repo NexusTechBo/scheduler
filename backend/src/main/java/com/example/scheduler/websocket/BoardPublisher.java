@@ -1,19 +1,35 @@
 package com.example.scheduler.websocket;
 
+import com.example.scheduler.websocket.event.AppointmentChangedEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class BoardPublisher {
-
     private final SimpMessagingTemplate messagingTemplate;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentChanged(AppointmentChangedEvent event) {
-        messagingTemplate.convertAndSend(AppointmentChangedEvent.boardTopic(event.clinicId()), event.payload());
+        send(AppointmentChangedEvent.boardTopic(event.clinicId()), event);
+        send(AppointmentChangedEvent.doctorBoardTopic(event.clinicId(), event.doctorId()), event);
+    }
+
+    private void send(String topic, AppointmentChangedEvent event) {
+        try {
+            messagingTemplate.convertAndSend(topic, event.payload());
+        } catch (RuntimeException e) {
+            log.error(
+                    "Board event for appointment {} could not be published to {} of clinic {}",
+                    event.payload().appointmentId(),
+                    topic,
+                    event.clinicId(),
+                    e);
+        }
     }
 }

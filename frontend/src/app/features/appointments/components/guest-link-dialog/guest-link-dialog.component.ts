@@ -1,6 +1,7 @@
 import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { SUCCESS_MESSAGE } from '../../../../core/utils/messages.util';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
@@ -27,7 +28,7 @@ export class GuestLinkDialogComponent {
       this.copyFailed.set(true);
       return;
     }
-    this.notifications.success('Enlace de reserva copiado');
+    this.notifications.success(SUCCESS_MESSAGE.guestLinkCopied);
     this.ref.close();
   }
 }

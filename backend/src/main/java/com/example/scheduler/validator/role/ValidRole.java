@@ -5,12 +5,11 @@ import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
-
 import java.lang.annotation.*;
 
 @Documented
 @Constraint(validatedBy = ValidRole.ValidRoleValidator.class)
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidRole {
     String message() default "{validation.role.invalid}";
@@ -20,10 +19,9 @@ public @interface ValidRole {
     Class<? extends Payload>[] payload() default {};
 
     class ValidRoleValidator implements ConstraintValidator<ValidRole, ERole> {
-
         @Override
         public boolean isValid(ERole value, ConstraintValidatorContext context) {
-            if(value == null) return true;
+            if (value == null) return true;
             return value == ERole.ASSISTANT || value == ERole.DOCTOR;
         }
     }

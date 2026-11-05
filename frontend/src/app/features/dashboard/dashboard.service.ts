@@ -3,34 +3,16 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
+import { appointmentStartDateTime } from '../../core/utils/appointment.util';
 import {
   addDays,
   formatShortDate,
   formatWeekdayShort,
   startOfWeek,
   toIso,
-  toLocalDateTime,
 } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
-import { UiIconName } from '../../shared/ui/ui-icon/ui-icon.component';
-
-interface Kpi {
-  label: string;
-  value: number | null;
-  icon: UiIconName;
-  tone: string;
-}
-
-export interface WeekDayStats {
-  iso: string;
-  weekday: string;
-  day: number;
-  isToday: boolean;
-  confirmed: number;
-  pending: number;
-  cancelled: number;
-  total: number;
-}
+import { Kpi, WeekDayStats } from './dashboard.model';
 
 const PENDING_LIMIT = 6;
 
@@ -42,7 +24,7 @@ export class DashboardService {
   private readonly weekStart = startOfWeek(new Date());
 
   private readonly weekResource = rxResource({
-    loader: () =>
+    stream: () =>
       this.appointmentsApi.board({
         from: toIso(this.weekStart),
         to: toIso(addDays(this.weekStart, 6)),
@@ -147,17 +129,13 @@ export class DashboardService {
 
   confirm(appointment: AppointmentSummaryItem): void {
     this.actions
-      .confirm(appointment.id, appointment.clientName, startOf(appointment))
+      .confirm(appointment.id, appointment.clientName, appointmentStartDateTime(appointment))
       .subscribe(() => this.reload());
   }
 
   cancel(appointment: AppointmentSummaryItem): void {
     this.actions
-      .cancel(appointment.id, appointment.clientName, startOf(appointment))
+      .cancel(appointment.id, appointment.clientName, appointmentStartDateTime(appointment))
       .subscribe(() => this.reload());
   }
-}
-
-function startOf(appointment: AppointmentSummaryItem): string {
-  return toLocalDateTime(appointment.appointmentDate, appointment.startTime);
 }

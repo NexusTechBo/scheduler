@@ -8,10 +8,13 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { filter, merge } from 'rxjs';
 import { Patient } from '../../../../core/models/api.models';
-import { initials } from '../../../../core/utils/labels.util';
-import { SpecialtyLabelPipe, specialtyLabel } from '../../../../shared/pipes/specialty-label.pipe';
+import { specialtyLabel } from '../../../../core/utils/labels.util';
+import { InitialsPipe } from '../../../../shared/pipes/initials.pipe';
+import { SpecialtyLabelPipe } from '../../../../shared/pipes/specialty-label.pipe';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
@@ -28,6 +31,7 @@ export interface AssignDoctorData {
 @Component({
   selector: 'app-assign-doctor-dialog',
   imports: [
+    InitialsPipe,
     SpecialtyLabelPipe,
     SkeletonComponent,
     LoadErrorComponent,
@@ -42,12 +46,12 @@ export interface AssignDoctorData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssignDoctorDialogComponent {
-  protected readonly assignment = inject(AssignDoctorService);
-  protected readonly ref = inject(DialogRef);
-
-  protected readonly initials = initials;
-  protected readonly doctorToAdd = signal<number | null>(null);
   private readonly removeButtons = viewChildren<ElementRef<HTMLButtonElement>>('removeButton');
+
+  protected readonly assignment = inject(AssignDoctorService);
+  private readonly ref = inject<DialogRef<boolean>>(DialogRef);
+
+  protected readonly doctorToAdd = signal<number | null>(null);
   private readonly focusAfterChange = focusAfterLoad(
     () => this.assignment.assigning() || this.assignment.assignedLoading(),
   );
@@ -57,6 +61,19 @@ export class AssignDoctorDialogComponent {
       label: `${doctor.name} · ${specialtyLabel(doctor.specialtyName)}`,
     })),
   );
+
+  constructor() {
+    merge(
+      this.ref.backdropClick.pipe(filter((event) => event.detail <= 1)),
+      this.ref.keydownEvents.pipe(filter((event) => event.key === 'Escape')),
+    )
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.close());
+  }
+
+  protected close(): void {
+    this.ref.close(this.assignment.changed());
+  }
 
   protected remove(doctorId: number, index: number): void {
     this.assignment.unassign(doctorId);

@@ -23,7 +23,6 @@ import {
 } from '../../core/http/api-error';
 import {
   Availability,
-  AvailabilityRequest,
   DayOfWeek,
   ScheduleException,
   ScheduleExceptionRequest,
@@ -32,13 +31,9 @@ import { formatLongDate, formatTime, toIso } from '../../core/utils/calendar.uti
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { AddAvailabilityResult, AvailabilityBlock } from './availability.model';
 
-type AvailabilityBlock = Omit<AvailabilityRequest, 'dayOfWeek'>;
-
-interface AddAvailabilityResult {
-  saved: DayOfWeek[];
-  failed: { day: DayOfWeek; message: string }[];
-}
+const REMOVE_LABEL = 'Quitar';
 
 @Injectable()
 export class AvailabilityService {
@@ -51,20 +46,23 @@ export class AvailabilityService {
   private readonly _previewDate = signal(this.today);
   readonly previewDate = this._previewDate.asReadonly();
 
-  private readonly availabilityResource = rxResource({ loader: () => this.api.availabilities() });
+  private readonly availabilityResource = rxResource({ stream: () => this.api.availabilities() });
   private readonly exceptionsResource = rxResource({
-    loader: () => this.api.exceptions(this.today),
+    stream: () => this.api.exceptions(this.today),
   });
   private readonly previewResource = rxResource({
-    request: () => this.previewDate(),
-    loader: ({ request }) =>
+    params: () => this.previewDate(),
+    stream: ({ params }) =>
       this.api
-        .availableSlots(this.doctorId, request)
+        .availableSlots(this.doctorId, params)
         .pipe(map((response) => response.availableSlots.map((slot) => formatTime(slot.startTime)))),
   });
+  readonly isWeekLoading = this.availabilityResource.isLoading;
+  readonly isExceptionsLoading = this.exceptionsResource.isLoading;
+  readonly isPreviewLoading = this.previewResource.isLoading;
 
   readonly week = computed(() => {
-    const blocks = this.availabilityResource.value() ?? [];
+    const blocks = this.availabilityResource.hasValue() ? this.availabilityResource.value() : [];
     return DAYS_OF_WEEK.map((day) => ({
       ...day,
       blocks: blocks
@@ -72,12 +70,12 @@ export class AvailabilityService {
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     }));
   });
-  readonly exceptions = computed(() => this.exceptionsResource.value() ?? []);
-  readonly previewSlots = computed(() => this.previewResource.value() ?? []);
-
-  readonly isWeekLoading = this.availabilityResource.isLoading;
-  readonly isExceptionsLoading = this.exceptionsResource.isLoading;
-  readonly isPreviewLoading = this.previewResource.isLoading;
+  readonly exceptions = computed(() =>
+    this.exceptionsResource.hasValue() ? this.exceptionsResource.value() : [],
+  );
+  readonly previewSlots = computed(() =>
+    this.previewResource.hasValue() ? this.previewResource.value() : [],
+  );
   readonly weekError = resourceError(this.availabilityResource, 'No se pudo cargar tu horario');
   readonly exceptionsError = resourceError(
     this.exceptionsResource,
@@ -130,7 +128,7 @@ export class AvailabilityService {
         {
           title: 'Quitar horario',
           message: `¿Quitar el bloque del ${dayLabel.toLowerCase()} de ${formatTime(block.startTime)} a ${formatTime(block.endTime)}? Las citas ya agendadas se mantienen.`,
-          confirmLabel: 'Quitar',
+          confirmLabel: REMOVE_LABEL,
           danger: true,
         },
         () => this.api.removeAvailability(block.id),
@@ -169,7 +167,7 @@ export class AvailabilityService {
         {
           title: 'Quitar bloqueo',
           message: `¿Habilitar nuevamente el ${formatLongDate(exception.date).toLowerCase()}?`,
-          confirmLabel: 'Quitar',
+          confirmLabel: REMOVE_LABEL,
         },
         () => this.api.removeException(exception.id),
         'Bloqueo quitado',

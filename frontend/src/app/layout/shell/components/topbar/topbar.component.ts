@@ -20,11 +20,12 @@ export class TopbarComponent {
 
   menu = output<void>();
 
+  protected readonly today = formatToday();
+
   protected readonly greeting = computed(() => {
     const hour = new Date().getHours();
     return hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
   });
   protected readonly givenName = computed(() => firstName(this.userName()));
   protected readonly avatarInitials = computed(() => initials(this.userName()));
-  protected readonly today = formatToday();
 }

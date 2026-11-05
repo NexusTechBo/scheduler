@@ -91,7 +91,7 @@
               </td>
               <td class="whitespace-nowrap max-sm:px-2">
                 <div class="flex flex-nowrap justify-end gap-1.5">
-                  @if (canConfirm(row.status)) {
+                  @if (row.canConfirm) {
                     <button
                       type="button"
                       class="btn btn-sm bg-primary/10 text-primary hover:bg-primary/20 max-2xl:h-9 max-2xl:w-9 max-2xl:px-0"
@@ -110,7 +110,7 @@
                       <span class="max-2xl:hidden">Confirmar</span>
                     </button>
                   }
-                  @if (canCancel(row.status)) {
+                  @if (row.canCancel) {
                     <button
                       type="button"
                       class="btn btn-sm btn-danger max-2xl:h-9 max-2xl:w-9 max-2xl:px-0"

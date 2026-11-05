@@ -1,40 +1,82 @@
-import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
-import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { DestroyRef, Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
+import { rxResource, takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, finalize, map } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  finalize,
+  map,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { AgendaApi } from '../../core/api/agenda.api';
 import { AppointmentsApi } from '../../core/api/appointments.api';
-import { CatalogsApi } from '../../core/api/catalogs.api';
 import { PatientsApi } from '../../core/api/patients.api';
-import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
-import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import { DoctorsStore } from '../../core/catalogs/doctors.store';
+import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
+import {
+  apiErrorMessage,
+  isSlotUnavailableError,
+  resourceError,
+  staffActiveAppointmentConflict,
+} from '../../core/http/api-error';
 import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
 import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import { LOAD_ERROR } from '../../core/utils/messages.util';
+import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { BookingAttempt, DoctorOption } from './booking.model';
+import { rescheduleConfirmOptions } from './booking.util';
 
 const PATIENT_RESULTS = 20;
-
-type DoctorOption = Pick<Staff, 'id' | 'name' | 'specialtyName'>;
 
 @Injectable()
 export class BookingService {
   private readonly auth = inject(AuthService);
   private readonly appointmentsApi = inject(AppointmentsApi);
   private readonly agendaApi = inject(AgendaApi);
-  private readonly staffApi = inject(StaffApi);
   private readonly patientsApi = inject(PatientsApi);
-  private readonly catalogsApi = inject(CatalogsApi);
+  private readonly specialtiesStore = inject(SpecialtiesStore);
+  private readonly doctorsStore = inject(DoctorsStore);
   private readonly notifications = inject(NotificationService);
+  private readonly confirm = inject(ConfirmService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
-  readonly isDoctor = this.auth.hasRole('DOCTOR');
+  readonly ownDataOnly = this.auth.restrictedToOwnData();
   readonly today = toIso(new Date());
 
   private readonly _patientSearch = signal('');
   private readonly _selectedPatient = signal<Patient | null>(null);
   readonly patientSearch = this._patientSearch.asReadonly();
   readonly selectedPatient = this._selectedPatient.asReadonly();
+
+  private readonly _specialtyId = signal<number | null>(null);
+  readonly specialtyId = this._specialtyId.asReadonly();
+  private readonly _selectedDoctor = linkedSignal<DoctorOption | null>(() =>
+    this.ownDataOnly
+      ? {
+          id: this.auth.userId()!,
+          name: this.auth.displayName(),
+          specialtyId: null,
+          specialtyName: null,
+        }
+      : null,
+  );
+  readonly selectedDoctor = this._selectedDoctor.asReadonly();
+  readonly specialties = this.specialtiesStore.specialties;
+  readonly doctorsLoading = this.doctorsStore.isLoading;
+  readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
+  readonly doctorsErrorMessage = this.doctorsStore.errorMessage;
+
+  private readonly _submitting = signal(false);
+  readonly submitting = this._submitting.asReadonly();
+
   private readonly debouncedPatientSearch = toSignal(
     toObservable(this._patientSearch).pipe(
       debounceTime(500),
@@ -44,51 +86,15 @@ export class BookingService {
     { initialValue: '' },
   );
   private readonly patientsResource = rxResource({
-    request: () => this.debouncedPatientSearch(),
-    loader: ({ request }) =>
+    params: () => this.debouncedPatientSearch(),
+    stream: ({ params }) =>
       this.patientsApi
-        .list({ search: request, isActive: true, size: PATIENT_RESULTS, sort: 'id' })
+        .list({ search: params, isActive: true, size: PATIENT_RESULTS, sort: 'id' })
         .pipe(map((page) => page.content)),
   });
   readonly patientsLoading = this.patientsResource.isLoading;
-  readonly filteredPatients = computed(() => this.patientsResource.value() ?? []);
-  readonly patientsErrorMessage = resourceError(
-    this.patientsResource,
-    'No se pudieron cargar los pacientes',
-  );
 
-  private readonly _specialtyId = signal<number | null>(null);
-  readonly specialtyId = this._specialtyId.asReadonly();
-  private readonly _selectedDoctor = linkedSignal<DoctorOption | null>(() =>
-    this.isDoctor
-      ? { id: this.auth.userId()!, name: this.auth.displayName(), specialtyName: null }
-      : null,
-  );
-  readonly selectedDoctor = this._selectedDoctor.asReadonly();
   private readonly selectedDoctorId = computed(() => this.selectedDoctor()?.id);
-  private readonly specialtiesResource = rxResource({
-    request: () => (this.isDoctor ? undefined : true),
-    loader: () => this.catalogsApi.specialties(),
-  });
-  private readonly doctorsResource = rxResource({
-    request: () => (this.isDoctor ? undefined : { specialtyId: this._specialtyId() ?? undefined }),
-    loader: ({ request }) =>
-      this.staffApi
-        .doctors({ specialtyId: request!.specialtyId, isActive: true, size: 100 })
-        .pipe(map((page) => page.content)),
-  });
-  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
-  readonly doctors = computed(() => this.doctorsResource.value() ?? []);
-  readonly doctorsLoading = this.doctorsResource.isLoading;
-  readonly specialtiesErrorMessage = resourceError(
-    this.specialtiesResource,
-    'No se pudieron cargar las especialidades',
-  );
-  readonly doctorsErrorMessage = resourceError(
-    this.doctorsResource,
-    'No se pudieron cargar los doctores',
-  );
-
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
   );
@@ -103,12 +109,12 @@ export class BookingService {
   });
   readonly selectedSlot = this._selectedSlot.asReadonly();
   private readonly slotsResource = rxResource({
-    request: () => {
+    params: () => {
       const doctorId = this.selectedDoctorId();
       return doctorId ? { doctorId, date: this.selectedDate() } : undefined;
     },
-    loader: ({ request }) =>
-      this.agendaApi.availableSlots(request!.doctorId, request!.date).pipe(
+    stream: ({ params }) =>
+      this.agendaApi.availableSlots(params.doctorId, params.date).pipe(
         map((response) =>
           response.availableSlots.map((slot) => ({
             startTime: formatTime(slot.startTime),
@@ -117,15 +123,21 @@ export class BookingService {
         ),
       ),
   });
-  readonly slots = computed(() => this.slotsResource.value() ?? []);
   readonly slotsLoading = this.slotsResource.isLoading;
-  readonly slotsErrorMessage = resourceError(
-    this.slotsResource,
-    'No se pudieron cargar los horarios',
-  );
 
-  private readonly _submitting = signal(false);
-  readonly submitting = this._submitting.asReadonly();
+  readonly filteredPatients = computed(() =>
+    this.patientsResource.hasValue() ? this.patientsResource.value() : [],
+  );
+  readonly patientsErrorMessage = resourceError(this.patientsResource, LOAD_ERROR.patients);
+  readonly doctors = computed(() => {
+    const all = this.doctorsStore.doctors();
+    const id = this._specialtyId();
+    return id === null ? all : all.filter((doctor) => doctor.specialtyId === id);
+  });
+  readonly slots = computed(() =>
+    this.slotsResource.hasValue() ? this.slotsResource.value() : [],
+  );
+  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
   readonly canSubmit = computed(
     () =>
       !!this.selectedDoctor() &&
@@ -133,6 +145,12 @@ export class BookingService {
       !!this.selectedPatient() &&
       !this.submitting(),
   );
+
+  constructor() {
+    if (this.ownDataOnly) return;
+    this.specialtiesStore.load();
+    this.doctorsStore.load();
+  }
 
   setPatientSearch(search: string): void {
     this._patientSearch.set(search);
@@ -143,16 +161,17 @@ export class BookingService {
   }
 
   selectSpecialty(id: number | null): void {
+    if (this.ownDataOnly) return;
     this._specialtyId.set(id);
-    if (id === null) return;
-    const name = this.specialties().find((s) => s.id === id)?.name;
-    if (this.selectedDoctor()?.specialtyName !== name) this._selectedDoctor.set(null);
+    if (id !== null && this.selectedDoctor()?.specialtyId !== id) this._selectedDoctor.set(null);
   }
 
   selectDoctor(doctor: Staff): void {
+    if (this.ownDataOnly) return;
     this._selectedDoctor.set({
       id: doctor.id,
       name: doctor.name,
+      specialtyId: doctor.specialtyId,
       specialtyName: doctor.specialtyName,
     });
   }
@@ -170,11 +189,11 @@ export class BookingService {
   }
 
   reloadSpecialties(): void {
-    this.specialtiesResource.reload();
+    this.specialtiesStore.reload();
   }
 
   reloadDoctors(): void {
-    this.doctorsResource.reload();
+    this.doctorsStore.reload();
   }
 
   reloadSlots(): void {
@@ -188,24 +207,55 @@ export class BookingService {
     if (!this.canSubmit() || !doctor || !slot || !patient) return;
 
     const date = this.selectedDate();
+    const attempt: BookingAttempt = {
+      doctor,
+      patient,
+      date,
+      startDateTime: toLocalDateTime(date, slot.startTime),
+    };
     this._submitting.set(true);
     this.appointmentsApi
-      .book({
-        doctorId: doctor.id,
-        patientId: patient.id,
-        startTime: toLocalDateTime(date, slot.startTime),
-      })
-      .pipe(finalize(() => this._submitting.set(false)))
-      .subscribe({
-        next: () => {
-          this.notifications.success('Cita agendada: queda pendiente de confirmación');
-          this.router.navigate(['/calendar'], { queryParams: { date } }).finally();
-        },
-        error: (error) => {
-          this.notifications.error(apiErrorMessage(error, 'No se pudo agendar la cita'));
-          this._selectedSlot.set(null);
-          this.slotsResource.reload();
-        },
+      .book({ doctorId: doctor.id, patientId: patient.id, startTime: attempt.startDateTime })
+      .pipe(
+        map(() => 'Cita agendada: queda pendiente de confirmación'),
+        catchError((error: unknown) => this.recoverFromBookingError(error, attempt)),
+        finalize(() => this._submitting.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((message) => {
+        this.notifications.success(message);
+        this.router.navigate(['/calendar'], { queryParams: { date } }).finally();
       });
+  }
+
+  private recoverFromBookingError(error: unknown, attempt: BookingAttempt): Observable<string> {
+    const conflict = staffActiveAppointmentConflict(error);
+    if (!conflict) {
+      this.handleBookingFailure(error, 'No se pudo agendar la cita');
+      return EMPTY;
+    }
+    this._submitting.set(false);
+    return this.confirm.ask(rescheduleConfirmOptions(conflict, attempt)).pipe(
+      filter(Boolean),
+      tap(() => this._submitting.set(true)),
+      switchMap(() =>
+        this.appointmentsApi
+          .reschedule(conflict.appointmentId, { startTime: attempt.startDateTime })
+          .pipe(
+            map(() => 'Cita reprogramada: queda pendiente de confirmación'),
+            catchError((rescheduleError: unknown) => {
+              this.handleBookingFailure(rescheduleError, 'No se pudo reprogramar la cita');
+              return EMPTY;
+            }),
+          ),
+      ),
+    );
+  }
+
+  private handleBookingFailure(error: unknown, fallback: string): void {
+    this.notifications.error(apiErrorMessage(error, fallback));
+    if (!isSlotUnavailableError(error)) return;
+    this._selectedSlot.set(null);
+    this.slotsResource.reload();
   }
 }

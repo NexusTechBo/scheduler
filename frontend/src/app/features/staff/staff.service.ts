@@ -1,27 +1,32 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, finalize, tap } from 'rxjs';
-import { CatalogsApi } from '../../core/api/catalogs.api';
 import { StaffApi } from '../../core/api/staff.api';
+import { DoctorsStore } from '../../core/catalogs/doctors.store';
+import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
 import { resourceError } from '../../core/http/api-error';
 import {
-  Role,
   Staff,
   StaffFilters,
   StaffRegisterRequest,
   StaffUpdateRequest,
 } from '../../core/models/api.models';
+import { ACTION_LABEL } from '../../core/utils/messages.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { StaffRoleFilter } from './staff.model';
 
 const PAGE_SIZE = 12;
 
-export type StaffRoleFilter = Role | 'all';
+function isDoctor(staff: Staff): boolean {
+  return staff.role === 'DOCTOR' || staff.alsoDoctor;
+}
 
 @Injectable()
 export class StaffService {
   private readonly staffApi = inject(StaffApi);
-  private readonly catalogsApi = inject(CatalogsApi);
+  private readonly specialtiesStore = inject(SpecialtiesStore);
+  private readonly doctorsStore = inject(DoctorsStore);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
 
@@ -33,20 +38,25 @@ export class StaffService {
   });
 
   private readonly staffResource = rxResource({
-    request: () => this.filters(),
-    loader: ({ request }) => this.staffApi.list(request),
+    params: () => this.filters(),
+    stream: ({ params }) => this.staffApi.list(params),
   });
-  private readonly specialtiesResource = rxResource({
-    loader: () => this.catalogsApi.specialties(),
-  });
+  readonly specialties = this.specialtiesStore.specialties;
+  readonly isLoading = this.staffResource.isLoading;
 
-  readonly staff = computed(() => this.staffResource.value()?.content ?? []);
-  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
-  readonly pagination = computed(() => this.staffResource.value()?.page ?? null);
+  readonly staff = computed(() =>
+    this.staffResource.hasValue() ? this.staffResource.value().content : [],
+  );
+  readonly pagination = computed(() =>
+    this.staffResource.hasValue() ? this.staffResource.value().page : null,
+  );
   readonly roleFilter = computed<StaffRoleFilter>(() => this.filters().role ?? 'all');
   readonly onlyActive = computed(() => this.filters().isActive === true);
-  readonly isLoading = this.staffResource.isLoading;
   readonly errorMessage = resourceError(this.staffResource, 'No se pudo cargar el personal');
+
+  constructor() {
+    this.specialtiesStore.load();
+  }
 
   reload(): void {
     this.staffResource.reload();
@@ -64,10 +74,6 @@ export class StaffService {
     this.filters.update((current) => ({ ...current, page }));
   }
 
-  specialtyIdOf(name: string | null | undefined): number | null {
-    return this.specialties().find((s) => s.name === name)?.id ?? null;
-  }
-
   create(request: StaffRegisterRequest): Observable<Staff> {
     return this.afterSave(this.staffApi.create(request), 'Miembro del personal creado');
   }
@@ -81,15 +87,17 @@ export class StaffService {
       .confirmThen(
         {
           title: 'Desactivar cuenta',
-          message: `${staff.name} dejará de aparecer para nuevas reservas. Sus citas existentes se mantienen.`,
-          confirmLabel: 'Desactivar',
+          message: isDoctor(staff)
+            ? `${staff.name} dejará de aparecer para nuevas reservas. Sus citas futuras se cancelarán y se notificará a los pacientes por WhatsApp.`
+            : `¿Desactivar la cuenta de ${staff.name}?`,
+          confirmLabel: ACTION_LABEL.deactivate,
           danger: true,
         },
         () => this.staffApi.deactivate(staff.id),
         'Cuenta desactivada',
         'No se pudo desactivar la cuenta',
       )
-      .pipe(tap(() => this.reload()));
+      .pipe(tap(() => this.afterChange()));
   }
 
   activate(staff: Staff): Observable<unknown> {
@@ -98,20 +106,28 @@ export class StaffService {
         {
           title: 'Reactivar cuenta',
           message: `¿Reactivar a ${staff.name}?`,
-          confirmLabel: 'Reactivar',
+          confirmLabel: ACTION_LABEL.reactivate,
         },
         () => this.staffApi.activate(staff.id),
         'Cuenta reactivada',
         'No se pudo reactivar la cuenta',
       )
-      .pipe(tap(() => this.reload()));
+      .pipe(tap(() => this.afterChange()));
   }
 
   private afterSave(request: Observable<Staff>, message: string): Observable<Staff> {
     return request.pipe(
-      tap(() => this.notifications.success(message)),
+      tap(() => {
+        this.notifications.success(message);
+        this.doctorsStore.invalidate();
+      }),
       finalize(() => this.reload()),
     );
+  }
+
+  private afterChange(): void {
+    this.reload();
+    this.doctorsStore.invalidate();
   }
 
   private updateFilters(patch: Partial<StaffFilters>): void {

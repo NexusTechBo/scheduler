@@ -1,4 +1,4 @@
-import { ElementRef, afterRenderEffect, inject, signal } from '@angular/core';
+import { afterRenderEffect, ElementRef, inject, signal } from '@angular/core';
 
 export type FocusTarget = string | (() => HTMLElement | null | undefined);
 

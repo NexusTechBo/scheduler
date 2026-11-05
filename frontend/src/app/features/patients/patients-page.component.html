@@ -1,13 +1,13 @@
 <app-page-header
   title="Pacientes"
   [subtitle]="
-    patients.isDoctor && patients.scope() === 'mine'
+    patients.ownListEnabled && patients.scope() === 'mine'
       ? 'Pacientes que tienes asignados'
       : 'Pacientes registrados en la clínica'
   "
 >
   <div class="flex flex-wrap items-center gap-3">
-    @if (patients.isDoctor) {
+    @if (patients.ownListEnabled) {
       <app-segmented-tabs
         [items]="tabs"
         [selectedId]="patients.scope()"
@@ -75,22 +75,25 @@
         <thead>
           <tr>
             <th>Paciente</th>
+            <th class="hidden md:table-cell">CI</th>
             <th class="hidden md:table-cell">Teléfono</th>
             <th class="hidden sm:table-cell">Estado</th>
             <th class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          @for (patient of patients.patients(); track patient.id) {
+          @for (row of patients.rows(); track row.patient.id) {
+            @let patient = row.patient;
             <tr>
               <td class="w-full max-sm:px-2">
                 <div class="flex items-center gap-3">
                   <span
                     class="hidden h-9 w-9 shrink-0 items-center sm:flex justify-center rounded-xl bg-secondary/10 text-xs font-bold text-secondary"
-                    >{{ initials(patient.name) }}</span
+                    >{{ patient.name | initials }}</span
                   >
                   <div class="min-w-0">
                     <p class="font-bold wrap-break-word text-gray-900">{{ patient.name }}</p>
+                    <p class="text-xs text-gray-500 md:hidden">CI {{ patient.ci }}</p>
                     @if (patient.email) {
                       <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
                     }
@@ -100,6 +103,7 @@
                   </div>
                 </div>
               </td>
+              <td class="hidden whitespace-nowrap md:table-cell">{{ patient.ci }}</td>
               <td class="hidden whitespace-nowrap md:table-cell">
                 {{ patient.phoneNumber }}
               </td>
@@ -117,25 +121,20 @@
               </td>
               <td class="whitespace-nowrap max-sm:px-2">
                 <div class="flex flex-nowrap justify-end gap-1">
-                  @if (patients.isDoctor) {
+                  @if (patients.ownListEnabled) {
                     <button
                       type="button"
-                      class="btn btn-sm min-h-10"
-                      [class]="
-                        patients.isMine(patient)
-                          ? 'btn-ghost'
-                          : 'bg-primary/10 text-primary hover:bg-primary/20'
-                      "
+                      class="btn btn-sm min-h-10 btn-ghost"
                       [id]="'patient-toggle-' + patient.id"
                       [attr.aria-label]="
-                        (patients.isMine(patient) ? 'Quitar de mi lista: ' : 'Asignarme: ') +
-                        patient.name
+                        (row.mine ? 'Quitar de mi lista: ' : 'Asignarme: ') + patient.name
                       "
                       (click)="toggleMine(patient)"
                     >
-                      {{ patients.isMine(patient) ? 'Quitar de mi lista' : 'Asignarme' }}
+                      {{ row.mine ? 'Quitar de mi lista' : 'Asignarme' }}
                     </button>
-                  } @else {
+                  }
+                  @if (patients.canManageDoctors) {
                     <button
                       type="button"
                       class="btn-icon h-10 w-10"

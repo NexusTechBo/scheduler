@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Tag(name = "Clinics", description = "Clinics Controller")
 public class ClinicController {
-
     private final ClinicService clinicService;
     private final ClinicActivationService clinicActivationService;
 
     @PostMapping
-    @Operation(summary = "Register a new clinic and create its administrator account; sends the activation email (public)")
+    @Operation(
+            summary = "Register a new clinic and create its administrator account; sends the activation email (public)")
     public ResponseEntity<ClinicCreatedResponse> createClinic(@Valid @RequestBody ClinicRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clinicService.createClinic(request));
     }

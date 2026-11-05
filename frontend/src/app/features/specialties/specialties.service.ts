@@ -1,28 +1,29 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { Injectable, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, defer, finalize, tap } from 'rxjs';
 import { CatalogsApi } from '../../core/api/catalogs.api';
-import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
+import { apiErrorMessage } from '../../core/http/api-error';
 import { Specialty } from '../../core/models/api.models';
 import { NotificationService } from '../../shared/services/notification.service';
 
 @Injectable()
 export class SpecialtiesService {
   private readonly api = inject(CatalogsApi);
+  private readonly store = inject(SpecialtiesStore);
   private readonly notifications = inject(NotificationService);
 
-  private readonly resource = rxResource({
-    loader: () => this.api.specialties(),
-  });
-
-  readonly specialties = computed(() => this.resource.value() ?? []);
-  readonly isLoading = this.resource.isLoading;
-  readonly errorMessage = resourceError(this.resource, 'No se pudieron cargar las especialidades');
+  readonly specialties = this.store.specialties;
+  readonly isLoading = this.store.isLoading;
+  readonly errorMessage = this.store.errorMessage;
   private readonly _saving = signal(false);
   readonly saving = this._saving.asReadonly();
 
+  constructor() {
+    this.store.load();
+  }
+
   reload(): void {
-    this.resource.reload();
+    this.store.reload();
   }
 
   create(name: string): Observable<Specialty> {
@@ -30,9 +31,9 @@ export class SpecialtiesService {
       this._saving.set(true);
       return this.api.createSpecialty({ name });
     }).pipe(
-      tap(() => {
+      tap((specialty) => {
+        this.store.upsert(specialty);
         this.notifications.success(`Especialidad "${name}" creada`);
-        this.reload();
       }),
       catchError((error) => {
         this.notifications.error(apiErrorMessage(error, 'No se pudo crear la especialidad'));

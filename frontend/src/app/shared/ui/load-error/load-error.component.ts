@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, input, output } from '@angular/core';
 import { AlertComponent } from '../alert/alert.component';
 
 @Component({
@@ -10,5 +10,11 @@ import { AlertComponent } from '../alert/alert.component';
 })
 export class LoadErrorComponent {
   message = input.required<string>();
+  retryLabel = input('Reintentar');
+  retryDisabled = input(false, { transform: booleanAttribute });
   retry = output<void>();
+
+  protected onRetry(): void {
+    if (!this.retryDisabled()) this.retry.emit();
+  }
 }

@@ -1,6 +1,8 @@
 package com.example.scheduler.enums;
 
 public enum ERole {
-    ADMINISTRATOR, DOCTOR, ASSISTANT,
+    ADMINISTRATOR,
+    DOCTOR,
+    ASSISTANT,
     GUEST;
 }

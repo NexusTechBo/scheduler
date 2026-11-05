@@ -41,13 +41,13 @@ export class DatePickerComponent implements ControlValueAccessor {
   protected readonly disabled = signal(false);
   protected readonly value = signal<string | null>(null);
   protected readonly viewDate = signal(new Date());
+  private onChange: (value: string) => void = () => {};
+  private onTouched: () => void = () => {};
+
   protected readonly label = computed(() => {
     const value = this.value();
     return value ? formatShortDate(value) : 'Seleccionar fecha';
   });
-
-  private onChange: (value: string) => void = () => {};
-  private onTouched: () => void = () => {};
 
   writeValue(value: string | null): void {
     this.value.set(value || null);

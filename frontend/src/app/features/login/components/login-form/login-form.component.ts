@@ -6,6 +6,13 @@ import { ResendActivationComponent } from '../../../../shared/components/resend-
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { LoginService } from '../../login.service';
 
+function usernameFromState(state: unknown): string {
+  if (state && typeof state === 'object' && 'username' in state) {
+    return typeof state.username === 'string' ? state.username : '';
+  }
+  return '';
+}
+
 @Component({
   selector: 'app-login-form',
   imports: [ReactiveFormsModule, RouterLink, FormFieldComponent, ResendActivationComponent],
@@ -17,6 +24,9 @@ export class LoginFormComponent {
   private readonly loginService = inject(LoginService);
   protected readonly submitting = this.loginService.submitting;
   protected readonly pendingActivation = this.loginService.pendingActivation;
+  protected readonly coolingDown = this.loginService.coolingDown;
+  protected readonly retryInLabel = this.loginService.retryInLabel;
+  protected readonly cooldownFinished = this.loginService.cooldownFinished;
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     username: [usernameFromState(inject(Location).getState()), Validators.required],
@@ -31,11 +41,4 @@ export class LoginFormComponent {
     const { username, password } = this.form.getRawValue();
     this.loginService.login(username.trim(), password);
   }
-}
-
-function usernameFromState(state: unknown): string {
-  if (state && typeof state === 'object' && 'username' in state) {
-    return typeof state.username === 'string' ? state.username : '';
-  }
-  return '';
 }

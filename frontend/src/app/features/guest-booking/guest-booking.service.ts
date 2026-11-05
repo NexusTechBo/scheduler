@@ -1,70 +1,42 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, catchError, finalize, ignoreElements, map, tap } from 'rxjs';
 import { GuestApi } from '../../core/api/guest.api';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
-import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import {
+  apiErrorMessage,
+  isSlotUnavailableError,
+  resourceError,
+  retryAfterSeconds,
+} from '../../core/http/api-error';
 import {
   GuestAppointmentResponse,
-  GuestDoctor,
   GuestBookingPatient,
+  GuestDoctor,
   TimeSlot,
 } from '../../core/models/api.models';
 import { formatTime, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
-
-const GUEST_BOOKING_STEPS = ['doctor', 'slot', 'patient', 'summary', 'done'] as const;
-
-export type GuestBookingStep = (typeof GUEST_BOOKING_STEPS)[number];
+import { createCooldown } from '../../core/utils/cooldown.util';
+import { LOAD_ERROR } from '../../core/utils/messages.util';
+import { GUEST_BOOKING_STEPS, GuestBookingStep } from './guest-booking.model';
 
 @Injectable()
 export class GuestBookingService {
   private readonly guestApi = inject(GuestApi);
   private readonly guestSession = inject(GuestSessionService);
+  private readonly cooldown = createCooldown();
 
   readonly today = toIso(new Date());
 
-  private readonly active = computed(() => (this.guestSession.ready() ? true : undefined));
-
-  private readonly clinicResource = rxResource({
-    request: () => this.active(),
-    loader: () => this.guestApi.clinic(),
-  });
-  readonly clinicName = computed(() => this.clinicResource.value()?.name ?? null);
-
   private readonly _step = signal<GuestBookingStep>('doctor');
   readonly step = this._step.asReadonly();
-  readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this._step()) + 1);
   readonly totalSteps = GUEST_BOOKING_STEPS.length - 1;
 
   private readonly _error = signal<string | null>(null);
-  readonly error = this._error.asReadonly();
+  private readonly _rateLimitMessage = signal<string | null>(null);
 
   private readonly _specialtyId = signal<number | null>(null);
   readonly specialtyId = this._specialtyId.asReadonly();
-  private readonly specialtiesResource = rxResource({
-    request: () => this.active(),
-    loader: () =>
-      this.guestApi
-        .specialties()
-        .pipe(map((list) => list.sort((a, b) => a.name.localeCompare(b.name)))),
-  });
-  readonly specialties = computed(() => this.specialtiesResource.value() ?? []);
-  readonly specialtiesErrorMessage = resourceError(
-    this.specialtiesResource,
-    'No se pudieron cargar las especialidades',
-  );
-
-  private readonly doctorsResource = rxResource({
-    request: () => this.active() && { specialtyId: this._specialtyId() ?? undefined },
-    loader: ({ request }) => this.guestApi.doctors(request!.specialtyId),
-  });
-  readonly doctors = computed(() => this.doctorsResource.value() ?? []);
-  readonly doctorsLoading = this.doctorsResource.isLoading;
-  readonly doctorsErrorMessage = resourceError(
-    this.doctorsResource,
-    'No se pudieron cargar los doctores',
-  );
 
   private readonly _selectedDoctor = signal<GuestDoctor | null>(null);
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
@@ -76,27 +48,73 @@ export class GuestBookingService {
   });
   readonly selectedSlot = this._selectedSlot.asReadonly();
 
-  private readonly slotsResource = rxResource({
-    request: () => {
-      const doctorId = this._selectedDoctor()?.id;
-      return this.active() && doctorId ? { doctorId, date: this._selectedDate() } : undefined;
-    },
-    loader: ({ request }) => this.loadSlots(request!.doctorId, request!.date),
-  });
-  readonly slots = computed(() => this.slotsResource.value() ?? []);
-  readonly slotsLoading = this.slotsResource.isLoading;
-  readonly slotsErrorMessage = resourceError(
-    this.slotsResource,
-    'No se pudieron cargar los horarios',
-  );
-
   private readonly _patient = signal<GuestBookingPatient | null>(null);
   readonly patient = this._patient.asReadonly();
 
   private readonly _submitting = signal(false);
   readonly submitting = this._submitting.asReadonly();
+  readonly coolingDown = this.cooldown.active;
+  readonly retryInLabel = this.cooldown.label;
+  readonly cooldownFinished = this.cooldown.finished;
   private readonly _result = signal<GuestAppointmentResponse | null>(null);
   readonly result = this._result.asReadonly();
+
+  private readonly active = computed(() => (this.guestSession.ready() ? true : undefined));
+
+  private readonly clinicResource = rxResource({
+    params: () => this.active(),
+    stream: () => this.guestApi.clinic(),
+  });
+  private readonly specialtiesResource = rxResource({
+    params: () => this.active(),
+    stream: () =>
+      this.guestApi
+        .specialties()
+        .pipe(map((list) => list.sort((a, b) => a.name.localeCompare(b.name)))),
+  });
+  private readonly doctorsResource = rxResource({
+    params: () => this.active() && { specialtyId: this._specialtyId() ?? undefined },
+    stream: ({ params }) => this.guestApi.doctors(params.specialtyId),
+  });
+  readonly doctorsLoading = this.doctorsResource.isLoading;
+  private readonly slotsResource = rxResource({
+    params: () => {
+      const doctorId = this._selectedDoctor()?.id;
+      return this.active() && doctorId ? { doctorId, date: this._selectedDate() } : undefined;
+    },
+    stream: ({ params }) => this.loadSlots(params.doctorId, params.date),
+  });
+  readonly slotsLoading = this.slotsResource.isLoading;
+
+  readonly clinicName = computed(() =>
+    this.clinicResource.hasValue() ? this.clinicResource.value().name : null,
+  );
+  readonly clinicErrorMessage = resourceError(this.clinicResource, 'No se pudo cargar la clínica');
+  readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this._step()) + 1);
+  readonly error = computed(
+    () =>
+      this._error() ??
+      (this.cooldown.active() && this._step() === 'summary' ? this._rateLimitMessage() : null),
+  );
+  readonly specialties = computed(() =>
+    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
+  );
+  readonly specialtiesErrorMessage = resourceError(
+    this.specialtiesResource,
+    LOAD_ERROR.specialties,
+  );
+  readonly doctors = computed(() =>
+    this.doctorsResource.hasValue() ? this.doctorsResource.value() : [],
+  );
+  readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
+  readonly slots = computed(() =>
+    this.slotsResource.hasValue() ? this.slotsResource.value() : [],
+  );
+  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
+
+  reloadClinic(): void {
+    this.clinicResource.reload();
+  }
 
   reloadSpecialties(): void {
     this.specialtiesResource.reload();
@@ -151,10 +169,11 @@ export class GuestBookingService {
     const doctor = this._selectedDoctor();
     const slot = this._selectedSlot();
     const patient = this._patient();
-    if (this._submitting() || !doctor || !slot || !patient) return;
+    if (this._submitting() || this.cooldown.active() || !doctor || !slot || !patient) return;
 
     const date = this._selectedDate();
     this._submitting.set(true);
+    this.cooldown.reset();
     this._error.set(null);
     this.guestApi
       .book({ doctorId: doctor.id, startTime: toLocalDateTime(date, slot.startTime), patient })
@@ -176,7 +195,13 @@ export class GuestBookingService {
     slot: TimeSlot,
   ): Observable<never> {
     const message = apiErrorMessage(error, 'No se pudo registrar la reserva');
-    if (!(error instanceof HttpErrorResponse) || error.status !== HttpStatusCode.Conflict) {
+    const retryAfter = retryAfterSeconds(error);
+    if (retryAfter) {
+      this._rateLimitMessage.set(message);
+      this.cooldown.start(retryAfter);
+      return EMPTY;
+    }
+    if (!isSlotUnavailableError(error)) {
       this._error.set(message);
       return EMPTY;
     }

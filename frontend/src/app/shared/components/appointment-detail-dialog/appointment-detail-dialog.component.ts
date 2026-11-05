@@ -14,8 +14,8 @@ import { TimeRangePipe } from '../../pipes/time-range.pipe';
 import { DialogFrameComponent } from '../../ui/dialog-frame/dialog-frame.component';
 import { LoadErrorComponent } from '../../ui/load-error/load-error.component';
 import { SkeletonComponent } from '../../ui/skeleton/skeleton.component';
-import { StatusBadgeComponent } from '../../ui/status-badge/status-badge.component';
 import { UiIconComponent } from '../../ui/ui-icon/ui-icon.component';
+import { StatusBadgeComponent } from '../status-badge/status-badge.component';
 import { AppointmentDetailService } from './appointment-detail.service';
 
 export interface AppointmentDetailData {

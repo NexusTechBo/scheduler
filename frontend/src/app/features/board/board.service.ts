@@ -5,7 +5,13 @@ import { AppointmentsApi } from '../../core/api/appointments.api';
 import { BoardSocket } from '../../core/api/board.socket';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
-import { addDays, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import {
+  appointmentStartDateTime,
+  canCancelAppointment,
+  canConfirmAppointment,
+  hasAppointmentStarted,
+} from '../../core/utils/appointment.util';
+import { addDays, toIso } from '../../core/utils/calendar.util';
 import {
   APPOINTMENT_STATUSES,
   STATUS_PLURAL_LABEL,
@@ -14,46 +20,48 @@ import {
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { DateRange } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
-
-export interface BoardColumn {
-  id: AppointmentStatus;
-  title: string;
-  accentClass: string;
-  appointments: AppointmentSummaryItem[];
-}
+import { BoardColumn } from './board.model';
 
 @Injectable()
 export class BoardService {
   private readonly api = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
   private readonly notifications = inject(NotificationService);
+  private readonly socket = inject(BoardSocket);
 
   private readonly _range = signal<DateRange>({
     from: toIso(new Date()),
     to: toIso(addDays(new Date(), 6)),
   });
   readonly range = this._range.asReadonly();
-  readonly showDates = computed(() => this.range().from !== this.range().to);
 
   private readonly resource = rxResource({
-    request: () => this.range(),
-    loader: ({ request: { from, to } }) => this.api.board({ from, to }),
+    params: () => this.range(),
+    stream: ({ params: { from, to } }) => this.api.board({ from, to }),
   });
 
   readonly isLoading = this.resource.isLoading;
+  readonly showDates = computed(() => this.range().from !== this.range().to);
   readonly hasData = computed(() => this.resource.hasValue());
   readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el tablero');
   readonly columns = computed<BoardColumn[]>(() => {
     const board = this.resource.hasValue() ? this.resource.value() : undefined;
-    return APPOINTMENT_STATUSES.map((status) => ({
-      id: status,
-      title: STATUS_PLURAL_LABEL[status],
-      accentClass: STATUS_STYLE[status].dot,
-      appointments: [...(board?.[status] ?? [])],
-    }));
+    return APPOINTMENT_STATUSES.map((status) => {
+      const appointments = [...(board?.[status] ?? [])];
+      const pastIds: Record<number, true> = {};
+      for (const appointment of appointments) {
+        if (hasAppointmentStarted(appointmentStartDateTime(appointment)))
+          pastIds[appointment.id] = true;
+      }
+      return {
+        id: status,
+        title: STATUS_PLURAL_LABEL[status],
+        accentClass: STATUS_STYLE[status].dot,
+        appointments,
+        pastIds,
+      };
+    });
   });
-
-  private readonly socket = inject(BoardSocket);
 
   constructor() {
     merge(this.socket.events$, this.socket.connected$.pipe(skip(1)))
@@ -74,12 +82,17 @@ export class BoardService {
   }
 
   move(appointment: AppointmentSummaryItem, target: AppointmentStatus): void {
-    const { id, clientName } = appointment;
-    const start = toLocalDateTime(appointment.appointmentDate, appointment.startTime);
+    const { id, clientName, status } = appointment;
+    const start = appointmentStartDateTime(appointment);
     let action: Observable<unknown> | null = null;
-    if (target === 'CONFIRMED' && appointment.status === 'PENDING')
+    if (target === 'CONFIRMED' && status === 'PENDING') {
+      if (!canConfirmAppointment(status, start)) return this.rejectPast();
       action = this.actions.confirm(id, clientName, start);
-    if (target === 'CANCELLED') action = this.actions.cancel(id, clientName, start);
+    }
+    if (target === 'CANCELLED') {
+      if (!canCancelAppointment(status, start)) return this.rejectPast();
+      action = this.actions.cancel(id, clientName, start);
+    }
 
     if (!action) {
       this.notifications.error(
@@ -94,5 +107,9 @@ export class BoardService {
 
   private refreshAfterAction(): void {
     if (!this.socket.isConnected()) this.reload();
+  }
+
+  private rejectPast(): void {
+    this.notifications.error('No se puede modificar una cita que ya pasó');
   }
 }

@@ -2,7 +2,9 @@ import { Clipboard } from '@angular/cdk/clipboard';
 import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { GUEST_BOOKING_PATH, ROLES } from '../../../../core/navigation/navigation';
+import { ROLES } from '../../../../core/auth/roles';
+import { GUEST_BOOKING_PATH } from '../../../../core/navigation/navigation';
+import { SUCCESS_MESSAGE } from '../../../../core/utils/messages.util';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { labelledByFrame } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
@@ -38,7 +40,7 @@ export class GuestLinkButtonComponent {
     const url = this.url();
     if (!url) return;
     if (this.clipboard.copy(url)) {
-      this.notifications.success('Enlace de reserva copiado');
+      this.notifications.success(SUCCESS_MESSAGE.guestLinkCopied);
       return;
     }
     this.dialog.open<void, GuestLinkData>(GuestLinkDialogComponent, {

@@ -1,18 +1,18 @@
 <app-page-header title="Mi perfil" subtitle="Tus datos de contacto en la clínica" />
 
 <div class="min-h-0 flex-1 overflow-y-auto">
-  @if (profileService.errorMessage(); as message) {
+  @if (profile.errorMessage(); as message) {
     <div class="glass-panel max-w-5xl rounded-3xl p-6">
-      <app-load-error [message]="message" (retry)="profileService.reload()" />
+      <app-load-error [message]="message" (retry)="profile.reload()" />
     </div>
   } @else {
     <div class="grid max-w-5xl grid-cols-1 gap-5 lg:grid-cols-[20rem_1fr]">
       <section class="glass-panel flex min-w-0 flex-col items-center rounded-3xl p-6 text-center">
-        @if (profileService.isLoading() && !profile()) {
+        @if (profile.isLoading() && !me()) {
           <app-skeleton heightClass="h-20 w-20" />
           <app-skeleton heightClass="mt-4 h-5 w-40" />
-        } @else if (profile()) {
-          @let p = profile()!;
+        } @else if (me()) {
+          @let p = me()!;
           <div
             class="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-2xl font-extrabold text-white shadow-lg shadow-primary/30"
           >
@@ -37,13 +37,18 @@
                 <dd class="font-bold text-gray-800">{{ p.specialtyName }}</dd>
               </div>
             }
-            @if (clinic(); as clinic) {
+            @if (auth.clinic(); as clinic) {
               <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
                 <dt class="font-semibold text-gray-500">Clínica</dt>
                 <dd class="min-w-0 truncate font-bold text-gray-800">{{ clinic.name }}</dd>
               </div>
             }
           </dl>
+          @if (canLinkWhatsapp()) {
+            <button type="button" class="btn btn-primary mt-4" (click)="openWhatsapp()">
+              WhatsApp de la clínica
+            </button>
+          }
         }
       </section>
 
@@ -122,6 +127,10 @@
           </div>
         </form>
       </section>
+
+      @if (profile.canToggleDoctorMode() && me()) {
+        <app-doctor-mode-card class="lg:col-start-2" />
+      }
     </div>
   }
 </div>
