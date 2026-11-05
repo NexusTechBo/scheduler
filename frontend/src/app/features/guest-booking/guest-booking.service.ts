@@ -1,10 +1,14 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, catchError, finalize, ignoreElements, map, tap } from 'rxjs';
 import { GuestApi } from '../../core/api/guest.api';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
-import { apiErrorMessage, resourceError, retryAfterSeconds } from '../../core/http/api-error';
+import {
+  apiErrorMessage,
+  isSlotUnavailableError,
+  resourceError,
+  retryAfterSeconds,
+} from '../../core/http/api-error';
 import {
   GuestAppointmentResponse,
   GuestBookingPatient,
@@ -198,7 +202,7 @@ export class GuestBookingService {
       this.cooldown.start(retryAfter);
       return EMPTY;
     }
-    if (!(error instanceof HttpErrorResponse) || error.status !== HttpStatusCode.Conflict) {
+    if (!isSlotUnavailableError(error)) {
       this._error.set(message);
       return EMPTY;
     }

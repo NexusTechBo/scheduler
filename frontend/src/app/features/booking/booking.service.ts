@@ -1,19 +1,37 @@
-import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
-import { rxResource, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { DestroyRef, Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
+import { rxResource, takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, finalize, map } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  finalize,
+  map,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { AgendaApi } from '../../core/api/agenda.api';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { PatientsApi } from '../../core/api/patients.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { DoctorsStore } from '../../core/catalogs/doctors.store';
 import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
-import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import {
+  apiErrorMessage,
+  isSlotUnavailableError,
+  resourceError,
+  staffActiveAppointmentConflict,
+} from '../../core/http/api-error';
 import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
 import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
 import { LOAD_ERROR } from '../../core/utils/messages.util';
+import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { DoctorOption } from './booking.model';
+import { BookingAttempt, DoctorOption } from './booking.model';
+import { rescheduleConfirmOptions } from './booking.util';
 
 const PATIENT_RESULTS = 20;
 
@@ -26,7 +44,9 @@ export class BookingService {
   private readonly specialtiesStore = inject(SpecialtiesStore);
   private readonly doctorsStore = inject(DoctorsStore);
   private readonly notifications = inject(NotificationService);
+  private readonly confirm = inject(ConfirmService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly ownDataOnly = this.auth.restrictedToOwnData();
   readonly today = toIso(new Date());
@@ -185,24 +205,56 @@ export class BookingService {
     if (!this.canSubmit() || !doctor || !slot || !patient) return;
 
     const date = this.selectedDate();
+    const attempt: BookingAttempt = {
+      doctor,
+      patient,
+      date,
+      startDateTime: toLocalDateTime(date, slot.startTime),
+    };
     this._submitting.set(true);
     this.appointmentsApi
-      .book({
-        doctorId: doctor.id,
-        patientId: patient.id,
-        startTime: toLocalDateTime(date, slot.startTime),
-      })
-      .pipe(finalize(() => this._submitting.set(false)))
-      .subscribe({
-        next: () => {
-          this.notifications.success('Cita agendada: queda pendiente de confirmación');
-          this.router.navigate(['/calendar'], { queryParams: { date } }).finally();
-        },
-        error: (error) => {
-          this.notifications.error(apiErrorMessage(error, 'No se pudo agendar la cita'));
-          this._selectedSlot.set(null);
-          this.slotsResource.reload();
-        },
+      .book({ doctorId: doctor.id, patientId: patient.id, startTime: attempt.startDateTime })
+      .pipe(
+        map(() => 'Cita agendada: queda pendiente de confirmación'),
+        catchError((error: unknown) => this.recoverFromBookingError(error, attempt)),
+        finalize(() => this._submitting.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((message) => {
+        this.notifications.success(message);
+        this.router.navigate(['/calendar'], { queryParams: { date } }).finally();
       });
+  }
+
+  private recoverFromBookingError(error: unknown, attempt: BookingAttempt): Observable<string> {
+    const conflict = staffActiveAppointmentConflict(error);
+    if (!conflict) {
+      this.handleBookingFailure(error, 'No se pudo agendar la cita');
+      return EMPTY;
+    }
+    // Re-enable the submit button while the dialog is open so the CDK can restore focus to it.
+    this._submitting.set(false);
+    return this.confirm.ask(rescheduleConfirmOptions(conflict, attempt)).pipe(
+      filter(Boolean),
+      tap(() => this._submitting.set(true)),
+      switchMap(() =>
+        this.appointmentsApi
+          .reschedule(conflict.appointmentId, { startTime: attempt.startDateTime })
+          .pipe(
+            map(() => 'Cita reprogramada: queda pendiente de confirmación'),
+            catchError((rescheduleError: unknown) => {
+              this.handleBookingFailure(rescheduleError, 'No se pudo reprogramar la cita');
+              return EMPTY;
+            }),
+          ),
+      ),
+    );
+  }
+
+  private handleBookingFailure(error: unknown, fallback: string): void {
+    this.notifications.error(apiErrorMessage(error, fallback));
+    if (!isSlotUnavailableError(error)) return;
+    this._selectedSlot.set(null);
+    this.slotsResource.reload();
   }
 }

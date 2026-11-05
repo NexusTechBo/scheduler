@@ -6,11 +6,12 @@ import { BoardSocket } from '../../core/api/board.socket';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
 import {
+  appointmentStartDateTime,
   canCancelAppointment,
   canConfirmAppointment,
   hasAppointmentStarted,
 } from '../../core/utils/appointment.util';
-import { addDays, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import { addDays, toIso } from '../../core/utils/calendar.util';
 import {
   APPOINTMENT_STATUSES,
   STATUS_PLURAL_LABEL,
@@ -48,7 +49,8 @@ export class BoardService {
       const appointments = [...(board?.[status] ?? [])];
       const pastIds: Record<number, true> = {};
       for (const appointment of appointments) {
-        if (hasAppointmentStarted(startOf(appointment))) pastIds[appointment.id] = true;
+        if (hasAppointmentStarted(appointmentStartDateTime(appointment)))
+          pastIds[appointment.id] = true;
       }
       return {
         id: status,
@@ -82,7 +84,7 @@ export class BoardService {
 
   move(appointment: AppointmentSummaryItem, target: AppointmentStatus): void {
     const { id, clientName, status } = appointment;
-    const start = startOf(appointment);
+    const start = appointmentStartDateTime(appointment);
     let action: Observable<unknown> | null = null;
     if (target === 'CONFIRMED' && status === 'PENDING') {
       if (!canConfirmAppointment(status, start)) return this.rejectPast();
@@ -111,8 +113,4 @@ export class BoardService {
   private rejectPast(): void {
     this.notifications.error('No se puede modificar una cita que ya pasó');
   }
-}
-
-function startOf(appointment: AppointmentSummaryItem): string {
-  return toLocalDateTime(appointment.appointmentDate, appointment.startTime);
 }

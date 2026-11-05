@@ -3,13 +3,13 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { resourceError } from '../../core/http/api-error';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
+import { appointmentStartDateTime } from '../../core/utils/appointment.util';
 import {
   addDays,
   formatShortDate,
   formatWeekdayShort,
   startOfWeek,
   toIso,
-  toLocalDateTime,
 } from '../../core/utils/calendar.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { Kpi, WeekDayStats } from './dashboard.model';
@@ -129,17 +129,13 @@ export class DashboardService {
 
   confirm(appointment: AppointmentSummaryItem): void {
     this.actions
-      .confirm(appointment.id, appointment.clientName, startOf(appointment))
+      .confirm(appointment.id, appointment.clientName, appointmentStartDateTime(appointment))
       .subscribe(() => this.reload());
   }
 
   cancel(appointment: AppointmentSummaryItem): void {
     this.actions
-      .cancel(appointment.id, appointment.clientName, startOf(appointment))
+      .cancel(appointment.id, appointment.clientName, appointmentStartDateTime(appointment))
       .subscribe(() => this.reload());
   }
-}
-
-function startOf(appointment: AppointmentSummaryItem): string {
-  return toLocalDateTime(appointment.appointmentDate, appointment.startTime);
 }

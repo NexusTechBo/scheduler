@@ -27,7 +27,21 @@ export interface PageQuery {
 export interface ApiError {
   status: number;
   message: string;
+  code?: string;
+  details?: Record<string, unknown>;
   errors?: { field: string; message: string }[] | null;
+}
+
+export type ActiveAppointmentStatus = Exclude<AppointmentStatus, 'CANCELLED'>;
+
+export interface PatientActiveAppointmentConflict {
+  appointmentId?: number;
+  startTime: string;
+  status: ActiveAppointmentStatus;
+}
+
+export interface StaffActiveAppointmentConflict extends PatientActiveAppointmentConflict {
+  appointmentId: number;
 }
 
 export interface LoginRequest {
@@ -94,6 +108,10 @@ export interface ResendActivationRequest {
 export interface AppointmentRequest {
   doctorId: number;
   patientId: number;
+  startTime: string;
+}
+
+export interface RescheduleAppointmentRequest {
   startTime: string;
 }
 

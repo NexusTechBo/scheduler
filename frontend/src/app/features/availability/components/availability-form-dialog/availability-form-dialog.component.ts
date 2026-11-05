@@ -1,13 +1,7 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, map } from 'rxjs';
 import { DayOfWeek } from '../../../../core/models/api.models';
 import { addMinutesToTime } from '../../../../core/utils/calendar.util';
@@ -19,11 +13,7 @@ import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/selec
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { TIME_RANGE_ERRORS } from '../../../../shared/utils/validation-messages.util';
 import { AvailabilityService } from '../../availability.service';
-
-function endAfterStart(control: AbstractControl): ValidationErrors | null {
-  const startTime = control.parent?.get('startTime')?.value as string | undefined;
-  return startTime && control.value && control.value <= startTime ? { endBeforeStart: true } : null;
-}
+import { availabilityEndAfterStart } from '../../availability.util';
 
 @Component({
   selector: 'app-availability-form-dialog',
@@ -52,7 +42,7 @@ export class AvailabilityFormDialogComponent {
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     startTime: ['08:00', Validators.required],
-    endTime: ['12:00', [Validators.required, endAfterStart]],
+    endTime: ['12:00', [Validators.required, availabilityEndAfterStart]],
     slotDurationMinutes: [30, [Validators.required, Validators.min(5)]],
   });
   protected readonly endErrors = TIME_RANGE_ERRORS;

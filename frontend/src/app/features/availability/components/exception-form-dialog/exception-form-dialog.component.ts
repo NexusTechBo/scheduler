@@ -10,13 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, map, merge } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { toIso } from '../../../../core/utils/calendar.util';
@@ -27,14 +21,7 @@ import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { TIME_RANGE_ERRORS } from '../../../../shared/utils/validation-messages.util';
 import { AvailabilityService } from '../../availability.service';
-
-function endAfterStart(control: AbstractControl): ValidationErrors | null {
-  const group = control.parent;
-  if (!group || group.get('isFullDayBlock')?.value) return null;
-  const startTime = group.get('startTime')?.value as string;
-  if (!startTime || !control.value) return { rangeRequired: true };
-  return control.value <= startTime ? { endBeforeStart: true } : null;
-}
+import { exceptionEndAfterStart } from '../../availability.util';
 
 @Component({
   selector: 'app-exception-form-dialog',
@@ -63,7 +50,7 @@ export class ExceptionFormDialogComponent {
     date: [this.today, Validators.required],
     isFullDayBlock: [true],
     startTime: ['09:00'],
-    endTime: ['10:00', endAfterStart],
+    endTime: ['10:00', exceptionEndAfterStart],
     reason: [''],
   });
   protected readonly endErrors = {

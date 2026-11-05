@@ -12,6 +12,7 @@ import {
   AppointmentResponse,
   CancelAppointmentRequest,
   Page,
+  RescheduleAppointmentRequest,
 } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -38,6 +39,10 @@ export class AppointmentsApi {
 
   cancel(id: number, request: CancelAppointmentRequest): Observable<AppointmentResponse> {
     return this.http.patch<AppointmentResponse>(`appointments/${id}/cancel`, request);
+  }
+
+  reschedule(id: number, request: RescheduleAppointmentRequest): Observable<AppointmentResponse> {
+    return this.http.patch<AppointmentResponse>(`appointments/${id}/reschedule`, request);
   }
 
   board(query: AppointmentBoardQuery): Observable<AppointmentBoard> {

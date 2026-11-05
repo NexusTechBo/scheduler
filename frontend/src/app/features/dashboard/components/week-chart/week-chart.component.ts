@@ -21,6 +21,7 @@ import {
   LinearScale,
   Tooltip,
 } from 'chart.js';
+import { capitalize } from '../../../../core/utils/calendar.util';
 import { STATUS_PLURAL_LABEL } from '../../../../core/utils/labels.util';
 import { WeekDayStats } from '../../dashboard.model';
 
@@ -144,8 +145,4 @@ function themeColors() {
     tertiary: read('--color-tertiary', '#973c00'),
     font: read('--font-sans', 'Inter, sans-serif'),
   };
-}
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }
