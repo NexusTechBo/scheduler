@@ -58,6 +58,11 @@ public class AccessLogFilter extends OncePerRequestFilter {
         }
     }
 
+    private boolean isExcluded(String path) {
+        return Arrays.stream(systemPaths).anyMatch(path::startsWith)
+                || STATIC_RESOURCE.matcher(path).matches();
+    }
+
     private static void log(HttpServletRequest request, String path, int status, long durationMs) {
         var method = request.getMethod();
         var clinicId = request.getAttribute(LogKeys.ATTR_CLINIC_ID);
@@ -86,10 +91,5 @@ public class AccessLogFilter extends OncePerRequestFilter {
         if (status >= 500) return Level.ERROR;
         if (status >= 400) return Level.WARN;
         return Level.INFO;
-    }
-
-    private boolean isExcluded(String path) {
-        return Arrays.stream(systemPaths).anyMatch(path::startsWith)
-                || STATIC_RESOURCE.matcher(path).matches();
     }
 }

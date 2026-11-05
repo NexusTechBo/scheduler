@@ -86,10 +86,6 @@ public class EmailServiceImpl implements EmailService {
                 () -> EmailTemplates.clinicWelcome(event, frontendUrl));
     }
 
-    private static String clinicAdminRef(Long clinicId) {
-        return "clinic=" + clinicId + " recipient=admin";
-    }
-
     private void sendToPatient(
             String type,
             AppointmentNotificationEvent event,
@@ -127,5 +123,9 @@ public class EmailServiceImpl implements EmailService {
                 ref,
                 e.getClass().getSimpleName(),
                 LogUtils.sanitizeForLog(e.getMessage()));
+    }
+
+    private static String clinicAdminRef(Long clinicId) {
+        return "clinic=" + clinicId + " recipient=admin";
     }
 }

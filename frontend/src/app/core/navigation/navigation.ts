@@ -1,13 +1,23 @@
 import { ROLES } from '../auth/roles';
 import { Role } from '../models/api.models';
 
+export type SessionAccess = 'required' | 'guestOnly';
+
+type NavIcon = 'home' | 'board' | 'calendar' | 'list' | 'patients' | 'clock' | 'staff' | 'tag';
+
+export interface NavItem {
+  label: string;
+  description: string;
+  route: string;
+  icon: NavIcon;
+  roles: Role[];
+}
+
 export const HOME_URL = '/dashboard';
 
 export const GUEST_BOOKING_PATH = 'clinic/guest/appointment/clinic';
 
 export const SESSION_ACCESS = 'sessionAccess';
-
-export type SessionAccess = 'required' | 'guestOnly';
 
 export const PAGE_TITLES = {
   dashboard: 'Inicio',
@@ -21,16 +31,6 @@ export const PAGE_TITLES = {
   specialties: 'Especialidades',
   profile: 'Mi perfil',
 } as const;
-
-type NavIcon = 'home' | 'board' | 'calendar' | 'list' | 'patients' | 'clock' | 'staff' | 'tag';
-
-export interface NavItem {
-  label: string;
-  description: string;
-  route: string;
-  icon: NavIcon;
-  roles: Role[];
-}
 
 const NAV_ITEMS: NavItem[] = [
   {

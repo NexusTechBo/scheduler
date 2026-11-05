@@ -28,12 +28,12 @@ import {
 } from '../../../../core/models/api.models';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
+export type WhatsappView =
+  'loading' | 'connected' | 'linking' | 'reconnecting' | 'expired' | 'error';
+
 const STATUS_POLL_MS = 3_000;
 const QR_REFRESH_MS = 20_000;
 const QR_MAX_CODES = 6;
-
-export type WhatsappView =
-  'loading' | 'connected' | 'linking' | 'reconnecting' | 'expired' | 'error';
 
 const WHATSAPP_STATUS_LABEL: Record<WhatsappSessionStatus, string> = {
   IDLE: 'Sin vincular',
@@ -42,6 +42,31 @@ const WHATSAPP_STATUS_LABEL: Record<WhatsappSessionStatus, string> = {
   READY: 'Conectado',
   DISCONNECTED: 'Reconectando…',
 };
+
+function withJsonErrorBody(error: unknown): Observable<never> {
+  if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
+    return throwError(() => error);
+  }
+  return from(error.error.text()).pipe(
+    switchMap((text) => {
+      let body: unknown = null;
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = null;
+      }
+      return throwError(
+        () =>
+          new HttpErrorResponse({
+            error: body,
+            headers: error.headers,
+            status: error.status,
+            url: error.url ?? undefined,
+          }),
+      );
+    }),
+  );
+}
 
 @Injectable()
 export class WhatsappQrService {
@@ -163,29 +188,4 @@ export class WhatsappQrService {
     if (previous) URL.revokeObjectURL(previous);
     this._qrUrl.set(qr ? URL.createObjectURL(qr) : null);
   }
-}
-
-function withJsonErrorBody(error: unknown): Observable<never> {
-  if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
-    return throwError(() => error);
-  }
-  return from(error.error.text()).pipe(
-    switchMap((text) => {
-      let body: unknown = null;
-      try {
-        body = JSON.parse(text);
-      } catch {
-        body = null;
-      }
-      return throwError(
-        () =>
-          new HttpErrorResponse({
-            error: body,
-            headers: error.headers,
-            status: error.status,
-            url: error.url ?? undefined,
-          }),
-      );
-    }),
-  );
 }

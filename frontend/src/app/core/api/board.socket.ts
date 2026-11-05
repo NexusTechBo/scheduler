@@ -22,17 +22,6 @@ export class BoardSocket {
     this.stomp.watch({ destination: this.boardTopic() }),
   );
 
-  isConnected(): boolean {
-    return this.stomp.connected();
-  }
-
-  private boardTopic(): string {
-    const clinicTopic = `/topic/clinic/${this.auth.session()?.clinicId}`;
-    return this.auth.restrictedToOwnData()
-      ? `${clinicTopic}/doctor/${this.auth.userId()}/board`
-      : `${clinicTopic}/board`;
-  }
-
   constructor() {
     let connectionToken: string | null = null;
     this.stomp.configure({
@@ -56,5 +45,16 @@ export class BoardSocket {
 
     this.zone.runOutsideAngular(() => this.stomp.activate());
     inject(DestroyRef).onDestroy(() => void this.stomp.deactivate());
+  }
+
+  isConnected(): boolean {
+    return this.stomp.connected();
+  }
+
+  private boardTopic(): string {
+    const clinicTopic = `/topic/clinic/${this.auth.session()?.clinicId}`;
+    return this.auth.restrictedToOwnData()
+      ? `${clinicTopic}/doctor/${this.auth.userId()}/board`
+      : `${clinicTopic}/board`;
   }
 }

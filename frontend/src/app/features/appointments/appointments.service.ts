@@ -26,6 +26,7 @@ export class AppointmentsService {
     params: () => this.filters(),
     stream: ({ params }) => this.api.list(params),
   });
+  readonly isLoading = this.resource.isLoading;
 
   readonly appointments = computed<AppointmentRow[]>(() =>
     (this.resource.hasValue() ? this.resource.value().content : []).map((appointment) => ({
@@ -40,7 +41,6 @@ export class AppointmentsService {
     this.resource.hasValue() ? this.resource.value().page : null,
   );
   readonly status = computed<AppointmentStatusFilter>(() => this.filters().status ?? 'ALL');
-  readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(this.resource, 'No se pudieron cargar las citas');
 
   reload(): void {

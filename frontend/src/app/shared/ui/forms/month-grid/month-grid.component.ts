@@ -41,6 +41,17 @@ const ARROW_DAYS: Record<string, number> = {
   ArrowDown: 7,
 };
 
+function keyTarget(event: KeyboardEvent, date: Date): Date | null {
+  if (ARROW_DAYS[event.key]) return addDays(date, ARROW_DAYS[event.key]);
+  if (event.key === 'Home') return startOfWeek(date);
+  if (event.key === 'End') return addDays(startOfWeek(date), 6);
+  if (event.key !== 'PageUp' && event.key !== 'PageDown') return null;
+  const months = (event.key === 'PageUp' ? -1 : 1) * (event.shiftKey ? 12 : 1);
+  const year = date.getFullYear();
+  const month = date.getMonth() + months;
+  return new Date(year, month, Math.min(date.getDate(), new Date(year, month + 1, 0).getDate()));
+}
+
 @Component({
   selector: 'app-month-grid',
   imports: [UiIconComponent],
@@ -56,10 +67,11 @@ export class MonthGridComponent {
   readonly pick = output<string>();
   readonly hover = output<string | null>();
 
-  protected readonly weekdays = DAYS_OF_WEEK;
-  private readonly today = toIso(new Date());
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+
+  protected readonly weekdays = DAYS_OF_WEEK;
+  private readonly today = toIso(new Date());
   private readonly active = signal<string | null>(null);
 
   protected readonly focusIso = computed(() => {
@@ -117,15 +129,4 @@ export class MonthGridComponent {
     const min = this.min();
     return !!min && iso < min;
   }
-}
-
-function keyTarget(event: KeyboardEvent, date: Date): Date | null {
-  if (ARROW_DAYS[event.key]) return addDays(date, ARROW_DAYS[event.key]);
-  if (event.key === 'Home') return startOfWeek(date);
-  if (event.key === 'End') return addDays(startOfWeek(date), 6);
-  if (event.key !== 'PageUp' && event.key !== 'PageDown') return null;
-  const months = (event.key === 'PageUp' ? -1 : 1) * (event.shiftKey ? 12 : 1);
-  const year = date.getFullYear();
-  const month = date.getMonth() + months;
-  return new Date(year, month, Math.min(date.getDate(), new Date(year, month + 1, 0).getDate()));
 }

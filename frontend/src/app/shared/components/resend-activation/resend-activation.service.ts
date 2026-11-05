@@ -8,6 +8,15 @@ import { INVALID_EMAIL_MESSAGE } from '../../utils/validation-messages.util';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
+const RESEND_FALLBACK = 'No se pudo reenviar el correo, intenta de nuevo';
+
+function resendErrorMessage(error: unknown, emailEditable: boolean): string {
+  if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.BadRequest) {
+    return emailEditable ? INVALID_EMAIL_MESSAGE : RESEND_FALLBACK;
+  }
+  return apiErrorMessage(error, RESEND_FALLBACK);
+}
+
 @Injectable()
 export class ResendActivationService {
   private readonly clinicsApi = inject(ClinicsApi);
@@ -46,13 +55,4 @@ export class ResendActivationService {
   startCooldown(): void {
     this.cooldown.start(RESEND_COOLDOWN_SECONDS);
   }
-}
-
-const RESEND_FALLBACK = 'No se pudo reenviar el correo, intenta de nuevo';
-
-function resendErrorMessage(error: unknown, emailEditable: boolean): string {
-  if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.BadRequest) {
-    return emailEditable ? INVALID_EMAIL_MESSAGE : RESEND_FALLBACK;
-  }
-  return apiErrorMessage(error, RESEND_FALLBACK);
 }

@@ -21,17 +21,16 @@ export class ProfileService {
 
   readonly me = this.auth.profile;
   readonly isLoading = this.auth.profileLoading;
+  readonly specialties = this.specialtiesStore.specialties;
+  readonly specialtiesLoading = this.specialtiesStore.isLoading;
+  readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
+
   readonly errorMessage = resourceError(
     { error: this.auth.profileError },
     'No se pudo cargar tu perfil',
   );
-
   readonly canToggleDoctorMode = computed(() => this.auth.hasRole(...ROLES.admin));
   readonly doctorMode = computed(() => this.auth.hasRole('DOCTOR'));
-
-  readonly specialties = this.specialtiesStore.specialties;
-  readonly specialtiesLoading = this.specialtiesStore.isLoading;
-  readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
 
   constructor() {
     if (this.canToggleDoctorMode()) this.specialtiesStore.load();

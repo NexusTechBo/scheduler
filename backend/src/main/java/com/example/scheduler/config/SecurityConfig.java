@@ -59,6 +59,13 @@ public class SecurityConfig {
     }
 
     @Bean
+    public FilterRegistrationBean<JwtAuthFilter> jwtAuthFilterRegistration() {
+        var registration = new FilterRegistrationBean<>(jwtAuthFilter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
     public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration() {
         var registration = new FilterRegistrationBean<>(rateLimitFilter);
         registration.setEnabled(false);

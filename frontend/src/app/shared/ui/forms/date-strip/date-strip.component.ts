@@ -9,6 +9,15 @@ import {
 
 const DATE_STRIP_DAYS = 14;
 
+function dayChip(date: Date) {
+  return {
+    iso: toIso(date),
+    weekday: formatWeekdayShort(date),
+    day: date.getDate(),
+    month: formatMonthShort(date),
+  };
+}
+
 @Component({
   selector: 'app-date-strip',
   templateUrl: './date-strip.component.html',
@@ -28,13 +37,4 @@ export class DateStripComponent {
       ? this.nextDays
       : [...this.nextDays, dayChip(parseIso(selected))];
   });
-}
-
-function dayChip(date: Date) {
-  return {
-    iso: toIso(date),
-    weekday: formatWeekdayShort(date),
-    day: date.getDate(),
-    month: formatMonthShort(date),
-  };
 }

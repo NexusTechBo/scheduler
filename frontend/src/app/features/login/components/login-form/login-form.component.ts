@@ -6,6 +6,13 @@ import { ResendActivationComponent } from '../../../../shared/components/resend-
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { LoginService } from '../../login.service';
 
+function usernameFromState(state: unknown): string {
+  if (state && typeof state === 'object' && 'username' in state) {
+    return typeof state.username === 'string' ? state.username : '';
+  }
+  return '';
+}
+
 @Component({
   selector: 'app-login-form',
   imports: [ReactiveFormsModule, RouterLink, FormFieldComponent, ResendActivationComponent],
@@ -34,11 +41,4 @@ export class LoginFormComponent {
     const { username, password } = this.form.getRawValue();
     this.loginService.login(username.trim(), password);
   }
-}
-
-function usernameFromState(state: unknown): string {
-  if (state && typeof state === 'object' && 'username' in state) {
-    return typeof state.username === 'string' ? state.username : '';
-  }
-  return '';
 }

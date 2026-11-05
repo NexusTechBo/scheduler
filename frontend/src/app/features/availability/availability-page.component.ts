@@ -72,11 +72,6 @@ export class AvailabilityPageComponent {
       );
   }
 
-  private neighbour<T>(list: T[], item: T): T | undefined {
-    const index = list.indexOf(item);
-    return list[index + 1] ?? list[index - 1];
-  }
-
   protected addAvailability(): void {
     this.dialog.open(AvailabilityFormDialogComponent, {
       ...labelledByFrame(),
@@ -89,5 +84,10 @@ export class AvailabilityPageComponent {
       ...labelledByFrame(),
       injector: this.injector,
     });
+  }
+
+  private neighbour<T>(list: T[], item: T): T | undefined {
+    const index = list.indexOf(item);
+    return list[index + 1] ?? list[index - 1];
   }
 }

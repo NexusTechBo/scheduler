@@ -26,11 +26,11 @@ export class CalendarService {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly today = toIso(new Date());
+  private readonly _scope = signal<CalendarScope>('all');
 
   readonly canFilterMine = computed(
     () => this.auth.hasRole('ADMINISTRATOR') && this.auth.hasRole('DOCTOR'),
   );
-  private readonly _scope = signal<CalendarScope>('all');
   readonly scope = computed<CalendarScope>(() => (this.canFilterMine() ? this._scope() : 'all'));
 
   private readonly dateParam = toSignal(

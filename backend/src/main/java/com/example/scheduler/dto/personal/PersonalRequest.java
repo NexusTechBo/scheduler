@@ -15,7 +15,9 @@ public record PersonalRequest(
         @NotBlank @Size(max = 255) String name,
         @NotBlank @Email @Size(max = 255) String email,
         @Size(max = 255) String phoneNumber,
-        @NotBlank @Size(max = 255) String ci,
+
+        @NotBlank @Pattern(regexp = "^\\d{5,10}$", message = "{validation.ci.pattern}")
+        String ci,
 
         @NotNull @Pattern(regexp = "^[a-z0-9._-]{3,50}$", message = "{validation.username.pattern}")
         String username,

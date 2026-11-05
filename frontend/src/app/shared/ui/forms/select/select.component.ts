@@ -36,6 +36,7 @@ export class SelectComponent<T> implements ControlValueAccessor {
   readonly placeholder = input('Seleccionar');
   readonly icon = input<UiIconName | null>(null);
   readonly id = input<string | null>(null);
+  private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('triggerEl');
 
   protected readonly listboxId = `app-select-${nextId++}`;
   protected readonly positions = POPOVER_POSITIONS;
@@ -44,18 +45,17 @@ export class SelectComponent<T> implements ControlValueAccessor {
   protected readonly isOpen = signal(false);
   protected readonly activeIndex = signal(-1);
   protected readonly width = signal(0);
+  private query = '';
+  private queryTimer?: ReturnType<typeof setTimeout>;
+  private onChange: (value: T) => void = () => {};
+  private onTouched: () => void = () => {};
+
   protected readonly selectedIndex = computed(() =>
     this.options().findIndex((option) => option.value === this.value()),
   );
   protected readonly selected = computed<SelectOption<T> | undefined>(
     () => this.options()[this.selectedIndex()],
   );
-
-  private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('triggerEl');
-  private query = '';
-  private queryTimer?: ReturnType<typeof setTimeout>;
-  private onChange: (value: T) => void = () => {};
-  private onTouched: () => void = () => {};
 
   writeValue(value: T | null): void {
     this.value.set(value ?? null);

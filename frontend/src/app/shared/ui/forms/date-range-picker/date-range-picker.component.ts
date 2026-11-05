@@ -59,6 +59,8 @@ export class DateRangePickerComponent implements ControlValueAccessor {
   protected readonly draftStart = signal<string | null>(null);
   protected readonly draftEnd = signal<string | null>(null);
   protected readonly hovered = signal<string | null>(null);
+  private onChange: (value: DateRange) => void = () => {};
+  private onTouched: () => void = () => {};
 
   protected readonly label = computed(() => {
     const range = this.value();
@@ -67,9 +69,6 @@ export class DateRangePickerComponent implements ControlValueAccessor {
       ? formatShortDate(range.from)
       : `${formatShortDate(range.from)} – ${formatShortDate(range.to)}`;
   });
-
-  private onChange: (value: DateRange) => void = () => {};
-  private onTouched: () => void = () => {};
 
   writeValue(value: DateRange | null): void {
     this.value.set(value);

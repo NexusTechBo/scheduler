@@ -55,6 +55,28 @@ export class BookingService {
   private readonly _selectedPatient = signal<Patient | null>(null);
   readonly patientSearch = this._patientSearch.asReadonly();
   readonly selectedPatient = this._selectedPatient.asReadonly();
+
+  private readonly _specialtyId = signal<number | null>(null);
+  readonly specialtyId = this._specialtyId.asReadonly();
+  private readonly _selectedDoctor = linkedSignal<DoctorOption | null>(() =>
+    this.ownDataOnly
+      ? {
+          id: this.auth.userId()!,
+          name: this.auth.displayName(),
+          specialtyId: null,
+          specialtyName: null,
+        }
+      : null,
+  );
+  readonly selectedDoctor = this._selectedDoctor.asReadonly();
+  readonly specialties = this.specialtiesStore.specialties;
+  readonly doctorsLoading = this.doctorsStore.isLoading;
+  readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
+  readonly doctorsErrorMessage = this.doctorsStore.errorMessage;
+
+  private readonly _submitting = signal(false);
+  readonly submitting = this._submitting.asReadonly();
+
   private readonly debouncedPatientSearch = toSignal(
     toObservable(this._patientSearch).pipe(
       debounceTime(500),
@@ -71,35 +93,8 @@ export class BookingService {
         .pipe(map((page) => page.content)),
   });
   readonly patientsLoading = this.patientsResource.isLoading;
-  readonly filteredPatients = computed(() =>
-    this.patientsResource.hasValue() ? this.patientsResource.value() : [],
-  );
-  readonly patientsErrorMessage = resourceError(this.patientsResource, LOAD_ERROR.patients);
 
-  private readonly _specialtyId = signal<number | null>(null);
-  readonly specialtyId = this._specialtyId.asReadonly();
-  private readonly _selectedDoctor = linkedSignal<DoctorOption | null>(() =>
-    this.ownDataOnly
-      ? {
-          id: this.auth.userId()!,
-          name: this.auth.displayName(),
-          specialtyId: null,
-          specialtyName: null,
-        }
-      : null,
-  );
-  readonly selectedDoctor = this._selectedDoctor.asReadonly();
   private readonly selectedDoctorId = computed(() => this.selectedDoctor()?.id);
-  readonly specialties = this.specialtiesStore.specialties;
-  readonly doctors = computed(() => {
-    const all = this.doctorsStore.doctors();
-    const id = this._specialtyId();
-    return id === null ? all : all.filter((doctor) => doctor.specialtyId === id);
-  });
-  readonly doctorsLoading = this.doctorsStore.isLoading;
-  readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
-  readonly doctorsErrorMessage = this.doctorsStore.errorMessage;
-
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
   );
@@ -128,14 +123,21 @@ export class BookingService {
         ),
       ),
   });
+  readonly slotsLoading = this.slotsResource.isLoading;
+
+  readonly filteredPatients = computed(() =>
+    this.patientsResource.hasValue() ? this.patientsResource.value() : [],
+  );
+  readonly patientsErrorMessage = resourceError(this.patientsResource, LOAD_ERROR.patients);
+  readonly doctors = computed(() => {
+    const all = this.doctorsStore.doctors();
+    const id = this._specialtyId();
+    return id === null ? all : all.filter((doctor) => doctor.specialtyId === id);
+  });
   readonly slots = computed(() =>
     this.slotsResource.hasValue() ? this.slotsResource.value() : [],
   );
-  readonly slotsLoading = this.slotsResource.isLoading;
   readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
-
-  private readonly _submitting = signal(false);
-  readonly submitting = this._submitting.asReadonly();
   readonly canSubmit = computed(
     () =>
       !!this.selectedDoctor() &&
@@ -232,7 +234,6 @@ export class BookingService {
       this.handleBookingFailure(error, 'No se pudo agendar la cita');
       return EMPTY;
     }
-    // Re-enable the submit button while the dialog is open so the CDK can restore focus to it.
     this._submitting.set(false);
     return this.confirm.ask(rescheduleConfirmOptions(conflict, attempt)).pipe(
       filter(Boolean),

@@ -36,18 +36,18 @@ export class RegisterFormComponent {
     adminPassword: ['', [Validators.required, Validators.minLength(8)]],
   });
 
-  protected readonly suffix = toSignal(
-    this.form.controls.slug.valueChanges.pipe(
-      map((value) => (this.form.controls.slug.valid ? value : '')),
-    ),
-    { initialValue: '' },
-  );
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly slugErrors = {
     pattern: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
   };
   protected readonly usernameErrors = USERNAME_ERRORS;
+  protected readonly suffix = toSignal(
+    this.form.controls.slug.valueChanges.pipe(
+      map((value) => (this.form.controls.slug.valid ? value : '')),
+    ),
+    { initialValue: '' },
+  );
 
   protected submit(): void {
     if (this.form.invalid) {

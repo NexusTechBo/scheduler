@@ -14,6 +14,11 @@ export class ActivationService {
 
   private readonly _state = signal<ActivationState>({ status: 'loading' });
   readonly state = this._state.asReadonly();
+  readonly coolingDown = this.cooldown.active;
+  readonly cooldownFinished = this.cooldown.finished;
+  private token: string | null = null;
+  private started = false;
+
   readonly status = computed(() => this._state().status);
   readonly result = computed(() => {
     const state = this._state();
@@ -23,20 +28,13 @@ export class ActivationService {
     const state = this._state();
     return state.status === 'error' ? state.message : null;
   });
-
-  readonly coolingDown = this.cooldown.active;
-  readonly cooldownFinished = this.cooldown.finished;
   readonly retryLabel = computed(() =>
     this.cooldown.active() ? `Reintenta en ${this.cooldown.label()}` : 'Reintentar',
   );
-
   readonly hasSession = computed(() => {
     const session = this.auth.session();
     return session !== null && session.expiresAt > Date.now();
   });
-
-  private token: string | null = null;
-  private started = false;
 
   continueToLogin(): void {
     const username = this.result()?.adminUsername;

@@ -26,14 +26,14 @@ export class DoctorModeCardComponent {
 
   private readonly enabling = signal(false);
   protected readonly enabled = this.profile.doctorMode;
-  protected readonly checked = computed(() => this.enabled() || this.enabling());
-  protected readonly showForm = computed(() => this.enabling() && !this.enabled());
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = new FormGroup({
     specialtyId: new FormControl<number | null>(null, Validators.required),
   });
+  protected readonly checked = computed(() => this.enabled() || this.enabling());
+  protected readonly showForm = computed(() => this.enabling() && !this.enabled());
   protected readonly specialtyOptions = computed<SelectOption<number | null>[]>(() =>
     this.profile.specialties().map((s) => ({ value: s.id, label: s.name })),
   );

@@ -27,13 +27,13 @@ export class BoardService {
   private readonly api = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
   private readonly notifications = inject(NotificationService);
+  private readonly socket = inject(BoardSocket);
 
   private readonly _range = signal<DateRange>({
     from: toIso(new Date()),
     to: toIso(addDays(new Date(), 6)),
   });
   readonly range = this._range.asReadonly();
-  readonly showDates = computed(() => this.range().from !== this.range().to);
 
   private readonly resource = rxResource({
     params: () => this.range(),
@@ -41,6 +41,7 @@ export class BoardService {
   });
 
   readonly isLoading = this.resource.isLoading;
+  readonly showDates = computed(() => this.range().from !== this.range().to);
   readonly hasData = computed(() => this.resource.hasValue());
   readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el tablero');
   readonly columns = computed<BoardColumn[]>(() => {
@@ -61,8 +62,6 @@ export class BoardService {
       };
     });
   });
-
-  private readonly socket = inject(BoardSocket);
 
   constructor() {
     merge(this.socket.events$, this.socket.connected$.pipe(skip(1)))

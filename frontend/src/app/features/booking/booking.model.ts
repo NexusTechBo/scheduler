@@ -5,8 +5,6 @@ export type DoctorOption = Pick<Staff, 'id' | 'name' | 'specialtyId' | 'specialt
 export interface BookingAttempt {
   doctor: DoctorOption;
   patient: Patient;
-  /** Selected day, `yyyy-MM-dd`. */
   date: string;
-  /** Selected slot start, `yyyy-MM-ddTHH:mm:ss`. */
   startDateTime: string;
 }

@@ -141,20 +141,6 @@ public class PersonalServiceImpl implements PersonalService {
         return personalMapper.toResponse(personalRepository.save(personal));
     }
 
-    private void updateContactData(Personal personal, String name, String rawEmail, String rawPhoneNumber) {
-        var email = Utils.normalizeEmail(rawEmail);
-        if (!personal.getEmail().equalsIgnoreCase(email) && personalRepository.existsByEmailIgnoreCase(email))
-            throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber);
-        if (phoneNumber != null
-                && !Objects.equals(personal.getPhoneNumber(), phoneNumber)
-                && personalRepository.existsByPhoneNumber(phoneNumber))
-            throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
-        personal.setName(name);
-        personal.setEmail(email);
-        personal.setPhoneNumber(phoneNumber);
-    }
-
     @Override
     @Transactional
     public void updateDoctorMode(Long userId, DoctorModeRequest request) {
@@ -190,6 +176,20 @@ public class PersonalServiceImpl implements PersonalService {
         var personal = getPersonalOrThrowById(personalId);
         personal.setActive(true);
         return personalMapper.toResponse(personalRepository.save(personal));
+    }
+
+    private void updateContactData(Personal personal, String name, String rawEmail, String rawPhoneNumber) {
+        var email = Utils.normalizeEmail(rawEmail);
+        if (!personal.getEmail().equalsIgnoreCase(email) && personalRepository.existsByEmailIgnoreCase(email))
+            throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
+        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber);
+        if (phoneNumber != null
+                && !Objects.equals(personal.getPhoneNumber(), phoneNumber)
+                && personalRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
+        personal.setName(name);
+        personal.setEmail(email);
+        personal.setPhoneNumber(phoneNumber);
     }
 
     private Personal getPersonalOrThrowById(Long personalId) {

@@ -9,6 +9,23 @@ import {
 const RATE_LIMIT_MESSAGE =
   'Has realizado demasiadas solicitudes. Intenta de nuevo en unos minutos.';
 
+export const API_ERROR_CODES = {
+  slotTaken: 'appointment.slotTaken',
+  scheduleBlocked: 'appointment.scheduleBlocked',
+  outOfJourney: 'appointment.outOfJourney',
+  pastDate: 'appointment.pastDate',
+  patientHasActive: 'appointment.patientHasActive',
+  patientHasActiveGuest: 'appointment.patientHasActiveGuest',
+  activeAppointmentsConflict: 'scheduleException.activeAppointmentsConflict',
+} as const;
+
+const SLOT_UNAVAILABLE_CODES: ReadonlySet<string> = new Set([
+  API_ERROR_CODES.slotTaken,
+  API_ERROR_CODES.scheduleBlocked,
+  API_ERROR_CODES.outOfJourney,
+  API_ERROR_CODES.pastDate,
+]);
+
 export function isRateLimited(error: unknown): error is HttpErrorResponse {
   return error instanceof HttpErrorResponse && error.status === HttpStatusCode.TooManyRequests;
 }
@@ -30,23 +47,6 @@ export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error in
   }
   return isRateLimited(error) ? RATE_LIMIT_MESSAGE : fallback;
 }
-
-export const API_ERROR_CODES = {
-  slotTaken: 'appointment.slotTaken',
-  scheduleBlocked: 'appointment.scheduleBlocked',
-  outOfJourney: 'appointment.outOfJourney',
-  pastDate: 'appointment.pastDate',
-  patientHasActive: 'appointment.patientHasActive',
-  patientHasActiveGuest: 'appointment.patientHasActiveGuest',
-  activeAppointmentsConflict: 'scheduleException.activeAppointmentsConflict',
-} as const;
-
-const SLOT_UNAVAILABLE_CODES: ReadonlySet<string> = new Set([
-  API_ERROR_CODES.slotTaken,
-  API_ERROR_CODES.scheduleBlocked,
-  API_ERROR_CODES.outOfJourney,
-  API_ERROR_CODES.pastDate,
-]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -80,14 +80,9 @@ export function isSlotUnavailableError(error: unknown): boolean {
 export function activeAppointmentsConflict(error: unknown): number | null {
   if (apiErrorCode(error) !== API_ERROR_CODES.activeAppointmentsConflict) return null;
   const count = apiErrorDetails(error)['count'];
-  // A missing or invalid count still means a conflict: 0 on purpose so callers show a generic text.
   return typeof count === 'number' && Number.isFinite(count) && count >= 0 ? count : 0;
 }
 
-/**
- * Staff-only conflict: the existing appointment id is required to offer a reschedule.
- * The guest variant (`patientHasActiveGuest`) only carries `startTime`, so guests just show the message.
- */
 export function staffActiveAppointmentConflict(
   error: unknown,
 ): StaffActiveAppointmentConflict | null {

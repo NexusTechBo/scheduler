@@ -15,9 +15,9 @@ const AUTO_DISMISS_MS = 4000;
 })
 export class NotificationService {
   private readonly _notifications = signal<Notification[]>([]);
-  public readonly notifications = this._notifications.asReadonly();
-
   private _nextId = 0;
+
+  public readonly notifications = this._notifications.asReadonly();
 
   success(message: string): void {
     this.push('success', message);

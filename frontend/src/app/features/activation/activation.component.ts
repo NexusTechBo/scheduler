@@ -28,12 +28,13 @@ import { ActivationService } from './activation.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActivationComponent implements OnInit {
+  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly activation = inject(ActivationService);
 
   private readonly token = this.route.snapshot.queryParamMap.get('token');
-  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
 
   constructor() {
     afterRenderEffect(() => {

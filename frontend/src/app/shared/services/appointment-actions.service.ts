@@ -18,6 +18,10 @@ import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
 import { ConfirmService } from './confirm.service';
 import { NotificationService } from './notification.service';
 
+function dayTime(startTime: string): string {
+  return `${formatDayLabel(datePart(startTime)).toLowerCase()} ${formatTime(startTime)}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AppointmentActionsService {
   private readonly api = inject(AppointmentsApi);
@@ -76,8 +80,4 @@ export class AppointmentActionsService {
       }),
     );
   }
-}
-
-function dayTime(startTime: string): string {
-  return `${formatDayLabel(datePart(startTime)).toLowerCase()} ${formatTime(startTime)}`;
 }

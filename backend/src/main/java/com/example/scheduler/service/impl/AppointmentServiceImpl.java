@@ -67,25 +67,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final MessageSource messageSource;
     private final Clock clock;
 
-    /**
-     * Who is booking. Staff see the existing appointment's id and status in the conflict; guests only see its start
-     * time, so a public caller cannot learn more about the appointment.
-     */
-    private enum BookingChannel {
-        STAFF("staff", MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE, true),
-        GUEST("guest", MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE_GUEST, false);
-
-        private final String label;
-        private final String conflictMessageKey;
-        private final boolean exposesAppointmentState;
-
-        BookingChannel(String label, String conflictMessageKey, boolean exposesAppointmentState) {
-            this.label = label;
-            this.conflictMessageKey = conflictMessageKey;
-            this.exposesAppointmentState = exposesAppointmentState;
-        }
-    }
-
     @Override
     @Transactional
     public AppointmentResponse bookAppointment(AppointmentRequest request, Long userId, boolean restrictToOwn) {
@@ -98,86 +79,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public AppointmentResponse bookGuestAppointment(AppointmentRequest request) {
         return book(request, BookingChannel.GUEST);
-    }
-
-    private AppointmentResponse book(AppointmentRequest request, BookingChannel channel) {
-        var patientId = request.patientId();
-        var doctor = personalRepository
-                .findByIdForUpdate(request.doctorId())
-                .orElseThrow(
-                        () -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, request.doctorId()));
-        var endTime = verifySlotBookable(doctor, request.startTime(), null);
-        var patient = patientRepository
-                .findByIdForShare(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
-        if (!patient.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_PATIENT_INACTIVE);
-        verifyNoActiveAppointmentWithDoctor(patientId, doctor.getId(), channel);
-        var appointment = Appointment.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .startTime(request.startTime())
-                .endTime(endTime)
-                .status(AppointmentStatus.PENDING)
-                .createdAt(LocalDateTime.now(clock))
-                .build();
-        var saved = saveAndNotify(appointment);
-        log.atInfo()
-                .addKeyValue("channel", channel.label)
-                .log(
-                        "Appointment {} created via {} for doctor {} and patient {} with status {}",
-                        saved.getId(),
-                        channel.label,
-                        doctor.getId(),
-                        patientId,
-                        saved.getStatus());
-        return appointmentMapper.toResponse(saved);
-    }
-
-    /**
-     * Rejects a booking when the patient already has an upcoming active appointment with the same doctor. The caller
-     * holds the pessimistic lock on the doctor ({@code findByIdForUpdate}), which serializes every booking for that
-     * doctor; since the rule is per doctor, no extra lock or unique index is needed.
-     */
-    private void verifyNoActiveAppointmentWithDoctor(Long patientId, Long doctorId, BookingChannel channel) {
-        appointmentRepository
-                .findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
-                        patientId, doctorId, ACTIVE_STATUSES, LocalDateTime.now(clock))
-                .ifPresent(existing -> {
-                    throw patientHasActiveConflict(existing, channel);
-                });
-    }
-
-    private static BusinessException patientHasActiveConflict(Appointment existing, BookingChannel channel) {
-        var startTime = existing.getStartTime();
-        var date = startTime.format(DateTimeFormats.SHORT_DATE);
-        var time = startTime.format(DateTimeFormats.TIME);
-        var details = new LinkedHashMap<String, Object>();
-        details.put("startTime", startTime);
-        if (!channel.exposesAppointmentState)
-            return BusinessException.withDetails(details, channel.conflictMessageKey, date, time);
-        details.put("appointmentId", existing.getId());
-        details.put("status", existing.getStatus());
-        return BusinessException.withDetails(
-                details, channel.conflictMessageKey, date, time, statusChoice(existing.getStatus()));
-    }
-
-    /** Selector for the {@code choice} format of the status label in the message bundles (0 pending, 1 confirmed). */
-    private static int statusChoice(AppointmentStatus status) {
-        return status == AppointmentStatus.CONFIRMED ? 1 : 0;
-    }
-
-    private LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime, Long excludeAppointmentId) {
-        if (!doctor.isDoctor()) throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
-        if (!doctor.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
-        if (startTime.isBefore(LocalDateTime.now(clock)))
-            throw new BadRequestException(MessageKeys.APPOINTMENT_PAST_DATE);
-        var endTime = findSlotEnd(doctor.getId(), startTime)
-                .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
-        if (isBlocked(doctor.getId(), startTime, endTime))
-            throw new BusinessException(MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED);
-        if (isSlotTaken(doctor.getId(), startTime, endTime, excludeAppointmentId))
-            throw new BusinessException(MessageKeys.APPOINTMENT_SLOT_TAKEN);
-        return endTime;
     }
 
     @Override
@@ -218,9 +119,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public AppointmentResponse rescheduleAppointmentById(
             Long appointmentId, RescheduleAppointmentRequest request, Long userId, boolean restrictToOwn) {
-        // Lock the doctor before reading anything else, as book() does: bookings and reschedules of the same doctor are
-        // serialized, so the doctor checks and the slot checks below see committed, locked state. The appointment row
-        // itself is protected by its @Version column against a concurrent confirm or cancel.
         var doctorId = appointmentRepository
                 .findDoctorIdById(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.APPOINTMENT_NOT_FOUND, appointmentId));
@@ -310,6 +208,79 @@ public class AppointmentServiceImpl implements AppointmentService {
         return cancelled;
     }
 
+    @Override
+    public Map<AppointmentStatus, List<AppointmentSummaryItem>> getBoardByRange(
+            LocalDate from, LocalDate to, Long doctorId, Long patientId) {
+        return groupByStatus(appointmentRepository.findByFiltersAndDateRange(
+                doctorId, patientId, from.atStartOfDay(), to.plusDays(1).atStartOfDay()));
+    }
+
+    @Override
+    public Map<String, List<AppointmentSummaryItem>> getCalendar(int month, int year, Long doctorId, Long patientId) {
+        var monthStart = LocalDate.of(year, month, 1);
+        return groupByDay(appointmentRepository.findByFiltersAndDateRange(
+                doctorId,
+                patientId,
+                monthStart.atStartOfDay(),
+                monthStart.plusMonths(1).atStartOfDay()));
+    }
+
+    private AppointmentResponse book(AppointmentRequest request, BookingChannel channel) {
+        var patientId = request.patientId();
+        var doctor = personalRepository
+                .findByIdForUpdate(request.doctorId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, request.doctorId()));
+        var endTime = verifySlotBookable(doctor, request.startTime(), null);
+        var patient = patientRepository
+                .findByIdForShare(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
+        if (!patient.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_PATIENT_INACTIVE);
+        verifyNoActiveAppointmentWithDoctor(patientId, doctor.getId(), channel);
+        var appointment = Appointment.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .startTime(request.startTime())
+                .endTime(endTime)
+                .status(AppointmentStatus.PENDING)
+                .createdAt(LocalDateTime.now(clock))
+                .build();
+        var saved = saveAndNotify(appointment);
+        log.atInfo()
+                .addKeyValue("channel", channel.label)
+                .log(
+                        "Appointment {} created via {} for doctor {} and patient {} with status {}",
+                        saved.getId(),
+                        channel.label,
+                        doctor.getId(),
+                        patientId,
+                        saved.getStatus());
+        return appointmentMapper.toResponse(saved);
+    }
+
+    private void verifyNoActiveAppointmentWithDoctor(Long patientId, Long doctorId, BookingChannel channel) {
+        appointmentRepository
+                .findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
+                        patientId, doctorId, ACTIVE_STATUSES, LocalDateTime.now(clock))
+                .ifPresent(existing -> {
+                    throw patientHasActiveConflict(existing, channel);
+                });
+    }
+
+    private LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime, Long excludeAppointmentId) {
+        if (!doctor.isDoctor()) throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
+        if (!doctor.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
+        if (startTime.isBefore(LocalDateTime.now(clock)))
+            throw new BadRequestException(MessageKeys.APPOINTMENT_PAST_DATE);
+        var endTime = findSlotEnd(doctor.getId(), startTime)
+                .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
+        if (isBlocked(doctor.getId(), startTime, endTime))
+            throw new BusinessException(MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED);
+        if (isSlotTaken(doctor.getId(), startTime, endTime, excludeAppointmentId))
+            throw new BusinessException(MessageKeys.APPOINTMENT_SLOT_TAKEN);
+        return endTime;
+    }
+
     private int cancelAll(List<Appointment> appointments, String reason, Set<NotificationChannel> channels) {
         if (appointments.isEmpty()) return 0;
         var clinic = currentClinicProvider.getCurrentClinic();
@@ -327,32 +298,6 @@ public class AppointmentServiceImpl implements AppointmentService {
         var saved = saveAndNotify(appointment);
         logStatusChange(saved, previousStatus);
         return saved;
-    }
-
-    private static void logStatusChange(Appointment appointment, AppointmentStatus from) {
-        log.info(
-                "Appointment {} of doctor {} changed {} -> {}",
-                appointment.getId(),
-                appointment.getDoctor().getId(),
-                from,
-                appointment.getStatus());
-    }
-
-    @Override
-    public Map<AppointmentStatus, List<AppointmentSummaryItem>> getBoardByRange(
-            LocalDate from, LocalDate to, Long doctorId, Long patientId) {
-        return groupByStatus(appointmentRepository.findByFiltersAndDateRange(
-                doctorId, patientId, from.atStartOfDay(), to.plusDays(1).atStartOfDay()));
-    }
-
-    @Override
-    public Map<String, List<AppointmentSummaryItem>> getCalendar(int month, int year, Long doctorId, Long patientId) {
-        var monthStart = LocalDate.of(year, month, 1);
-        return groupByDay(appointmentRepository.findByFiltersAndDateRange(
-                doctorId,
-                patientId,
-                monthStart.atStartOfDay(),
-                monthStart.plusMonths(1).atStartOfDay()));
     }
 
     private Map<AppointmentStatus, List<AppointmentSummaryItem>> groupByStatus(List<Appointment> appointments) {
@@ -467,5 +412,47 @@ public class AppointmentServiceImpl implements AppointmentService {
             Long doctorId, LocalDateTime startTime, LocalDateTime endTime, Long excludeAppointmentId) {
         return appointmentRepository.existsOverlappingAppointment(
                 doctorId, startTime, endTime, EXCLUDED_FROM_OVERLAP, excludeAppointmentId);
+    }
+
+    private static BusinessException patientHasActiveConflict(Appointment existing, BookingChannel channel) {
+        var startTime = existing.getStartTime();
+        var date = startTime.format(DateTimeFormats.SHORT_DATE);
+        var time = startTime.format(DateTimeFormats.TIME);
+        var details = new LinkedHashMap<String, Object>();
+        details.put("startTime", startTime);
+        if (!channel.exposesAppointmentState)
+            return BusinessException.withDetails(details, channel.conflictMessageKey, date, time);
+        details.put("appointmentId", existing.getId());
+        details.put("status", existing.getStatus());
+        return BusinessException.withDetails(
+                details, channel.conflictMessageKey, date, time, statusChoice(existing.getStatus()));
+    }
+
+    private static int statusChoice(AppointmentStatus status) {
+        return status == AppointmentStatus.CONFIRMED ? 1 : 0;
+    }
+
+    private static void logStatusChange(Appointment appointment, AppointmentStatus from) {
+        log.info(
+                "Appointment {} of doctor {} changed {} -> {}",
+                appointment.getId(),
+                appointment.getDoctor().getId(),
+                from,
+                appointment.getStatus());
+    }
+
+    private enum BookingChannel {
+        STAFF("staff", MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE, true),
+        GUEST("guest", MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE_GUEST, false);
+
+        private final String label;
+        private final String conflictMessageKey;
+        private final boolean exposesAppointmentState;
+
+        BookingChannel(String label, String conflictMessageKey, boolean exposesAppointmentState) {
+            this.label = label;
+            this.conflictMessageKey = conflictMessageKey;
+            this.exposesAppointmentState = exposesAppointmentState;
+        }
     }
 }

@@ -33,10 +33,11 @@ import { TopbarComponent } from './components/topbar/topbar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellComponent {
+  private readonly drawerTrap = viewChild.required(CdkTrapFocus);
+
   private readonly auth = inject(AuthService);
 
   protected readonly navOpen = signal(false);
-  private readonly drawerTrap = viewChild.required(CdkTrapFocus);
   private focusBeforeOpen: HTMLElement | null = null;
 
   protected readonly navItems = computed(() => navItemsFor(this.auth.roles()));

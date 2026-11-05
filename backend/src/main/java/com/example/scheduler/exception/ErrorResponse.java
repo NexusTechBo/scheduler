@@ -8,10 +8,6 @@ import java.util.Map;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 
-/**
- * Error contract consumed by the frontend. {@code code} is the message key of an {@link ApiException} and {@code
- * details} its optional structured data; both are omitted for other errors.
- */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponse(
         Instant timestamp,

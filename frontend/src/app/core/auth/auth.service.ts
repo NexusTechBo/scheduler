@@ -7,9 +7,6 @@ import { AuthApi } from '../api/auth.api';
 import { Role, Staff, TokenPayload } from '../models/api.models';
 import { HOME_URL, SESSION_ACCESS, SessionAccess } from '../navigation/navigation';
 
-const TOKEN_KEY = 'scheduler.token';
-const MAX_TIMER_MS = 2_147_483_647;
-
 interface Session {
   token: string;
   userId: number;
@@ -21,6 +18,9 @@ interface Session {
   username: string;
   expiresAt: number;
 }
+
+const TOKEN_KEY = 'scheduler.token';
+const MAX_TIMER_MS = 2_147_483_647;
 
 function readStorage(key: string): string | null {
   try {

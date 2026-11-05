@@ -31,6 +31,16 @@ const GRAY = '#9ca3af';
 const TEXT = '#6b7280';
 const GRID = 'rgba(17, 24, 39, 0.06)';
 
+function themeColors() {
+  const style = getComputedStyle(document.documentElement);
+  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
+  return {
+    primary: read('--color-primary', '#0056b3'),
+    tertiary: read('--color-tertiary', '#973c00'),
+    font: read('--font-sans', 'Inter, sans-serif'),
+  };
+}
+
 @Component({
   selector: 'app-week-chart',
   template: `<canvas #canvas role="img" [attr.aria-label]="summary()"></canvas>`,
@@ -135,14 +145,4 @@ export class WeekChartComponent {
       },
     };
   }
-}
-
-function themeColors() {
-  const style = getComputedStyle(document.documentElement);
-  const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
-  return {
-    primary: read('--color-primary', '#0056b3'),
-    tertiary: read('--color-tertiary', '#973c00'),
-    font: read('--font-sans', 'Inter, sans-serif'),
-  };
 }

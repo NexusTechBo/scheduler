@@ -39,7 +39,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
 
-    /** {@code excludeId} skips one appointment (the one being rescheduled); pass null to check every appointment. */
     @Query("SELECT COUNT(a) > 0 FROM Appointment a " + "WHERE a.doctor.id = :doctorId "
             + "AND a.status NOT IN :excludedStatuses "
             + "AND a.startTime < :endTime "

@@ -7,10 +7,6 @@ import { apiErrorMessage, isRateLimited, retryAfterSeconds } from '../http/api-e
 import { GuestTokenPayload } from '../models/api.models';
 import { createCooldown } from '../utils/cooldown.util';
 
-const GUEST_TOKEN_KEY = 'scheduler.guestToken';
-const EXPIRY_MARGIN_MS = 30_000;
-const UNAVAILABLE_MESSAGE = 'Esta clínica no está disponible para reservas en línea.';
-
 export type GuestSessionStatus = 'loading' | 'ready' | 'unavailable' | 'error';
 
 interface GuestSession {
@@ -18,6 +14,10 @@ interface GuestSession {
   clinicSlug: string;
   expiresAt: number;
 }
+
+const GUEST_TOKEN_KEY = 'scheduler.guestToken';
+const EXPIRY_MARGIN_MS = 30_000;
+const UNAVAILABLE_MESSAGE = 'Esta clínica no está disponible para reservas en línea.';
 
 function readStorage(): string | null {
   try {
@@ -59,11 +59,11 @@ export class GuestSessionService {
 
   private readonly _status = signal<GuestSessionStatus>('loading');
   private readonly _message = signal<string | null>(null);
+  private readonly cooldown = createCooldown();
+
   readonly status = this._status.asReadonly();
   readonly message = this._message.asReadonly();
   readonly ready = computed(() => this._status() === 'ready');
-
-  private readonly cooldown = createCooldown();
   readonly coolingDown = this.cooldown.active;
   readonly retryInLabel = this.cooldown.label;
   readonly cooldownFinished = this.cooldown.finished;
@@ -129,7 +129,7 @@ export class GuestSessionService {
     const unavailable =
       error instanceof HttpErrorResponse &&
       (error.status === HttpStatusCode.NotFound || error.status === HttpStatusCode.BadRequest);
-    if (unavailable) this.setStatus('unavailable', apiErrorMessage(error, UNAVAILABLE_MESSAGE));
+    if (unavailable) this.setStatus('unavailable', UNAVAILABLE_MESSAGE);
     else this.setStatus('error', apiErrorMessage(error, 'No se pudo iniciar la reserva'));
   }
 

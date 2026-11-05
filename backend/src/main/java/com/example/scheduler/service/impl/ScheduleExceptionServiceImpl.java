@@ -41,8 +41,6 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     private final Clock clock;
     private final MessageSource messageSource;
 
-    private record BlockedRange(LocalDateTime from, LocalDateTime to) {}
-
     @Override
     @Transactional
     public ScheduleExceptionResponse addDoctorScheduleException(Long doctorId, ScheduleExceptionRequest request) {
@@ -113,4 +111,6 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
                         LocaleContextHolder.getLocale())
                 : reason;
     }
+
+    private record BlockedRange(LocalDateTime from, LocalDateTime to) {}
 }

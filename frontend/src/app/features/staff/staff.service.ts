@@ -41,17 +41,17 @@ export class StaffService {
     params: () => this.filters(),
     stream: ({ params }) => this.staffApi.list(params),
   });
+  readonly specialties = this.specialtiesStore.specialties;
+  readonly isLoading = this.staffResource.isLoading;
 
   readonly staff = computed(() =>
     this.staffResource.hasValue() ? this.staffResource.value().content : [],
   );
-  readonly specialties = this.specialtiesStore.specialties;
   readonly pagination = computed(() =>
     this.staffResource.hasValue() ? this.staffResource.value().page : null,
   );
   readonly roleFilter = computed<StaffRoleFilter>(() => this.filters().role ?? 'all');
   readonly onlyActive = computed(() => this.filters().isActive === true);
-  readonly isLoading = this.staffResource.isLoading;
   readonly errorMessage = resourceError(this.staffResource, 'No se pudo cargar el personal');
 
   constructor() {

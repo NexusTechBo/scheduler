@@ -33,11 +33,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GlobalExceptionHandler {
     private final MessageSource messageSource;
 
-    private String msg(String key, Object... args) {
-        Locale locale = LocaleContextHolder.getLocale();
-        return messageSource.getMessage(key, args, key, locale);
-    }
-
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApi(ApiException ex, HttpServletRequest req) {
         log.warn(
@@ -154,6 +149,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest req) {
         log.error("Unhandled exception on {} {}", req.getMethod(), req.getRequestURI(), ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, msg(MessageKeys.ERROR_SERVER_INTERNAL), req);
+    }
+
+    private String msg(String key, Object... args) {
+        Locale locale = LocaleContextHolder.getLocale();
+        return messageSource.getMessage(key, args, key, locale);
     }
 
     private ResponseEntity<ErrorResponse> validationFailed(List<FieldErrorItem> errors, HttpServletRequest req) {

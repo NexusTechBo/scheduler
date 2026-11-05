@@ -62,13 +62,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    public static List<String> extractRoles(Claims claims) {
-        var role = claims.get(JwtClaims.ROLE, String.class);
-        if (!(claims.get(JwtClaims.ROLES) instanceof Collection<?> roles) || roles.isEmpty())
-            return role == null ? List.of() : List.of(role);
-        return roles.stream().filter(Objects::nonNull).map(Object::toString).toList();
-    }
-
     public Optional<Claims> parse(String token) {
         try {
             return Optional.of(Jwts.parser()
@@ -79,5 +72,12 @@ public class JwtUtil {
         } catch (JwtException | IllegalArgumentException _) {
             return Optional.empty();
         }
+    }
+
+    public static List<String> extractRoles(Claims claims) {
+        var role = claims.get(JwtClaims.ROLE, String.class);
+        if (!(claims.get(JwtClaims.ROLES) instanceof Collection<?> roles) || roles.isEmpty())
+            return role == null ? List.of() : List.of(role);
+        return roles.stream().filter(Objects::nonNull).map(Object::toString).toList();
     }
 }

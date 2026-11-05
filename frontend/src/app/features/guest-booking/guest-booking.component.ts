@@ -51,9 +51,13 @@ import { GuestBookingService } from './guest-booking.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuestBookingComponent implements OnInit {
+  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
+
   private readonly route = inject(ActivatedRoute);
   protected readonly session = inject(GuestSessionService);
   protected readonly booking = inject(GuestBookingService);
+
+  private lastView: string | null = null;
 
   protected readonly sessionRetryLabel = computed(() =>
     this.session.coolingDown() ? `Reintenta en ${this.session.retryInLabel()}` : 'Reintentar',
@@ -64,9 +68,6 @@ export class GuestBookingComponent implements OnInit {
     const result = this.booking.result();
     return result ? formatLongDate(datePart(result.startTime)) : '';
   });
-
-  private readonly heading = viewChild<ElementRef<HTMLElement>>('heading');
-  private lastView: string | null = null;
 
   constructor() {
     afterRenderEffect(() => {

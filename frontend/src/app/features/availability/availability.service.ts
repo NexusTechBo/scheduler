@@ -57,6 +57,9 @@ export class AvailabilityService {
         .availableSlots(this.doctorId, params)
         .pipe(map((response) => response.availableSlots.map((slot) => formatTime(slot.startTime)))),
   });
+  readonly isWeekLoading = this.availabilityResource.isLoading;
+  readonly isExceptionsLoading = this.exceptionsResource.isLoading;
+  readonly isPreviewLoading = this.previewResource.isLoading;
 
   readonly week = computed(() => {
     const blocks = this.availabilityResource.hasValue() ? this.availabilityResource.value() : [];
@@ -73,10 +76,6 @@ export class AvailabilityService {
   readonly previewSlots = computed(() =>
     this.previewResource.hasValue() ? this.previewResource.value() : [],
   );
-
-  readonly isWeekLoading = this.availabilityResource.isLoading;
-  readonly isExceptionsLoading = this.exceptionsResource.isLoading;
-  readonly isPreviewLoading = this.previewResource.isLoading;
   readonly weekError = resourceError(this.availabilityResource, 'No se pudo cargar tu horario');
   readonly exceptionsError = resourceError(
     this.exceptionsResource,

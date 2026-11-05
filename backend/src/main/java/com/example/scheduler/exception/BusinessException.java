@@ -12,7 +12,6 @@ public class BusinessException extends ApiException {
         super(HttpStatus.CONFLICT, details, messageKey, args);
     }
 
-    /** Conflict that also carries structured {@code details} the client can rely on instead of parsing the text. */
     public static BusinessException withDetails(Map<String, Object> details, String messageKey, Object... args) {
         return new BusinessException(details, messageKey, args);
     }

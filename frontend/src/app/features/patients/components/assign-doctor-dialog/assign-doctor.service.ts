@@ -28,15 +28,15 @@ export class AssignDoctorService {
   readonly assigning = this._assigning.asReadonly();
   readonly message = this._message.asReadonly();
   readonly changed = this._changed.asReadonly();
+  readonly assignedLoading = this.assignedResource.isLoading;
+  readonly doctorsErrorMessage = this.doctorsStore.errorMessage;
   readonly assignedDoctors = computed(() =>
     this.assignedResource.hasValue() ? this.assignedResource.value() : [],
   );
-  readonly assignedLoading = this.assignedResource.isLoading;
   readonly assignedErrorMessage = resourceError(
     this.assignedResource,
     'No se pudieron cargar los doctores asignados',
   );
-  readonly doctorsErrorMessage = this.doctorsStore.errorMessage;
   readonly assignableDoctors = computed(() => {
     const assigned = new Set(this.assignedDoctors().map((doctor) => doctor.id));
     return this.doctorsStore.doctors().filter((doctor) => !assigned.has(doctor.id));

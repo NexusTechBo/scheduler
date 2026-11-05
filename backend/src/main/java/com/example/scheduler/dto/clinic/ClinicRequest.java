@@ -22,4 +22,6 @@ public record ClinicRequest(
 
         @NotBlank @Email @Size(max = 255) String adminEmail,
         @NotBlank @Size(min = 8, max = 72) @MaxUtf8Bytes String adminPassword,
-        @NotBlank @Size(max = 255) String adminCi) {}
+
+        @NotBlank @Pattern(regexp = "^\\d{5,10}$", message = "{validation.ci.pattern}")
+        String adminCi) {}

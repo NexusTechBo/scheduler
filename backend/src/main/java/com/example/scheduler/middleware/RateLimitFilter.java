@@ -106,6 +106,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     retryAfterSeconds);
     }
 
+    static boolean matchesAny(List<PathPattern> patterns, PathContainer path) {
+        return patterns.stream().anyMatch(pattern -> pattern.matches(path));
+    }
+
     private static String resolveKey(RateLimitKeyStrategy strategy, HttpServletRequest request) {
         if (strategy == RateLimitKeyStrategy.USER) {
             var clinicId = request.getAttribute(LogKeys.ATTR_CLINIC_ID);
@@ -153,10 +157,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
                         LogUtils.orDash(request.getAttribute(LogKeys.ATTR_USER_ID)));
     }
 
-    static boolean matchesAny(List<PathPattern> patterns, PathContainer path) {
-        return patterns.stream().anyMatch(pattern -> pattern.matches(path));
-    }
-
     record CompiledRateLimitPolicy(
             String name,
             Set<String> methods,
@@ -164,6 +164,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
             RateLimitKeyStrategy key,
             List<Bandwidth> bandwidths,
             Cache<String, Bucket> buckets) {
+        boolean matches(String method, PathContainer path) {
+            return (methods.isEmpty() || methods.contains(method)) && RateLimitFilter.matchesAny(paths, path);
+        }
+
+        Bucket newBucket() {
+            var builder = Bucket.builder();
+            bandwidths.forEach(builder::addLimit);
+            return builder.build();
+        }
+
         static CompiledRateLimitPolicy of(RateLimitPolicy policy, PathPatternParser parser, long cacheMaxSize) {
             var longestPeriod = policy.limits().stream()
                     .map(RateLimitBandwidth::period)
@@ -186,16 +196,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     policy.key(),
                     bandwidths,
                     buckets);
-        }
-
-        boolean matches(String method, PathContainer path) {
-            return (methods.isEmpty() || methods.contains(method)) && RateLimitFilter.matchesAny(paths, path);
-        }
-
-        Bucket newBucket() {
-            var builder = Bucket.builder();
-            bandwidths.forEach(builder::addLimit);
-            return builder.build();
         }
     }
 }

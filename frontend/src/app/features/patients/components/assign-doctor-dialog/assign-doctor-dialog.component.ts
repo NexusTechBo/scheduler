@@ -46,11 +46,12 @@ export interface AssignDoctorData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AssignDoctorDialogComponent {
+  private readonly removeButtons = viewChildren<ElementRef<HTMLButtonElement>>('removeButton');
+
   protected readonly assignment = inject(AssignDoctorService);
   private readonly ref = inject<DialogRef<boolean>>(DialogRef);
 
   protected readonly doctorToAdd = signal<number | null>(null);
-  private readonly removeButtons = viewChildren<ElementRef<HTMLButtonElement>>('removeButton');
   private readonly focusAfterChange = focusAfterLoad(
     () => this.assignment.assigning() || this.assignment.assignedLoading(),
   );

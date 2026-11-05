@@ -23,11 +23,11 @@ import {
 } from '../../../../shared/utils/validation-messages.util';
 import { StaffService } from '../../staff.service';
 
-const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
-
 export interface StaffFormData {
   staff?: Staff;
 }
+
+const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
 
 function initialRole(staff: Staff | undefined): Role {
   if (!staff) return 'DOCTOR';
@@ -52,10 +52,6 @@ export class StaffFormDialogComponent {
   protected readonly staff = inject<StaffFormData>(DIALOG_DATA).staff;
 
   private readonly clinic = inject(AuthService).clinic;
-  protected readonly clinicSuffix = computed(() => {
-    const clinic = this.clinic();
-    return clinic ? `@${clinic.slug}.com` : '';
-  });
   protected readonly canChangeRole = this.staff?.role !== 'ADMINISTRATOR';
   protected readonly roles = EDITABLE_ROLES.map((role) => ({ id: role, label: ROLE_LABEL[role] }));
   protected readonly usernameErrors = USERNAME_ERRORS;
@@ -78,6 +74,10 @@ export class StaffFormDialogComponent {
     specialtyId: [this.staff?.specialtyId ?? null, specialtyForDoctor],
   });
 
+  protected readonly clinicSuffix = computed(() => {
+    const clinic = this.clinic();
+    return clinic ? `@${clinic.slug}.com` : '';
+  });
   private readonly role = toSignal(this.form.controls.role.valueChanges, {
     initialValue: this.form.controls.role.value,
   });

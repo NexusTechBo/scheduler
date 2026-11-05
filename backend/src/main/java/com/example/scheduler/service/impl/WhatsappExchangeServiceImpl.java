@@ -90,15 +90,15 @@ public class WhatsappExchangeServiceImpl implements WhatsappExchangeService {
         }
     }
 
+    private WhatsappStatusResponse toStatusResponse(String sessionId, SessionStatus status) {
+        return new WhatsappStatusResponse(
+                sessionId, status, currentClinicProvider.getCurrentClinic().getPhoneNumber());
+    }
+
     private static String currentSessionId() {
         var tenant = TenantContext.current();
         if (tenant == null) throw new IllegalStateException("No clinic tenant bound");
         return tenant.clinicSlug();
-    }
-
-    private WhatsappStatusResponse toStatusResponse(String sessionId, SessionStatus status) {
-        return new WhatsappStatusResponse(
-                sessionId, status, currentClinicProvider.getCurrentClinic().getPhoneNumber());
     }
 
     private static boolean hasStatus(RestClientResponseException e, HttpStatus status) {

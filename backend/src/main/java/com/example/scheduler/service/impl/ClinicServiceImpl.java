@@ -101,10 +101,6 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    private static String constraintName(DataIntegrityViolationException e) {
-        return e.getCause() instanceof ConstraintViolationException cve ? cve.getConstraintName() : null;
-    }
-
     private void discardFailedClinic(Clinic clinic, TransactionTemplate tx) {
         TenantContext.clear();
         try {
@@ -144,5 +140,9 @@ public class ClinicServiceImpl implements ClinicService {
         clinicRepository.flush();
         schemaProvisioningService.dropTenantSchema(TenantContext.schemaName(clinic.getSlug()));
         return true;
+    }
+
+    private static String constraintName(DataIntegrityViolationException e) {
+        return e.getCause() instanceof ConstraintViolationException cve ? cve.getConstraintName() : null;
     }
 }

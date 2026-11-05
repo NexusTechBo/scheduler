@@ -37,10 +37,11 @@ import { exceptionEndAfterStart } from '../../availability.util';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExceptionFormDialogComponent {
+  private readonly submitButton = viewChild.required<ElementRef<HTMLButtonElement>>('submitButton');
+
   private readonly availability = inject(AvailabilityService);
   private readonly injector = inject(Injector);
   protected readonly ref = inject(DialogRef);
-  private readonly submitButton = viewChild.required<ElementRef<HTMLButtonElement>>('submitButton');
 
   protected readonly today = toIso(new Date());
   protected readonly saving = signal(false);

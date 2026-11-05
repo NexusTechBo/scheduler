@@ -51,21 +51,6 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
         createActivationToken(clinic, adminName, adminEmail);
     }
 
-    private void createActivationToken(Clinic clinic, String adminName, String adminEmail) {
-        var token = TokenUtils.generate();
-        var now = LocalDateTime.now(clock);
-        var expiresAt = now.plus(TOKEN_VALIDITY);
-        tokenRepository.save(ClinicActivationToken.builder()
-                .clinic(clinic)
-                .tokenHash(TokenUtils.hash(token))
-                .email(adminEmail)
-                .expiresAt(expiresAt)
-                .createdAt(now)
-                .build());
-        eventPublisher.publishEvent(
-                new ClinicActivationEvent(clinic.getId(), clinic.getName(), adminName, adminEmail, token, expiresAt));
-    }
-
     @Override
     public ClinicActivatedResponse activateClinic(ActivateClinicRequest request) {
         var tokenHash = TokenUtils.hash(request.token());
@@ -107,6 +92,21 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
                         e.getClass().getSimpleName());
             }
         }
+    }
+
+    private void createActivationToken(Clinic clinic, String adminName, String adminEmail) {
+        var token = TokenUtils.generate();
+        var now = LocalDateTime.now(clock);
+        var expiresAt = now.plus(TOKEN_VALIDITY);
+        tokenRepository.save(ClinicActivationToken.builder()
+                .clinic(clinic)
+                .tokenHash(TokenUtils.hash(token))
+                .email(adminEmail)
+                .expiresAt(expiresAt)
+                .createdAt(now)
+                .build());
+        eventPublisher.publishEvent(
+                new ClinicActivationEvent(clinic.getId(), clinic.getName(), adminName, adminEmail, token, expiresAt));
     }
 
     private void reissueActivationToken(Long clinicId) {

@@ -11,8 +11,8 @@ import { LANDING_NAV } from '../../constants/landing.content';
   imports: [UiIconComponent, RouterLink],
 })
 export class HeaderLandingPageComponent {
+  private readonly auth = inject(AuthService);
   protected readonly nav = LANDING_NAV;
   protected readonly homeUrl = HOME_URL;
-  private readonly auth = inject(AuthService);
   protected readonly isLoggedIn = computed(() => !!this.auth.session());
 }

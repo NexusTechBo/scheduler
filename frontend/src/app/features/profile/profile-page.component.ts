@@ -45,12 +45,6 @@ export class ProfilePageComponent {
   protected readonly auth = inject(AuthService);
 
   protected readonly me = this.profile.me;
-  protected readonly roleLabel = computed(() => {
-    const profile = this.me();
-    if (!profile) return '';
-    return rolesLabel(profile.alsoDoctor ? [profile.role, 'DOCTOR'] : [profile.role]);
-  });
-  protected readonly avatar = computed(() => initials(this.me()?.name));
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -62,6 +56,14 @@ export class ProfilePageComponent {
     currentPassword: ['', currentPasswordWhenChanging],
     newPassword: ['', Validators.minLength(8)],
   });
+
+  protected readonly roleLabel = computed(() => {
+    const profile = this.me();
+    if (!profile) return '';
+    return rolesLabel(profile.alsoDoctor ? [profile.role, 'DOCTOR'] : [profile.role]);
+  });
+  protected readonly avatar = computed(() => initials(this.me()?.name));
+  protected readonly canLinkWhatsapp = computed(() => this.auth.hasRole(...ROLES.admin));
 
   constructor() {
     toObservable(this.me)
@@ -99,8 +101,6 @@ export class ProfilePageComponent {
         error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo actualizar el perfil')),
       });
   }
-
-  protected readonly canLinkWhatsapp = computed(() => this.auth.hasRole(...ROLES.admin));
 
   protected openWhatsapp(): void {
     this.dialog.open(WhatsappQrComponent, labelledByFrame());

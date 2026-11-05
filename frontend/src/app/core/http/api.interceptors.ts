@@ -15,6 +15,31 @@ const GUEST_PATH = 'guest/';
 const PUBLIC_PATHS = ['public/', 'auth/login', 'clinics/activate', 'clinics/activation/resend'];
 const REGISTER_PATH = 'clinics';
 
+export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
+  if (/^(https?:)?\/\//.test(req.url) || req.url.startsWith('/')) return next(req);
+  return next(req.clone({ url: environment.apiUrl + req.url }));
+};
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (isPublicRequest(req)) return next(req);
+  if (isGuestRequest(req.url)) return guestRequest(req, next);
+
+  const auth = inject(AuthService);
+  const token = auth.token();
+  if (token && !auth.isAuthenticated()) {
+    auth.expireSession(token);
+    return throwError(() => unauthorized(req));
+  }
+  return next(withToken(req, token)).pipe(
+    catchError((error: unknown) => {
+      if (token && error instanceof HttpErrorResponse && error.status === 401) {
+        auth.expireSession(token);
+      }
+      return throwError(() => error);
+    }),
+  );
+};
+
 function hasPath(url: string, path: string): boolean {
   return url.startsWith(path) || url.startsWith(environment.apiUrl + path);
 }
@@ -30,11 +55,6 @@ function isPublicRequest(req: HttpRequest<unknown>): boolean {
 function isGuestRequest(url: string): boolean {
   return hasPath(url, GUEST_PATH);
 }
-
-export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
-  if (/^(https?:)?\/\//.test(req.url) || req.url.startsWith('/')) return next(req);
-  return next(req.clone({ url: environment.apiUrl + req.url }));
-};
 
 function withToken(req: HttpRequest<unknown>, token: string | null): HttpRequest<unknown> {
   return token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
@@ -65,23 +85,3 @@ function guestRequest(req: HttpRequest<unknown>, next: HttpHandlerFn) {
     }),
   );
 }
-
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (isPublicRequest(req)) return next(req);
-  if (isGuestRequest(req.url)) return guestRequest(req, next);
-
-  const auth = inject(AuthService);
-  const token = auth.token();
-  if (token && !auth.isAuthenticated()) {
-    auth.expireSession(token);
-    return throwError(() => unauthorized(req));
-  }
-  return next(withToken(req, token)).pipe(
-    catchError((error: unknown) => {
-      if (token && error instanceof HttpErrorResponse && error.status === 401) {
-        auth.expireSession(token);
-      }
-      return throwError(() => error);
-    }),
-  );
-};

@@ -6,13 +6,6 @@ export const ROLE_LABEL: Record<Role, string> = {
   ASSISTANT: 'Asistente',
 };
 
-export function rolesLabel(roles: readonly Role[]): string {
-  return (Object.keys(ROLE_LABEL) as Role[])
-    .filter((role) => roles.includes(role))
-    .map((role) => ROLE_LABEL[role])
-    .join(' · ');
-}
-
 export const APPOINTMENT_STATUSES: AppointmentStatus[] = ['PENDING', 'CONFIRMED', 'CANCELLED'];
 
 export const STATUS_LABEL: Record<AppointmentStatus, string> = {
@@ -42,6 +35,13 @@ export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] 
   { value: 'SATURDAY', label: 'Sábado', short: 'Sáb' },
   { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
 ];
+
+export function rolesLabel(roles: readonly Role[]): string {
+  return (Object.keys(ROLE_LABEL) as Role[])
+    .filter((role) => roles.includes(role))
+    .map((role) => ROLE_LABEL[role])
+    .join(' · ');
+}
 
 export function specialtyLabel(name: string | null | undefined): string {
   return name ?? 'Sin especialidad';
