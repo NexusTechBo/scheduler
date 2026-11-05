@@ -1,9 +1,9 @@
 <app-dialog-frame
-  title="Doctores del paciente"
+  [title]="'patients.assignDoctorDialog.title' | translate"
   [subtitle]="assignment.patient.name"
   (closed)="close()"
 >
-  <p class="field-label">Asignados</p>
+  <p class="field-label">{{ 'patients.assignDoctorDialog.assignedLabel' | translate }}</p>
   <div class="mb-5 space-y-2">
     @if (assignment.assignedLoading()) {
       <app-skeleton />
@@ -31,14 +31,16 @@
             class="btn-icon hover:text-red-600!"
             [disabled]="assignment.assigning()"
             (click)="remove(doctor.id, i)"
-            [attr.aria-label]="'Quitar a ' + doctor.name"
+            [attr.aria-label]="
+              ('patients.assignDoctorDialog.removeAriaLabel' | translate) + ' ' + doctor.name
+            "
           >
             <app-ui-icon name="trash" class="h-4 w-4" />
           </button>
         </div>
       } @empty {
         <p class="rounded-2xl bg-white/40 px-4 py-3 text-sm text-gray-500">
-          Este paciente aún no tiene doctores asignados.
+          {{ 'patients.assignDoctorDialog.emptyAssigned' | translate }}
         </p>
       }
     }
@@ -51,13 +53,16 @@
   @if (assignment.doctorsErrorMessage(); as error) {
     <app-load-error [message]="error" (retry)="assignment.reloadDoctors()" />
   } @else {
-    <app-form-field label="Asignar a otro doctor" fieldId="doctor-to-add">
+    <app-form-field
+      [label]="'patients.assignDoctorDialog.assignFieldLabel' | translate"
+      fieldId="doctor-to-add"
+    >
       <div class="flex gap-2">
         <app-select
           class="min-w-0 flex-1"
           id="doctor-to-add"
           icon="stethoscope"
-          placeholder="Selecciona un doctor"
+          [placeholder]="'patients.assignDoctorDialog.selectPlaceholder' | translate"
           [options]="doctorOptions()"
           [ngModel]="doctorToAdd()"
           (ngModelChange)="doctorToAdd.set($event)"
@@ -68,7 +73,7 @@
           [disabled]="!doctorToAdd() || assignment.assigning()"
           (click)="add()"
         >
-          Asignar
+          {{ 'patients.assignDoctorDialog.assignButton' | translate }}
         </button>
       </div>
     </app-form-field>

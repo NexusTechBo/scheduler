@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NavItem } from '../../../../core/navigation/navigation';
 import { initials } from '../../../../core/utils/labels.util';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-sidebar-nav',
-  imports: [RouterLink, RouterLinkActive, UiIconComponent],
+  imports: [RouterLink, RouterLinkActive, UiIconComponent, TranslatePipe],
   templateUrl: './sidebar-nav.component.html',
   host: {
     class:

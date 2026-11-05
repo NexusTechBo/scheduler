@@ -1,10 +1,12 @@
 import { LowerCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { APPOINTMENT_STATUSES, STATUS_PLURAL_LABEL } from '../../core/utils/labels.util';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { APPOINTMENT_STATUSES } from '../../core/utils/labels.util';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
@@ -19,6 +21,13 @@ import { focusAfterLoad } from '../../shared/utils/focus-after-load.util';
 import { AppointmentRow, AppointmentStatusFilter } from './appointments.model';
 import { AppointmentsService } from './appointments.service';
 import { GuestLinkButtonComponent } from './components/guest-link-button/guest-link-button.component';
+
+const STATUS_I18N_KEYS: Record<string, string> = {
+  PENDING: 'appointments.tabs.pending',
+  CONFIRMED: 'appointments.tabs.confirmed',
+  CANCELLED: 'appointments.tabs.cancelled',
+  COMPLETED: 'appointments.tabs.completed',
+};
 
 @Component({
   selector: 'app-appointments-page',
@@ -35,6 +44,7 @@ import { GuestLinkButtonComponent } from './components/guest-link-button/guest-l
     EmptyStateComponent,
     UiIconComponent,
     GuestLinkButtonComponent,
+    TranslatePipe,
   ],
   providers: [AppointmentsService],
   templateUrl: './appointments-page.component.html',
@@ -42,16 +52,29 @@ import { GuestLinkButtonComponent } from './components/guest-link-button/guest-l
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppointmentsPageComponent {
+  private readonly i18n = inject(I18nService);
   private readonly ownDataOnly = inject(AuthService).restrictedToOwnData();
   protected readonly appointments = inject(AppointmentsService);
   private readonly focusRow = focusAfterLoad(this.appointments.isLoading);
 
   protected readonly showDoctor = !this.ownDataOnly;
-  protected readonly subtitle = this.ownDataOnly ? 'Tus citas' : 'Todas las citas de la clínica';
-  protected readonly tabs: SegmentedTabItem[] = [
-    { id: 'ALL', label: 'Todas' },
-    ...APPOINTMENT_STATUSES.map((status) => ({ id: status, label: STATUS_PLURAL_LABEL[status] })),
-  ];
+
+  protected readonly subtitle = computed(() => {
+    this.i18n.currentLang();
+    const key = this.ownDataOnly ? 'appointments.subtitles.own' : 'appointments.subtitles.all';
+    return this.i18n.translate(key);
+  });
+
+  protected readonly tabs = computed<SegmentedTabItem[]>(() => {
+    this.i18n.currentLang();
+    return [
+      { id: 'ALL', label: this.i18n.translate('appointments.tabs.all') },
+      ...APPOINTMENT_STATUSES.map((status) => ({
+        id: status,
+        label: this.i18n.translate(STATUS_I18N_KEYS[status] ?? status),
+      })),
+    ];
+  });
 
   protected setStatus(id: string): void {
     this.appointments.setStatus(id as AppointmentStatusFilter);

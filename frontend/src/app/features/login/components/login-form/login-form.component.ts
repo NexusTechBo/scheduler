@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ResendActivationComponent } from '../../../../shared/components/resend-activation/resend-activation.component';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { LoginService } from '../../login.service';
 
@@ -15,7 +16,13 @@ function usernameFromState(state: unknown): string {
 
 @Component({
   selector: 'app-login-form',
-  imports: [ReactiveFormsModule, RouterLink, FormFieldComponent, ResendActivationComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    FormFieldComponent,
+    ResendActivationComponent,
+    TranslatePipe,
+  ],
   templateUrl: './login-form.component.html',
   host: { class: 'flex min-h-screen items-center justify-center px-4 py-10 sm:px-6' },
   changeDetection: ChangeDetectionStrategy.OnPush,

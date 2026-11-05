@@ -15,6 +15,7 @@ import { Patient } from '../../../../core/models/api.models';
 import { specialtyLabel } from '../../../../core/utils/labels.util';
 import { InitialsPipe } from '../../../../shared/pipes/initials.pipe';
 import { SpecialtyLabelPipe } from '../../../../shared/pipes/specialty-label.pipe';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
@@ -40,6 +41,7 @@ export interface AssignDoctorData {
     FormFieldComponent,
     SelectComponent,
     UiIconComponent,
+    TranslatePipe,
   ],
   providers: [AssignDoctorService],
   templateUrl: './assign-doctor-dialog.component.html',

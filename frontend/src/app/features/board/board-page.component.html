@@ -1,4 +1,4 @@
-<app-page-header title="Tablero" subtitle="Arrastra una cita para confirmarla o cancelarla">
+<app-page-header [title]="'board.title' | translate" [subtitle]="'board.subtitle' | translate">
   <app-date-range-picker
     titleAccessory
     [ngModel]="board.range()"
@@ -11,7 +11,7 @@
     [disabled]="board.isLoading()"
   >
     <app-ui-icon name="refresh" class="h-4 w-4" [class.animate-spin]="board.isLoading()" />
-    Actualizar
+    {{ 'board.refresh' | translate }}
   </button>
 </app-page-header>
 

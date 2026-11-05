@@ -2,10 +2,10 @@
   <button
     type="button"
     class="btn btn-secondary"
-    title="Copia el enlace para que el paciente reserve su cita"
+    [attr.title]="'appointments.guestLink.tooltip' | translate"
     (click)="copy()"
   >
     <app-ui-icon name="link" class="h-4 w-4" />
-    Enlace de reserva
+    {{ 'appointments.guestLink.button' | translate }}
   </button>
 }

@@ -1,13 +1,14 @@
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { AppointmentSummaryItem } from '../../../../core/models/api.models';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { SkeletonComponent } from '../../../../shared/ui/skeleton/skeleton.component';
 import { BoardColumn } from '../../board.model';
 import { BoardCardComponent } from '../board-card/board-card.component';
 
 @Component({
   selector: 'app-board-column',
-  imports: [CdkDropList, CdkDrag, BoardCardComponent, SkeletonComponent],
+  imports: [CdkDropList, CdkDrag, BoardCardComponent, SkeletonComponent, TranslatePipe],
   templateUrl: './board-column.component.html',
   host: {
     class:

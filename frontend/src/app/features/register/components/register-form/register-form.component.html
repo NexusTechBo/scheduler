@@ -1,41 +1,51 @@
 <div class="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <div class="mb-6">
-      <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">Registra tu clínica</h1>
+      <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">
+        {{ 'register.title' | translate }}
+      </h1>
       <p class="mt-1 text-sm font-medium text-gray-500">
-        Crea el espacio de tu clínica y la cuenta de su administrador
+        {{ 'register.subtitle' | translate }}
       </p>
     </div>
 
-    <p class="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">Clínica</p>
+    <p class="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">
+      {{ 'register.sectionClinic' | translate }}
+    </p>
     <div class="space-y-4">
       <div class="grid gap-4 sm:grid-cols-2">
-        <app-form-field label="Nombre" fieldId="register-name">
+        <app-form-field [label]="'register.clinicNameLabel' | translate" fieldId="register-name">
           <input
             id="register-name"
             type="text"
             class="field-input"
             formControlName="name"
             autocomplete="organization"
-            placeholder="Clínica Central"
+            [placeholder]="'register.clinicNamePlaceholder' | translate"
           />
         </app-form-field>
-        <app-form-field label="Teléfono" fieldId="register-phone" [errorMessages]="phoneErrors">
+        <app-form-field
+          [label]="'register.clinicPhoneLabel' | translate"
+          fieldId="register-phone"
+          [errorMessages]="phoneErrors"
+        >
           <input
             id="register-phone"
             type="tel"
             class="field-input"
             formControlName="phoneNumber"
             autocomplete="tel"
-            placeholder="+591 700 00000"
+            [placeholder]="'register.clinicPhonePlaceholder' | translate"
           />
         </app-form-field>
       </div>
       <app-form-field
-        label="Identificador de la clínica"
+        [label]="'register.clinicSlugLabel' | translate"
         fieldId="register-slug"
         [hint]="
-          'Los usuarios de tu clínica terminarán en @' + (suffix() || 'identificador') + '.com'
+          ('register.slugHintPrefix' | translate) +
+          (suffix() || ('register.slugDefault' | translate)) +
+          '.com'
         "
         [errorMessages]="slugErrors"
       >
@@ -45,25 +55,34 @@
           class="field-input"
           formControlName="slug"
           autocomplete="off"
-          placeholder="clinicacentral"
+          [placeholder]="'register.clinicSlugPlaceholder' | translate"
         />
       </app-form-field>
     </div>
 
-    <p class="mb-3 mt-6 text-xs font-bold uppercase tracking-wide text-gray-500">Administrador</p>
+    <p class="mb-3 mt-6 text-xs font-bold uppercase tracking-wide text-gray-500">
+      {{ 'register.sectionAdmin' | translate }}
+    </p>
     <div class="space-y-4">
       <div class="grid gap-4 sm:grid-cols-2">
-        <app-form-field label="Nombre completo" fieldId="register-admin-name">
+        <app-form-field
+          [label]="'register.adminNameLabel' | translate"
+          fieldId="register-admin-name"
+        >
           <input
             id="register-admin-name"
             type="text"
             class="field-input"
             formControlName="adminName"
             autocomplete="name"
-            placeholder="Tu nombre"
+            [placeholder]="'register.adminNamePlaceholder' | translate"
           />
         </app-form-field>
-        <app-form-field label="CI" fieldId="register-admin-ci" [errorMessages]="ciErrors">
+        <app-form-field
+          [label]="'register.adminCiLabel' | translate"
+          fieldId="register-admin-ci"
+          [errorMessages]="ciErrors"
+        >
           <input
             id="register-admin-ci"
             type="text"
@@ -72,12 +91,12 @@
             inputmode="numeric"
             maxlength="10"
             autocomplete="off"
-            placeholder="Documento de identidad"
+            [placeholder]="'register.adminCiPlaceholder' | translate"
           />
         </app-form-field>
       </div>
       <app-form-field
-        label="Usuario"
+        [label]="'register.adminUsernameLabel' | translate"
         fieldId="register-admin-username"
         [errorMessages]="usernameErrors"
       >
@@ -91,31 +110,37 @@
             autocapitalize="none"
             autocorrect="off"
             spellcheck="false"
-            placeholder="admin"
+            [placeholder]="'register.adminUsernamePlaceholder' | translate"
           />
           <span class="min-w-0 truncate text-sm font-semibold text-gray-500"
-            >&#64;{{ suffix() || 'identificador' }}.com</span
+            >&#64;{{ suffix() || ('register.slugDefault' | translate) }}.com</span
           >
         </div>
       </app-form-field>
-      <app-form-field label="Correo electrónico" fieldId="register-admin-email">
+      <app-form-field
+        [label]="'register.adminEmailLabel' | translate"
+        fieldId="register-admin-email"
+      >
         <input
           id="register-admin-email"
           type="email"
           class="field-input"
           formControlName="adminEmail"
           autocomplete="email"
-          placeholder="admin@email.com"
+          [placeholder]="'register.adminEmailPlaceholder' | translate"
         />
       </app-form-field>
-      <app-form-field label="Contraseña" fieldId="register-admin-password">
+      <app-form-field
+        [label]="'register.adminPasswordLabel' | translate"
+        fieldId="register-admin-password"
+      >
         <input
           id="register-admin-password"
           type="password"
           class="field-input"
           formControlName="adminPassword"
           autocomplete="new-password"
-          placeholder="Mínimo 8 caracteres"
+          [placeholder]="'register.adminPasswordPlaceholder' | translate"
         />
       </app-form-field>
     </div>
@@ -126,25 +151,29 @@
       [attr.aria-disabled]="register.submitting() || register.coolingDown() || null"
     >
       @if (register.submitting()) {
-        Registrando…
+        {{ 'register.submitting' | translate }}
       } @else if (register.coolingDown()) {
-        Reintenta en {{ register.retryInLabel() }}
+        {{ 'register.retryIn' | translate }} {{ register.retryInLabel() }}
       } @else {
-        Registrar clínica
+        {{ 'register.submit' | translate }}
       }
     </button>
     <span class="sr-only" aria-live="polite">
       @if (register.cooldownFinished()) {
-        Ya puedes intentarlo de nuevo
+        {{ 'register.cooldownFinished' | translate }}
       }
     </span>
 
     <div class="mt-6 flex items-center gap-3">
       <span class="h-px flex-1 bg-gray-900/10"></span>
-      <span class="text-xs font-medium text-gray-500">¿Ya tienes cuenta?</span>
+      <span class="text-xs font-medium text-gray-500">
+        {{ 'register.alreadyHaveAccount' | translate }}
+      </span>
       <span class="h-px flex-1 bg-gray-900/10"></span>
     </div>
 
-    <a routerLink="/login" class="btn btn-secondary mt-4 w-full">Iniciar sesión</a>
+    <a routerLink="/login" class="btn btn-secondary mt-4 w-full">
+      {{ 'register.loginLink' | translate }}
+    </a>
   </form>
 </div>

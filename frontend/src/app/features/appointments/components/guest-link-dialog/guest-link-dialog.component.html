@@ -1,12 +1,12 @@
 <app-dialog-frame
-  title="Enlace de reserva"
-  subtitle="No se pudo copiar automáticamente"
+  [title]="'appointments.guestLinkDialog.title' | translate"
+  [subtitle]="'appointments.guestLinkDialog.subtitle' | translate"
   (closed)="ref.close()"
 >
   <app-form-field
-    label="Enlace para el paciente"
+    [label]="'appointments.guestLinkDialog.inputLabel' | translate"
     fieldId="guest-link-url"
-    hint="Compártelo por WhatsApp o email."
+    [hint]="'appointments.guestLinkDialog.inputHint' | translate"
   >
     <input
       #urlInput
@@ -20,19 +20,21 @@
 
   @if (copyFailed()) {
     <app-alert class="mt-4">
-      No se pudo copiar. Selecciona el enlace y cópialo manualmente.
+      {{ 'appointments.guestLinkDialog.failedAlert' | translate }}
     </app-alert>
   }
 
   <ng-container ngProjectAs="[dialogFooter]">
-    <button type="button" class="btn btn-secondary" (click)="ref.close()">Cerrar</button>
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">
+      {{ 'appointments.guestLinkDialog.close' | translate }}
+    </button>
     <button
       type="button"
       class="btn btn-primary"
       [cdkCopyToClipboard]="link.url"
       (cdkCopyToClipboardCopied)="onCopied($event)"
     >
-      Copiar
+      {{ 'appointments.guestLinkDialog.copy' | translate }}
     </button>
   </ng-container>
 </app-dialog-frame>

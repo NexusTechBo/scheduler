@@ -1,15 +1,15 @@
-<app-page-header title="Citas" [subtitle]="subtitle">
+<app-page-header [title]="'appointments.title' | translate" [subtitle]="subtitle()">
   <div class="flex min-w-0 max-w-full flex-wrap items-center gap-3">
     <app-segmented-tabs
       class="min-w-0"
-      [items]="tabs"
+      [items]="tabs()"
       [selectedId]="appointments.status()"
       (select)="setStatus($event)"
     />
     <app-guest-link-button />
     <a routerLink="/appointments/new" class="btn btn-primary">
       <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
-      Agendar cita
+      {{ 'appointments.bookAppointment' | translate }}
     </a>
   </div>
 </app-page-header>
@@ -27,21 +27,27 @@
         (retry)="appointments.reload()"
       />
     } @else if (!appointments.appointments().length) {
-      <app-empty-state icon="calendar" title="No hay citas" message="No hay citas con este filtro.">
-        <a routerLink="/appointments/new" class="btn btn-secondary btn-sm">Agendar cita</a>
+      <app-empty-state
+        icon="calendar"
+        [title]="'appointments.emptyTitle' | translate"
+        [message]="'appointments.emptyMessage' | translate"
+      >
+        <a routerLink="/appointments/new" class="btn btn-secondary btn-sm">
+          {{ 'appointments.bookAppointment' | translate }}
+        </a>
       </app-empty-state>
     } @else {
       <table class="data-table">
         <thead>
           <tr>
-            <th class="max-sm:px-2">Fecha</th>
-            <th class="hidden 2xl:table-cell">Horario</th>
-            <th class="max-sm:px-2">Paciente</th>
+            <th class="max-sm:px-2">{{ 'appointments.table.date' | translate }}</th>
+            <th class="hidden 2xl:table-cell">{{ 'appointments.table.time' | translate }}</th>
+            <th class="max-sm:px-2">{{ 'appointments.table.patient' | translate }}</th>
             @if (showDoctor) {
-              <th class="hidden lg:table-cell">Doctor</th>
+              <th class="hidden lg:table-cell">{{ 'appointments.table.doctor' | translate }}</th>
             }
-            <th class="hidden xl:table-cell">Estado</th>
-            <th class="text-right max-sm:px-2">Acciones</th>
+            <th class="hidden xl:table-cell">{{ 'appointments.table.status' | translate }}</th>
+            <th class="text-right max-sm:px-2">{{ 'appointments.table.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -95,7 +101,7 @@
                     <button
                       type="button"
                       class="btn btn-sm bg-primary/10 text-primary hover:bg-primary/20 max-2xl:h-9 max-2xl:w-9 max-2xl:px-0"
-                      title="Confirmar"
+                      [attr.title]="'appointments.actions.confirm' | translate"
                       [attr.aria-label]="
                         'Confirmar cita de ' +
                         row.patientName +
@@ -107,14 +113,16 @@
                       (click)="confirm(row, $event)"
                     >
                       <app-ui-icon name="check" class="h-4 w-4 2xl:hidden" [strokeWidth]="2.4" />
-                      <span class="max-2xl:hidden">Confirmar</span>
+                      <span class="max-2xl:hidden">{{
+                        'appointments.actions.confirm' | translate
+                      }}</span>
                     </button>
                   }
                   @if (row.canCancel) {
                     <button
                       type="button"
                       class="btn btn-sm btn-danger max-2xl:h-9 max-2xl:w-9 max-2xl:px-0"
-                      title="Cancelar cita"
+                      [attr.title]="'appointments.actions.cancel' | translate"
                       [attr.aria-label]="
                         'Cancelar cita de ' +
                         row.patientName +
@@ -126,7 +134,9 @@
                       (click)="cancel(row, $event)"
                     >
                       <app-ui-icon name="x" class="h-4 w-4 2xl:hidden" [strokeWidth]="2.4" />
-                      <span class="max-2xl:hidden">Cancelar cita</span>
+                      <span class="max-2xl:hidden">{{
+                        'appointments.actions.cancel' | translate
+                      }}</span>
                     </button>
                   }
                 </div>

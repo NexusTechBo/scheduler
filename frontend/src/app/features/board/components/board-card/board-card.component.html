@@ -1,12 +1,12 @@
 <div
   class="glass-card rounded-2xl p-4.5"
   [class]="past() ? 'cursor-pointer opacity-60' : 'cursor-grab'"
-  [attr.title]="past() ? 'Cita pasada: no se puede confirmar ni cancelar' : null"
+  [attr.title]="past() ? ('board.pastAppointmentTitle' | translate) : null"
 >
   <p class="mb-2 text-[16.5px] font-bold leading-tight text-gray-900">
     {{ appointment().clientName }}
     @if (past()) {
-      <span class="sr-only">(cita pasada, no se puede confirmar ni cancelar)</span>
+      <span class="sr-only">{{ 'board.pastAppointmentSr' | translate }}</span>
     }
   </p>
 

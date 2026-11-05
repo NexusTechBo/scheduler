@@ -1,12 +1,14 @@
 import { Dialog } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { Patient } from '../../core/models/api.models';
 import {
   PatientFormData,
   PatientFormDialogComponent,
 } from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
 import { InitialsPipe } from '../../shared/pipes/initials.pipe';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
@@ -38,6 +40,7 @@ import { PatientsService } from './patients.service';
     PaginationComponent,
     EmptyStateComponent,
     UiIconComponent,
+    TranslatePipe,
   ],
   providers: [PatientsService],
   templateUrl: './patients-page.component.html',
@@ -45,15 +48,11 @@ import { PatientsService } from './patients.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PatientsPageComponent {
+  private readonly i18n = inject(I18nService);
   private readonly dialog = inject(Dialog);
   private readonly injector = inject(Injector);
   protected readonly patients = inject(PatientsService);
   private readonly focusRow = focusAfterLoad(this.patients.isLoading);
-
-  protected readonly tabs: SegmentedTabItem[] = [
-    { id: 'mine', label: 'Mis pacientes' },
-    { id: 'all', label: 'Todos' },
-  ];
 
   protected setScope(scope: string): void {
     this.patients.setScope(scope as PatientScope);
@@ -114,4 +113,12 @@ export class PatientsPageComponent {
         ),
       );
   }
+
+  protected readonly tabs = computed<SegmentedTabItem[]>(() => {
+    this.i18n.currentLang();
+    return [
+      { id: 'all', label: this.i18n.translate('patients.tabs.all') },
+      { id: 'mine', label: this.i18n.translate('patients.tabs.mine') },
+    ];
+  });
 }

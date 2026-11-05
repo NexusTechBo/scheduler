@@ -5,6 +5,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { ROLES } from '../../../../core/auth/roles';
 import { GUEST_BOOKING_PATH } from '../../../../core/navigation/navigation';
 import { SUCCESS_MESSAGE } from '../../../../core/utils/messages.util';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { labelledByFrame } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
@@ -15,7 +16,7 @@ import {
 
 @Component({
   selector: 'app-guest-link-button',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, TranslatePipe],
   templateUrl: './guest-link-button.component.html',
   host: { class: 'contents' },
   changeDetection: ChangeDetectionStrategy.OnPush,

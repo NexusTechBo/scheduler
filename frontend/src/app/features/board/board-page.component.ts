@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BoardSocket } from '../../core/api/board.socket';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { DateRangePickerComponent } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
@@ -20,6 +21,7 @@ import { BoardColumnComponent } from './components/board-column/board-column.com
     PageHeaderComponent,
     DateRangePickerComponent,
     UiIconComponent,
+    TranslatePipe,
   ],
   providers: [BoardService, BoardSocket],
   templateUrl: './board-page.component.html',

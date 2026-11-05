@@ -2,7 +2,7 @@
   <button
     type="button"
     class="btn-icon shrink-0 lg:hidden"
-    aria-label="Abrir menú"
+    [attr.aria-label]="'nav.openMenu' | translate"
     aria-controls="app-sidebar"
     [attr.aria-expanded]="menuOpen()"
     (click)="menu.emit()"
@@ -11,7 +11,7 @@
   </button>
   <div class="min-w-0">
     <p class="truncate text-lg font-bold text-gray-900">{{ greeting() }}, {{ givenName() }}</p>
-    <p class="truncate text-sm font-medium text-gray-500">{{ today }}</p>
+    <p class="truncate text-sm font-medium capitalize text-gray-500">{{ today() }}</p>
   </div>
 </div>
 

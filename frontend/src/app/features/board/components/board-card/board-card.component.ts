@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { AppointmentSummaryItem } from '../../../../core/models/api.models';
 import { formatDayLabel } from '../../../../core/utils/calendar.util';
 import { TimeRangePipe } from '../../../../shared/pipes/time-range.pipe';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { KeyboardActivateDirective } from '../../../../shared/ui/keyboard-activate/keyboard-activate.directive';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-board-card',
-  imports: [UiIconComponent, TimeRangePipe],
+  imports: [UiIconComponent, TimeRangePipe, TranslatePipe],
   templateUrl: './board-card.component.html',
   host: { class: 'block rounded-2xl' },
   hostDirectives: [KeyboardActivateDirective],

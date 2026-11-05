@@ -1,14 +1,16 @@
 <div class="glass-panel w-full max-w-sm rounded-3xl p-6 sm:p-8">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <div class="mb-6">
-      <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">Inicia sesión</h1>
+      <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">
+        {{ 'login.title' | translate }}
+      </h1>
       <p class="mt-1 text-sm font-medium text-gray-500">
-        Ingresa tus credenciales para acceder a tu cuenta
+        {{ 'login.subtitle' | translate }}
       </p>
     </div>
 
     <div class="space-y-4">
-      <app-form-field label="Usuario" fieldId="login-username">
+      <app-form-field [label]="'login.usernameLabel' | translate" fieldId="login-username">
         <input
           id="login-username"
           type="text"
@@ -18,17 +20,17 @@
           autocapitalize="none"
           autocorrect="off"
           spellcheck="false"
-          placeholder="usuario@clinica.com"
+          [placeholder]="'login.usernamePlaceholder' | translate"
         />
       </app-form-field>
-      <app-form-field label="Contraseña" fieldId="login-password">
+      <app-form-field [label]="'login.passwordLabel' | translate" fieldId="login-password">
         <input
           id="login-password"
           type="password"
           class="field-input"
           formControlName="password"
           autocomplete="current-password"
-          placeholder="Ingresa tu contraseña"
+          [placeholder]="'login.passwordPlaceholder' | translate"
         />
       </app-form-field>
     </div>
@@ -39,16 +41,16 @@
       [attr.aria-disabled]="submitting() || coolingDown() || null"
     >
       @if (submitting()) {
-        Ingresando…
+        {{ 'login.submitting' | translate }}
       } @else if (coolingDown()) {
-        Reintenta en {{ retryInLabel() }}
+        {{ 'login.retryIn' | translate }} {{ retryInLabel() }}
       } @else {
-        Ingresar
+        {{ 'login.submit' | translate }}
       }
     </button>
     <span class="sr-only" aria-live="polite">
       @if (cooldownFinished()) {
-        Ya puedes intentarlo de nuevo
+        {{ 'login.cooldownFinished' | translate }}
       }
     </span>
   </form>
@@ -57,26 +59,31 @@
     @if (pendingActivation()) {
       <div class="mt-6 rounded-2xl bg-amber-50 p-4">
         <p class="text-sm font-semibold text-amber-800">
-          Tu clínica aún no está activada. Revisa tu correo para activarla.
+          {{ 'login.activationPendingTitle' | translate }}
         </p>
         <p class="mb-3 mt-1 text-xs font-medium text-amber-700">
-          ¿No encuentras el correo? Podemos enviarte un nuevo enlace.
+          {{ 'login.activationPendingHelp' | translate }}
         </p>
-        <app-resend-activation label="Reenviar correo" fieldId="login-resend-email" />
+        <app-resend-activation
+          [label]="'login.resendActivation' | translate"
+          fieldId="login-resend-email"
+        />
       </div>
     }
   </div>
 
   <div class="mt-6 flex items-center gap-3">
     <span class="h-px flex-1 bg-gray-900/10"></span>
-    <span class="text-center text-xs font-medium text-gray-500"
-      >¿Tu clínica aún no usa ClinicFlow?</span
-    >
+    <span class="text-center text-xs font-medium text-gray-500">
+      {{ 'login.notUsingClinicFlow' | translate }}
+    </span>
     <span class="h-px flex-1 bg-gray-900/10"></span>
   </div>
 
-  <a routerLink="/register" class="btn btn-secondary mt-4 w-full">Registrar clínica</a>
+  <a routerLink="/register" class="btn btn-secondary mt-4 w-full">
+    {{ 'login.registerClinic' | translate }}
+  </a>
   <p class="mt-4 text-center text-xs font-medium text-gray-500">
-    El personal es creado por el administrador de la clínica.
+    {{ 'login.staffDisclaimer' | translate }}
   </p>
 </div>

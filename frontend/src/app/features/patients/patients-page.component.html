@@ -1,22 +1,23 @@
 <app-page-header
-  title="Pacientes"
+  [title]="'patients.title' | translate"
   [subtitle]="
-    patients.ownListEnabled && patients.scope() === 'mine'
-      ? 'Pacientes que tienes asignados'
-      : 'Pacientes registrados en la clínica'
+    (patients.ownListEnabled && patients.scope() === 'mine'
+      ? 'patients.subtitles.mine'
+      : 'patients.subtitles.all'
+    ) | translate
   "
 >
   <div class="flex flex-wrap items-center gap-3">
     @if (patients.ownListEnabled) {
       <app-segmented-tabs
-        [items]="tabs"
+        [items]="tabs()"
         [selectedId]="patients.scope()"
         (select)="setScope($event)"
       />
     }
     <button type="button" class="btn btn-primary" (click)="openForm()">
       <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
-      Nuevo paciente
+      {{ 'patients.newPatient' | translate }}
     </button>
   </div>
 </app-page-header>
@@ -30,8 +31,8 @@
       />
       <input
         class="field-input pl-10"
-        placeholder="Buscar por nombre, CI, email o teléfono"
-        aria-label="Buscar pacientes"
+        [placeholder]="'patients.searchPlaceholder' | translate"
+        [attr.aria-label]="'patients.searchAriaLabel' | translate"
         [ngModel]="patients.search()"
         (ngModelChange)="patients.setSearch($event)"
       />
@@ -43,7 +44,7 @@
         [ngModel]="patients.showInactive()"
         (ngModelChange)="patients.setShowInactive($event)"
       />
-      Mostrar inactivos
+      {{ 'patients.showInactive' | translate }}
     </label>
   </div>
 
@@ -61,24 +62,27 @@
     } @else if (!patients.patients().length) {
       <app-empty-state
         icon="patients"
-        [title]="patients.search() ? 'Sin resultados' : 'No hay pacientes'"
+        [title]="
+          (patients.search() ? 'patients.emptySearchTitle' : 'patients.emptyTitle') | translate
+        "
         [message]="
-          patients.search().trim()
-            ? 'No hay pacientes que coincidan con la búsqueda.'
+          (patients.search().trim()
+            ? 'patients.emptySearchMessage'
             : patients.scope() === 'mine'
-              ? 'Asígnate pacientes desde la pestaña Todos o registra uno nuevo.'
-              : 'Registra al primer paciente de la clínica.'
+              ? 'patients.emptyMineMessage'
+              : 'patients.emptyAllMessage'
+          ) | translate
         "
       />
     } @else {
       <table class="data-table">
         <thead>
           <tr>
-            <th>Paciente</th>
-            <th class="hidden md:table-cell">CI</th>
-            <th class="hidden md:table-cell">Teléfono</th>
-            <th class="hidden sm:table-cell">Estado</th>
-            <th class="text-right">Acciones</th>
+            <th>{{ 'patients.table.patient' | translate }}</th>
+            <th class="hidden md:table-cell">{{ 'patients.table.ci' | translate }}</th>
+            <th class="hidden md:table-cell">{{ 'patients.table.phone' | translate }}</th>
+            <th class="hidden sm:table-cell">{{ 'patients.table.status' | translate }}</th>
+            <th class="text-right">{{ 'patients.table.actions' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -93,12 +97,16 @@
                   >
                   <div class="min-w-0">
                     <p class="font-bold wrap-break-word text-gray-900">{{ patient.name }}</p>
-                    <p class="text-xs text-gray-500 md:hidden">CI {{ patient.ci }}</p>
+                    <p class="text-xs text-gray-500 md:hidden">
+                      {{ 'patients.table.ci' | translate }} {{ patient.ci }}
+                    </p>
                     @if (patient.email) {
                       <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
                     }
                     @if (!patient.active) {
-                      <p class="text-xs font-bold text-gray-500 sm:hidden">Inactivo</p>
+                      <p class="text-xs font-bold text-gray-500 sm:hidden">
+                        {{ 'patients.status.inactive' | translate }}
+                      </p>
                     }
                   </div>
                 </div>
@@ -116,7 +124,10 @@
                       : 'bg-gray-900/6 text-gray-500'
                   "
                 >
-                  {{ patient.active ? 'Activo' : 'Inactivo' }}
+                  {{
+                    (patient.active ? 'patients.status.active' : 'patients.status.inactive')
+                      | translate
+                  }}
                 </span>
               </td>
               <td class="whitespace-nowrap max-sm:px-2">
@@ -127,19 +138,30 @@
                       class="btn btn-sm min-h-10 btn-ghost"
                       [id]="'patient-toggle-' + patient.id"
                       [attr.aria-label]="
-                        (row.mine ? 'Quitar de mi lista: ' : 'Asignarme: ') + patient.name
+                        (row.mine
+                          ? ('patients.actions.removeFromMine' | translate)
+                          : ('patients.actions.assignToMe' | translate)) +
+                        ': ' +
+                        patient.name
                       "
                       (click)="toggleMine(patient)"
                     >
-                      {{ row.mine ? 'Quitar de mi lista' : 'Asignarme' }}
+                      {{
+                        (row.mine
+                          ? 'patients.actions.removeFromMine'
+                          : 'patients.actions.assignToMe'
+                        ) | translate
+                      }}
                     </button>
                   }
                   @if (patients.canManageDoctors) {
                     <button
                       type="button"
                       class="btn-icon h-10 w-10"
-                      title="Doctores asignados"
-                      [attr.aria-label]="'Doctores asignados de ' + patient.name"
+                      [attr.title]="'patients.actions.assignedDoctors' | translate"
+                      [attr.aria-label]="
+                        ('patients.actions.assignedDoctors' | translate) + ': ' + patient.name
+                      "
                       (click)="manageDoctors(patient)"
                     >
                       <app-ui-icon name="link" class="h-4 w-4" />
@@ -148,9 +170,9 @@
                   <button
                     type="button"
                     class="btn-icon h-10 w-10"
-                    title="Editar"
+                    [attr.title]="'patients.actions.edit' | translate"
                     [id]="'patient-edit-' + patient.id"
-                    [attr.aria-label]="'Editar a ' + patient.name"
+                    [attr.aria-label]="('patients.actions.edit' | translate) + ': ' + patient.name"
                     (click)="openForm(patient)"
                   >
                     <app-ui-icon name="edit" class="h-4 w-4" />
@@ -159,9 +181,11 @@
                     <button
                       type="button"
                       class="btn-icon h-10 w-10 hover:text-red-600!"
-                      title="Desactivar"
+                      [attr.title]="'patients.actions.deactivate' | translate"
                       [id]="'patient-status-' + patient.id"
-                      [attr.aria-label]="'Desactivar a ' + patient.name"
+                      [attr.aria-label]="
+                        ('patients.actions.deactivate' | translate) + ': ' + patient.name
+                      "
                       (click)="deactivate(patient)"
                     >
                       <app-ui-icon name="block" class="h-4 w-4" />
@@ -170,9 +194,11 @@
                     <button
                       type="button"
                       class="btn-icon h-10 w-10 hover:text-secondary!"
-                      title="Reactivar"
+                      [attr.title]="'patients.actions.reactivate' | translate"
                       [id]="'patient-status-' + patient.id"
-                      [attr.aria-label]="'Reactivar a ' + patient.name"
+                      [attr.aria-label]="
+                        ('patients.actions.reactivate' | translate) + ': ' + patient.name
+                      "
                       (click)="activate(patient)"
                     >
                       <app-ui-icon name="refresh" class="h-4 w-4" />
