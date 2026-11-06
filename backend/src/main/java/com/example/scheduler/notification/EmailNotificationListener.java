@@ -2,6 +2,7 @@ package com.example.scheduler.notification;
 
 import com.example.scheduler.config.AsyncConfig;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.AppointmentNotificationType;
 import com.example.scheduler.notification.event.ClinicActivatedEvent;
 import com.example.scheduler.notification.event.ClinicActivationEvent;
 import com.example.scheduler.notification.event.NotificationChannel;
@@ -43,14 +44,26 @@ public class EmailNotificationListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentNotification(AppointmentNotificationEvent event) {
         if (!event.targets(NotificationChannel.EMAIL)) return;
+
+        if (event.type() == AppointmentNotificationType.DOCTOR_GUEST_BOOKED) {
+            if (!StringUtils.hasText(event.doctorEmail())) {
+                log.info("Appointment {} doctor email notification skipped: doctor has no email", event.appointmentId());
+                return;
+            }
+            emailService.sendDoctorGuestAppointment(event);
+            return;
+        }
+
         if (!StringUtils.hasText(event.patientEmail())) {
             log.info("Appointment {} email notification skipped: patient has no email", event.appointmentId());
             return;
         }
+
         switch (event.type()) {
             case CONFIRMED -> emailService.sendAppointmentConfirmed(event);
             case CANCELLED -> emailService.sendAppointmentCancelled(event);
             case RESCHEDULED -> emailService.sendAppointmentRescheduled(event);
+            default -> log.debug("Unhandled appointment notification type for email: {}", event.type());
         }
     }
 }
