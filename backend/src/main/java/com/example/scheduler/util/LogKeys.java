@@ -8,6 +8,7 @@ public final class LogKeys {
     public static final String ROLE = "role";
     public static final String METHOD = "method";
     public static final String PATH = "path";
+    public static final String CLIENT_IP = "clientIp";
     public static final String GUEST_USER = "guest";
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
 

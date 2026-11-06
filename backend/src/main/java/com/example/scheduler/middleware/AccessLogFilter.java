@@ -68,23 +68,45 @@ public class AccessLogFilter extends OncePerRequestFilter {
         var clinicId = request.getAttribute(LogKeys.ATTR_CLINIC_ID);
         var userId = request.getAttribute(LogKeys.ATTR_USER_ID);
         var role = request.getAttribute(LogKeys.ATTR_ROLE);
+        var clientIp = request.getRemoteAddr();
         var event = log.atLevel(levelFor(status))
                 .addKeyValue(LogKeys.METHOD, method)
                 .addKeyValue(LogKeys.PATH, path)
+                .addKeyValue(LogKeys.CLIENT_IP, clientIp)
                 .addKeyValue("status", status)
                 .addKeyValue("durationMs", durationMs);
         if (clinicId != null) event = event.addKeyValue(LogKeys.CLINIC_ID, clinicId);
         if (userId != null) event = event.addKeyValue(LogKeys.USER_ID, userId);
         if (role != null) event = event.addKeyValue(LogKeys.ROLE, role);
         event.log(
-                "{} {} {} {}ms clinic={} user={} role={}",
+                "{} {} {} {}ms ip={} clinic={} user={} role={}",
                 method,
                 path,
                 status,
                 durationMs,
+                clientIp,
                 LogUtils.orDash(clinicId),
                 LogUtils.orDash(userId),
                 LogUtils.orDash(role));
+        logProxyHeaders(request, clientIp);
+    }
+
+    private static void logProxyHeaders(HttpServletRequest request, String clientIp) {
+        if (!log.isDebugEnabled()) return;
+        var forwardedFor = request.getHeader("X-Forwarded-For");
+        var forwardedBy = request.getHeader("X-Forwarded-By");
+        var realIp = request.getHeader("X-Real-IP");
+        log.atDebug()
+                .addKeyValue(LogKeys.CLIENT_IP, clientIp)
+                .addKeyValue("xForwardedFor", forwardedFor)
+                .addKeyValue("xForwardedBy", forwardedBy)
+                .addKeyValue("xRealIp", realIp)
+                .log(
+                        "Proxy headers ip={} x-forwarded-for={} x-forwarded-by={} x-real-ip={}",
+                        clientIp,
+                        LogUtils.orDash(forwardedFor),
+                        LogUtils.orDash(forwardedBy),
+                        LogUtils.orDash(realIp));
     }
 
     private static Level levelFor(int status) {
