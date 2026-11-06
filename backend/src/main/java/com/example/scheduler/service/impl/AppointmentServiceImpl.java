@@ -255,6 +255,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                         doctor.getId(),
                         patientId,
                         saved.getStatus());
+        if (channel == BookingChannel.GUEST) {
+            publishDoctorGuestNotification(saved, currentClinicProvider.getCurrentClinic());
+        }
         return appointmentMapper.toResponse(saved);
     }
 
@@ -364,6 +367,29 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getEndTime(),
                 appointment.getCancellationReason(),
                 channels));
+    }
+
+    private void publishDoctorGuestNotification(Appointment appointment, Clinic clinic) {
+        var doctor = appointment.getDoctor();
+        var patient = appointment.getPatient();
+        var specialty = doctor.getSpecialty();
+        eventPublisher.publishEvent(new AppointmentNotificationEvent(
+                AppointmentNotificationType.DOCTOR_GUEST_BOOKED,
+                appointment.getStatus(),
+                appointment.getId(),
+                clinic.getName(),
+                clinic.getSlug(),
+                doctor.getName(),
+                doctor.getEmail(),
+                specialty != null ? specialty.getName() : null,
+                patient.getName(),
+                patient.getEmail(),
+                patient.getPhoneNumber(),
+                appointment.getStartTime(),
+                appointment.getEndTime(),
+                null,
+                null,
+                AppointmentNotificationEvent.EMAIL_ONLY));
     }
 
     private String resolveMessage(String key) {

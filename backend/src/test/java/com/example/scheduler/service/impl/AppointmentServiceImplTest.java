@@ -37,6 +37,7 @@ import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.AppointmentMapper;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.notification.event.AppointmentNotificationType;
+import com.example.scheduler.notification.event.NotificationChannel;
 import com.example.scheduler.repository.AppointmentRepository;
 import com.example.scheduler.repository.DoctorAvailabilityRepository;
 import com.example.scheduler.repository.PatientRepository;
@@ -158,7 +159,7 @@ class AppointmentServiceImplTest {
 
     private void givenExistingActive(Appointment existing) {
         when(appointmentRepository.findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
-                        anyLong(), anyLong(), any(), any()))
+                anyLong(), anyLong(), any(), any()))
                 .thenReturn(Optional.of(existing));
     }
 
@@ -234,6 +235,7 @@ class AppointmentServiceImplTest {
         return Personal.builder()
                 .id(id)
                 .name("Dr " + id)
+                .email("dr" + id + "@clinic.test")
                 .role(role)
                 .specialty(Specialty.builder().id(1L).name("Cardiologia").build())
                 .build();
@@ -544,7 +546,7 @@ class AppointmentServiceImplTest {
             givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
             givenWorkingDay(DOCTOR_ID, FUTURE_DAY);
             when(appointmentRepository.existsOverlappingAppointment(
-                            eq(DOCTOR_ID), eq(FUTURE_START), any(), any(), isNull()))
+                    eq(DOCTOR_ID), eq(FUTURE_START), any(), any(), isNull()))
                     .thenReturn(true);
 
             assertApiException(
@@ -653,16 +655,27 @@ class AppointmentServiceImplTest {
     class BookGuestAppointment {
         @Test
         void shouldSavePendingAppointmentWhenGuestBooksFreeSlot() {
-            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+            var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
+            givenDoctorLocked(doctor);
             givenWorkingDay(DOCTOR_ID, FUTURE_DAY);
             givenPatient(patient(PATIENT_ID, true));
             givenSaveAssignsId();
+            givenClinic();
             var response = givenMapperResponse();
 
             var result = service.bookGuestAppointment(request(DOCTOR_ID, FUTURE_START));
 
             assertThat(result).isSameAs(response);
             assertThat(captureSaved().getStatus()).isEqualTo(AppointmentStatus.PENDING);
+
+            var notification = singleNotification();
+            assertThat(notification.type()).isEqualTo(AppointmentNotificationType.DOCTOR_GUEST_BOOKED);
+            assertThat(notification.doctorEmail()).isEqualTo(doctor.getEmail());
+            assertThat(notification.doctorName()).isEqualTo(doctor.getName());
+            assertThat(notification.specialtyName()).isEqualTo("Cardiologia");
+            assertThat(notification.patientName()).isEqualTo("Patient " + PATIENT_ID);
+            assertThat(notification.clinicName()).isEqualTo("Clinica Demo");
+            assertThat(notification.channels()).isEqualTo(AppointmentNotificationEvent.EMAIL_ONLY);
         }
 
         @Test
@@ -831,11 +844,11 @@ class AppointmentServiceImplTest {
             givenExistingForReschedule(doctor(DOCTOR_ID, ERole.DOCTOR), AppointmentStatus.PENDING);
             givenWorkingDay(DOCTOR_ID, FUTURE_DAY);
             when(appointmentRepository.existsOverlappingAppointment(
-                            DOCTOR_ID,
-                            FUTURE_START,
-                            FUTURE_START.plusMinutes(30),
-                            List.of(AppointmentStatus.CANCELLED),
-                            APPOINTMENT_ID))
+                    DOCTOR_ID,
+                    FUTURE_START,
+                    FUTURE_START.plusMinutes(30),
+                    List.of(AppointmentStatus.CANCELLED),
+                    APPOINTMENT_ID))
                     .thenReturn(true);
 
             assertApiException(
@@ -1081,7 +1094,7 @@ class AppointmentServiceImplTest {
             var second = appointment(
                     2L, doctor, patient(PATIENT_ID, true), from.plusMinutes(30), AppointmentStatus.CONFIRMED);
             when(appointmentRepository.findOverlappingAppointments(
-                            DOCTOR_ID, from, to, List.of(AppointmentStatus.CANCELLED)))
+                    DOCTOR_ID, from, to, List.of(AppointmentStatus.CANCELLED)))
                     .thenReturn(List.of(first, second));
             givenSaveAssignsId();
             givenClinic();
@@ -1112,12 +1125,12 @@ class AppointmentServiceImplTest {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             var upcoming = appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.PENDING);
             when(appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                            DOCTOR_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
+                    DOCTOR_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
                     .thenReturn(List.of(upcoming));
             when(messageSource.getMessage(
-                            eq(MessageKeys.APPOINTMENT_DOCTOR_DEACTIVATED_CANCELLATION_REASON),
-                            isNull(),
-                            any(Locale.class)))
+                    eq(MessageKeys.APPOINTMENT_DOCTOR_DEACTIVATED_CANCELLATION_REASON),
+                    isNull(),
+                    any(Locale.class)))
                     .thenReturn("Doctor no disponible");
             givenSaveAssignsId();
             givenClinic();
@@ -1137,12 +1150,12 @@ class AppointmentServiceImplTest {
             var upcoming =
                     appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.CONFIRMED);
             when(appointmentRepository.findByPatientIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                            PATIENT_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
+                    PATIENT_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
                     .thenReturn(List.of(upcoming));
             when(messageSource.getMessage(
-                            eq(MessageKeys.APPOINTMENT_PATIENT_DEACTIVATED_CANCELLATION_REASON),
-                            isNull(),
-                            any(Locale.class)))
+                    eq(MessageKeys.APPOINTMENT_PATIENT_DEACTIVATED_CANCELLATION_REASON),
+                    isNull(),
+                    any(Locale.class)))
                     .thenReturn("Paciente desactivado");
             givenSaveAssignsId();
             givenClinic();
@@ -1204,10 +1217,10 @@ class AppointmentServiceImplTest {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             var pending = appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.PENDING);
             when(appointmentRepository.findByFiltersAndDateRange(
-                            DOCTOR_ID,
-                            null,
-                            from.atStartOfDay(),
-                            LocalDate.of(2026, 11, 11).atStartOfDay()))
+                    DOCTOR_ID,
+                    null,
+                    from.atStartOfDay(),
+                    LocalDate.of(2026, 11, 11).atStartOfDay()))
                     .thenReturn(List.of(pending));
 
             var board = service.getBoardByRange(from, to, DOCTOR_ID, null);
@@ -1238,7 +1251,7 @@ class AppointmentServiceImplTest {
             var third = appointment(
                     3L, doctor, patient(PATIENT_ID, true), FUTURE_START.plusDays(1), AppointmentStatus.PENDING);
             when(appointmentRepository.findByFiltersAndDateRange(
-                            null, PATIENT_ID, LocalDateTime.of(2026, 11, 1, 0, 0), LocalDateTime.of(2026, 12, 1, 0, 0)))
+                    null, PATIENT_ID, LocalDateTime.of(2026, 11, 1, 0, 0), LocalDateTime.of(2026, 12, 1, 0, 0)))
                     .thenReturn(List.of(first, second, third));
 
             var calendar = service.getCalendar(11, 2026, null, PATIENT_ID);

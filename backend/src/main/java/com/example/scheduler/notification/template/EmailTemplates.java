@@ -33,11 +33,11 @@ public final class EmailTemplates {
                 </table>
                 <p>Te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
                 """.formatted(
-                        Utils.escapeHtml(event.name()),
-                        Utils.escapeHtml(clinicLabel(event.clinicName())),
-                        Utils.escapeHtml(event.username()),
-                        Utils.escapeHtml(event.rawPassword()),
-                        Utils.escapeHtml(roleLabel(event.role())));
+                Utils.escapeHtml(event.name()),
+                Utils.escapeHtml(clinicLabel(event.clinicName())),
+                Utils.escapeHtml(event.username()),
+                Utils.escapeHtml(event.rawPassword()),
+                Utils.escapeHtml(roleLabel(event.role())));
         return new EmailContent(subject, layout(body));
     }
 
@@ -52,10 +52,10 @@ public final class EmailTemplates {
                 <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
                 <p>Este enlace vence en 48 horas. Si no solicitaste este registro, puedes ignorar este correo.</p>
                 """.formatted(
-                        Utils.escapeHtml(event.adminName()),
-                        Utils.escapeHtml(clinic),
-                        button(link, "Activar clínica"),
-                        anchor(link));
+                Utils.escapeHtml(event.adminName()),
+                Utils.escapeHtml(clinic),
+                button(link, "Activar clínica"),
+                anchor(link));
         return new EmailContent(subject, layout(body));
     }
 
@@ -70,11 +70,11 @@ public final class EmailTemplates {
                 %s
                 <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
                 """.formatted(
-                        Utils.escapeHtml(event.adminName()),
-                        Utils.escapeHtml(clinic),
-                        row("Usuario", event.adminUsername()),
-                        button(link, "Iniciar sesión"),
-                        anchor(link));
+                Utils.escapeHtml(event.adminName()),
+                Utils.escapeHtml(clinic),
+                row("Usuario", event.adminUsername()),
+                button(link, "Iniciar sesión"),
+                anchor(link));
         return new EmailContent(subject, layout(body));
     }
 
@@ -110,6 +110,20 @@ public final class EmailTemplates {
                 %s
                 <p>La cita queda <strong>pendiente de confirmación</strong>; te avisaremos cuando la clínica la confirme.</p>
                 """.formatted(Utils.escapeHtml(recipientName), appointmentDetails(event));
+        return new EmailContent(subject, layout(body));
+    }
+
+    public static EmailContent doctorGuestAppointment(AppointmentNotificationEvent event) {
+        var subject = "Nueva cita agendada - " + clinicLabel(event.clinicName());
+        var reasonText = StringUtils.hasText(event.reason()) ? event.reason() : "No especificado";
+        var reasonHtml = "<p><strong>Motivo de consulta:</strong> " + Utils.escapeHtml(reasonText) + "</p>";
+        var body = """
+                <p>Hola Dr./Dra. %s,</p>
+                <p>Un paciente ha agendado una nueva cita desde el portal público:</p>
+                %s
+                %s
+                <p>Recuerda que la cita se encuentra <strong>pendiente de confirmación</strong>.</p>
+                """.formatted(Utils.escapeHtml(event.doctorName()), appointmentDetails(event), reasonHtml);
         return new EmailContent(subject, layout(body));
     }
 

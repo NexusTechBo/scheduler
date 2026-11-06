@@ -2,6 +2,7 @@ package com.example.scheduler.notification;
 
 import com.example.scheduler.config.AsyncConfig;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
+import com.example.scheduler.notification.event.AppointmentNotificationType;
 import com.example.scheduler.notification.event.NotificationChannel;
 import com.example.scheduler.notification.template.WhatsappTemplates;
 import com.example.scheduler.service.WhatsappExchangeService;
@@ -20,11 +21,16 @@ public class WhatsappNotificationListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAppointmentNotification(AppointmentNotificationEvent event) {
         if (!event.targets(NotificationChannel.WHATSAPP)) return;
+        if (event.type() == AppointmentNotificationType.DOCTOR_GUEST_BOOKED) return;
+
         var message = switch (event.type()) {
             case CONFIRMED -> WhatsappTemplates.appointmentConfirmed(event);
             case CANCELLED -> WhatsappTemplates.appointmentCancelled(event);
             case RESCHEDULED -> WhatsappTemplates.appointmentRescheduled(event);
+            default -> null;
         };
+        if (message == null) return;
+
         whatsappExchangeService.sendMessage(
                 event.clinicSlug(),
                 event.patientPhoneNumber(),
