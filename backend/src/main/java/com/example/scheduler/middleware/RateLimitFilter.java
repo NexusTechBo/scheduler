@@ -144,7 +144,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .addKeyValue("policy", policy)
                 .addKeyValue(LogKeys.METHOD, method)
                 .addKeyValue(LogKeys.PATH, path)
-                .addKeyValue("clientIp", clientIp)
+                .addKeyValue(LogKeys.CLIENT_IP, clientIp)
                 .addKeyValue("retryAfterSeconds", retryAfterSeconds)
                 .log(
                         "Rate limit exceeded policy={} {} {} ip={} retryAfter={}s clinic={} user={}",
